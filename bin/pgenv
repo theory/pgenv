@@ -162,8 +162,9 @@ Some useful pgenv commands are:
     start     Start the current PostgreSQL server
     stop      Stop the current PostgreSQL server
     build     Build a specific version of PostgreSQL
-    version    Show the current PostgreSQL version
+    version   Show the current PostgreSQL version
     versions  List all Perl versions available to pgenv
+    help      Show this usage statment and command summary
     
 EOF
         exit
