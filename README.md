@@ -33,7 +33,7 @@ This makes it easy to switch between versions when testing for compatability.
 Installation
 ------------
 
-1.  Check out plenv into `~/.plenv`.
+1.  Check out pgenv into `~/.pgenv`.
 
     ``` sh
     $ git clone https://github.com/theory/pgenv.git ~/.pgenv
