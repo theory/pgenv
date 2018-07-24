@@ -1,0 +1,171 @@
+#!/bin/bash
+
+# Versions:
+# 10.4 9.6.9 9.5.13 9.4.18 9.3.23 9.2.24 9.1.24 9.0.19 8.4.22 8.3.23 8.2.23 8.1.23 8.0.26
+
+PGENV_ROOT=$(dirname $(dirname $0))
+PGSQL=$PGENV_ROOT/pgsql
+PG_DATA=$PGSQL/data
+
+PG_CTL="$PGSQL/bin/pg_ctl -D $PG_DATA"
+INITDB="$PGSQL/bin/initdb -U postgres --locale en_US.UTF-8 --encoding UNICODE -D $PG_DATA"
+
+cd $PGENV_ROOT || exit $?
+
+case $1 in
+    use)
+        v=$2
+        # Make sure it's a version we have.
+        if [ ! -e "pgsql-$v" ]; then
+            echo "PostgreSQL $v not installed; installed versions:"
+            ls | grep pgsql-
+            exit 1
+        fi
+
+        # Shut down existing running instance.
+        if [ -e "pgsql" ]; then
+            if $PG_CTL status &> /dev/null; then
+                $PG_CTL stop || exit $?
+            fi
+        fi
+
+        # Link the new instance.
+        ln -nsf pgsql-$2 pgsql || exit $?
+        
+        # Init if needed.
+        if [ ! -d $PG_DATA ]; then
+            $INITDB || exit $?
+        fi
+
+        # Start er up!
+        $PG_CTL start -l $PG_DATA/server.log || exit $?
+        echo "PostgreSQL $v started";
+        exit
+        ;;
+
+    start)
+        # Do we have a current version?
+        if [ ! -e "pgsql" ]; then
+            echo "No current version of PostgreSQL"
+            echo "Run \`pgenv use \$version\` to link and start a specific version"
+            echo "Run \`pgenv versions\` to list all installed versions"
+            exit 1
+        fi
+
+        # Just stop if already running.
+        if $PG_CTL status &> /dev/null; then
+            echo "PostgreSQL is already running"
+            exit
+        fi
+
+        # Init the database if needed.
+        if [ ! -d $PG_DATA ]; then
+            $INITDB || exit $?
+        fi
+
+        # Start er up!
+        $PG_CTL start -l $PG_DATA/server.log || exit $?
+        echo "PostgreSQL $v started";
+        exit
+        ;;
+
+    stop)
+        # Shut down the server unless it's not running.
+        if $PG_CTL status &> /dev/null; then
+            $PG_CTL stop || exit $?
+            echo "PostgreSQL stopped";
+        else
+            echo "PostgreSQL not running";
+        fi
+        exit
+        ;;
+
+    build)
+        v=$2
+        # Skip it if we already have it.
+        if [ -e "pgsql-$v" ]; then
+            echo "PostgreSQL $v already built"
+            exit
+        fi
+
+        # Switch to the src directory.
+        if [ ! -e "src" ]; then
+            mkdir src
+        fi
+        cd src
+
+        # Download the source if wee don't already have it.
+        if [ ! -f "postgresql-$v.tar.bz2" ]; then
+            curl -LO http://ftp.postgresql.org/pub/source/v$v/postgresql-$v.tar.bz2 || exit $?
+        fi
+
+        # Unpack the source.
+        rm -rf "postgresql-$v"
+        tar jxf postgresql-$v.tar.bz2 || exit $?
+        cd postgresql-$v
+
+        # Patch 8.1.
+        if [[ $v =~ ^8\.1\. ]]; then
+            patch -p1 <<EOF
+--- a/src/pl/plperl/plperl.c
++++ b/src/pl/plperl/plperl.c
+@@ -694,7 +694,7 @@
+ 		if (!isGV_with_GP(sv) || !GvCV(sv))
+ 			continue;
+ 		SvREFCNT_dec(GvCV(sv)); /* free the CV */
+-		GvCV(sv) = NULL;		/* prevent call via GV */
++		GvCV_set(sv, NULL);		/* prevent call via GV */
+ 	}
+ 
+ 	hv_clear(stash);
+EOF
+        fi
+
+        # Configure.
+        ./configure --prefix=$PGENV_ROOT/pgsql-$v --with-perl PERL=/usr/bin/perl || exit $?
+
+        # make and make install.
+        if [ "`echo $v | awk -F . '{print $1}'`" -lt 9 ]; then
+            # 8.x doesn't have `make world`.
+            make -j3 || exit $?
+            make install || exit $?
+            cd contrib
+            make -j3 || exit $?
+            make install || exit $?            
+        else
+            # Yay, make world!
+            make world -j3 || exit $?
+            make install-world || exit $?
+        fi
+        exit
+        ;;
+
+    version)
+        readlink pgsql
+        if [ $? != 0 ]; then
+            echo "No version of PostgreSQL currently in use"
+        fi
+        exit
+        ;;
+
+    versions)
+        ls | grep pgsql-
+        exit
+        ;;
+
+    *)
+        cat <<EOF
+Uaage: pgenv <command> [<args>]"
+
+Some useful pgenv commands are:
+    use       Set and start the current PostgreSQL version
+    start     Start the current PostgreSQL server
+    stop      Stop the current PostgreSQL server
+    build     Build a specific version of PostgreSQL
+    version    Show the current PostgreSQL version
+    versions  List all Perl versions available to pgenv
+    
+EOF
+        exit
+        ;;
+esac
