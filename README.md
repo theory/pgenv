@@ -28,7 +28,7 @@ Description
 -----------
 
 pgenv is a simple utility to build and run different releases of [PostgreSQL].
-This makes it easy to switch between versions when testing for compatability.
+This makes it easy to switch between versions when testing for compatibility.
 
 Installation
 ------------
