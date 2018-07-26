@@ -105,7 +105,7 @@ case $1 in
         cd postgresql-$v
 
         # Patch 8.1.
-        if [[ $v =~ ^8\.1\. ]]; then
+        if [[ $v =~ ^8\.[01]\. ]]; then
             patch -p1 <<EOF
 --- a/src/pl/plperl/plperl.c
 +++ b/src/pl/plperl/plperl.c
