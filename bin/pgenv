@@ -140,6 +140,38 @@ EOF
         exit
         ;;
 
+    clear)
+        if $PG_CTL status &> /dev/null; then
+            $PG_CTL stop || exit $?
+            echo "PostgreSQL stopped";
+        fi
+        rm pgsql || exit $?
+        echo "PostgreSQL cleared"
+        exit
+        ;;
+
+    remove)
+        v=$2
+        if [ ! -e "pgsql-$v" ]; then
+            echo "PostgreSQL $v not installed; installed versions:"
+            ls | grep pgsql-
+            exit 1
+        fi
+
+        if [ "`readlink pgsql`" = "pgsql-$v" ]; then
+            echo "PostgreSQL $v currently in use"
+            echo "Run \`pgenv clear\` to clear it"
+            echo "or \`pgenv use\` to switch to another version"
+            exit 1
+        fi
+
+        rm -fr "pgsql-$v" || exit $?
+        rm -fr src/postgresql-$v.tar.bz2 || exit $?
+        rm -fr src/postgresql-$v || exit $?
+        echo "PostgreSQL $v removed"
+        exit
+        ;;
+
     version)
         readlink pgsql
         if [ $? != 0 ]; then
@@ -159,9 +191,11 @@ Uaage: pgenv <command> [<args>]"
 
 Some useful pgenv commands are:
     use       Set and start the current PostgreSQL version
+    clear     Stop and unset the current PostgreSQL version
     start     Start the current PostgreSQL server
     stop      Stop the current PostgreSQL server
     build     Build a specific version of PostgreSQL
+    remove    Remove a specific version of PostgreSQL
     version   Show the current PostgreSQL version
     versions  List all Perl versions available to pgenv
     help      Show this usage statment and command summary
