@@ -73,7 +73,7 @@ case $1 in
         # Start er up!
         if ! $PG_CTL status &> /dev/null; then
             $PG_CTL start -l $PG_DATA/server.log
-            echo "PostgreSQL $v started";
+            echo "PostgreSQL $v started"
         fi
         exit
         ;;
@@ -100,7 +100,7 @@ case $1 in
 
         # Start er up!
         $PG_CTL start -l $PG_DATA/server.log
-        echo "PostgreSQL $v started";
+        echo "PostgreSQL $v started"
         exit
         ;;
 
@@ -108,9 +108,21 @@ case $1 in
         # Shut down the server unless it's not running.
         if $PG_CTL status &> /dev/null; then
             $PG_CTL stop
-            echo "PostgreSQL stopped";
+            echo "PostgreSQL stopped"
         else
-            echo "PostgreSQL not running";
+            echo "PostgreSQL not running"
+        fi
+        exit
+        ;;
+
+    restart)
+        # Shut down the server unless it's not running.
+        if $PG_CTL status &> /dev/null; then
+            $PG_CTL restart -l $PG_DATA/server.log
+            echo "PostgreSQL restarted"
+        else
+            $PG_CTL start -l $PG_DATA/server.log
+            echo "PostgreSQL started"
         fi
         exit
         ;;
@@ -178,7 +190,7 @@ EOF
     clear)
         if $PG_CTL status &> /dev/null; then
             $PG_CTL stop
-            echo "PostgreSQL stopped";
+            echo "PostgreSQL stopped"
         fi
         rm pgsql
         echo "PostgreSQL cleared"
@@ -229,6 +241,7 @@ The pgenv commands are:
     clear     Stop and unset the current PostgreSQL version
     start     Start the current PostgreSQL server
     stop      Stop the current PostgreSQL server
+    restart   Restart the current PostgreSQL server
     build     Build a specific version of PostgreSQL
     remove    Remove a specific version of PostgreSQL
     version   Show the current PostgreSQL version
