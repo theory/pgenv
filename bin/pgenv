@@ -16,12 +16,14 @@
 # 10.4
 # 11beta2
 
+# https://stackoverflow.com/a/19622569/79202
 set -e
 
 PGENV_ROOT=$(dirname $(dirname $0))
 PGSQL=$PGENV_ROOT/pgsql
 PG_DATA=$PGSQL/data
 
+# Now -w because 9.0 and earlier always time out even when successful.
 PG_CTL="$PGSQL/bin/pg_ctl -D $PG_DATA"
 INITDB="$PGSQL/bin/initdb -U postgres --locale en_US.UTF-8 --encoding UNICODE -D $PG_DATA"
 
@@ -48,24 +50,31 @@ case $1 in
             exit 1
         fi
 
-        # Shut down existing running instance.
-        if [ -e "pgsql" ]; then
-            if $PG_CTL status &> /dev/null; then
-                $PG_CTL stop
+        # Check if current version?
+        if [ "`readlink pgsql`" = "pgsql-$v" ]; then
+            echo "Already using PostgreSQL $v"
+        else
+            # Shut down existing running instance.
+            if [ -e "pgsql" ]; then
+                if $PG_CTL status &> /dev/null; then
+                    $PG_CTL stop
+                fi
             fi
+
+            # Link the new instance.
+            ln -nsf pgsql-$2 pgsql
         fi
 
-        # Link the new instance.
-        ln -nsf pgsql-$2 pgsql
-        
         # Init if needed.
         if [ ! -d $PG_DATA ]; then
             $INITDB
         fi
 
         # Start er up!
-        $PG_CTL start -l $PG_DATA/server.log
-        echo "PostgreSQL $v started";
+        if ! $PG_CTL status &> /dev/null; then
+            $PG_CTL start -l $PG_DATA/server.log
+            echo "PostgreSQL $v started";
+        fi
         exit
         ;;
 
