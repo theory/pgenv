@@ -241,8 +241,9 @@ EOF
         ;;
 
     version)
-        readlink pgsql
-        if [ $? != 0 ]; then
+        if [ -e "pgsql" ]; then
+            readlink pgsql
+        else
             echo "No version of PostgreSQL currently in use"
         fi
         exit
