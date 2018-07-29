@@ -30,7 +30,9 @@ INITDB="$PGSQL/bin/initdb -U postgres --locale en_US.UTF-8 --encoding UNICODE -D
 cd $PGENV_ROOT
 
 pgversions() {
-    curr=$(readlink pgsql)
+    if [ -e "pgsql" ]; then
+        curr=$(readlink pgsql)
+    fi
     for dir in $(ls | grep pgsql-); do
         if [ "$dir" = "$curr" ]; then
             echo "  *  $dir"
