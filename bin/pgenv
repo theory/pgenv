@@ -215,8 +215,12 @@ EOF
             $PG_CTL stop
             echo "PostgreSQL stopped"
         fi
-        rm pgsql
-        echo "PostgreSQL cleared"
+        if [ -e "pgsql" ]; then
+            rm -f pgsql
+            echo "PostgreSQL cleared"
+        else
+            echo "No version of PostgreSQL is currently active"
+        fi
         exit
         ;;
 
