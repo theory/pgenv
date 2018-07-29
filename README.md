@@ -221,6 +221,8 @@ See Also
 --------
 
 *   [plenv] is a binary manager for [Perl], and was the inspiration for pgenv.
+*   plenv, in turn, was inspired by and based on [rbenv], a binary manager for
+    Ruby.
 *   [Pgenv] works similarly, but requires [PostgreSQL] manually compiled from
     its Git repo.
 
@@ -232,6 +234,7 @@ Distributed under [The MIT License]; see [`LICENSE.md`] for terms.
 [PostgreSQL]: https://postgresql.org/
 [plenv]: https://github.com/tokuhirom/plenv/
 [Perl]: https://perl.org/
+[rbenv]: https://github.com/rbenv/rbenv
 [Pgenv]: https://github.com/mnencia/pgenv
 [GitHub issues]: https://github.com/theory/pgenv/issues/
 [The MIT License]: https://opensource.org/licenses/MIT
