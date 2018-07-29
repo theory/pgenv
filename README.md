@@ -173,7 +173,7 @@ Initializes the data directory if none exists.
 Stops the currently active version of PostgreSQL.
 
     $ pgenv stop
-    PostgreSQL started
+    PostgreSQL stopped
 
 ### pgenv restart
 
@@ -222,6 +222,6 @@ Distributed under [The MIT License]; see [`LICENSE.md`] for terms.
 [plenv]: https://github.com/tokuhirom/plenv/
 [Perl]: https://perl.org/
 [Pgenv]: https://github.com/mnencia/pgenv
-[GitHub issues]: https://github.com/theory/pgenv/
+[GitHub issues]: https://github.com/theory/pgenv/issues/
 [The MIT License]: https://opensource.org/licenses/MIT
 [`LICENSE.md`]: https://github.com/theory/pgenv/blob/master/LICENSE.md
