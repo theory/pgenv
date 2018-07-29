@@ -74,11 +74,22 @@ Installation
     $ pgenv install 10.4
     ~~~
 
-Dependencies
+### Upgrading
+
+You can upgrade your installation to the cutting-edge version at any time
+with a simple `git pull`.
+
+~~~ sh
+$ cd ~/.pgenv
+$ git pull
+~~~
+
+### Dependencies
 ------------
 
 *   bash
 *   curl
+*   Perl
 
 Command Reference
 -----------------
