@@ -77,8 +77,8 @@ Installation
 Dependencies
 ------------
 
-    * bash
-    * curl
+* bash
+* curl
 
 Command Reference
 -----------------
@@ -202,6 +202,10 @@ Outputs a brief usage statement and summary of available commands. The
         versions  List all Perl versions available to pgenv
         help      Show this usage statement and command summary
 
+# Bug Reporting
+
+Please use [GitHub issues].
+
 See Also
 --------
 
@@ -209,7 +213,15 @@ See Also
 *   [Pgenv] works similarly, but requires [PostgreSQL] manually compiled from
     its Git repo.
 
+License
+-------
+
+Distributed under [The MIT License]; see [`LICENSE.md`] for terms.
+
 [PostgreSQL]: https://postgresql.org/
 [plenv]: https://github.com/tokuhirom/plenv/
 [Perl]: https://perl.org/
 [Pgenv]: https://github.com/mnencia/pgenv
+[GitHub issues]: https://github.com/theory/pgenv/
+[The MIT License]: https://opensource.org/licenses/MIT
+[`LICENSE.md`]: https://github.com/theory/pgenv/blob/master/LICENSE.md
