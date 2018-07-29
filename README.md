@@ -77,8 +77,8 @@ Installation
 Dependencies
 ------------
 
-* bash
-* curl
+*   bash
+*   curl
 
 Command Reference
 -----------------
