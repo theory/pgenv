@@ -16,6 +16,8 @@
 # 10.4
 # 11beta2
 
+set -e
+
 PGENV_ROOT=$(dirname $(dirname $0))
 PGSQL=$PGENV_ROOT/pgsql
 PG_DATA=$PGSQL/data
@@ -23,7 +25,7 @@ PG_DATA=$PGSQL/data
 PG_CTL="$PGSQL/bin/pg_ctl -D $PG_DATA"
 INITDB="$PGSQL/bin/initdb -U postgres --locale en_US.UTF-8 --encoding UNICODE -D $PG_DATA"
 
-cd $PGENV_ROOT || exit $?
+cd $PGENV_ROOT
 
 pgversions() {
     curr=$(readlink pgsql)
@@ -49,20 +51,20 @@ case $1 in
         # Shut down existing running instance.
         if [ -e "pgsql" ]; then
             if $PG_CTL status &> /dev/null; then
-                $PG_CTL stop || exit $?
+                $PG_CTL stop
             fi
         fi
 
         # Link the new instance.
-        ln -nsf pgsql-$2 pgsql || exit $?
+        ln -nsf pgsql-$2 pgsql
         
         # Init if needed.
         if [ ! -d $PG_DATA ]; then
-            $INITDB || exit $?
+            $INITDB
         fi
 
         # Start er up!
-        $PG_CTL start -l $PG_DATA/server.log || exit $?
+        $PG_CTL start -l $PG_DATA/server.log
         echo "PostgreSQL $v started";
         exit
         ;;
@@ -84,11 +86,11 @@ case $1 in
 
         # Init the database if needed.
         if [ ! -d $PG_DATA ]; then
-            $INITDB || exit $?
+            $INITDB
         fi
 
         # Start er up!
-        $PG_CTL start -l $PG_DATA/server.log || exit $?
+        $PG_CTL start -l $PG_DATA/server.log
         echo "PostgreSQL $v started";
         exit
         ;;
@@ -96,7 +98,7 @@ case $1 in
     stop)
         # Shut down the server unless it's not running.
         if $PG_CTL status &> /dev/null; then
-            $PG_CTL stop || exit $?
+            $PG_CTL stop
             echo "PostgreSQL stopped";
         else
             echo "PostgreSQL not running";
@@ -120,12 +122,12 @@ case $1 in
 
         # Download the source if wee don't already have it.
         if [ ! -f "postgresql-$v.tar.bz2" ]; then
-            curl -LO http://ftp.postgresql.org/pub/source/v$v/postgresql-$v.tar.bz2 || exit $?
+            curl -LO http://ftp.postgresql.org/pub/source/v$v/postgresql-$v.tar.bz2
         fi
 
         # Unpack the source.
         rm -rf "postgresql-$v"
-        tar jxf postgresql-$v.tar.bz2 || exit $?
+        tar jxf postgresql-$v.tar.bz2
         cd postgresql-$v
 
         # Patch 8.1.
@@ -146,30 +148,30 @@ EOF
         fi
 
         # Configure.
-        ./configure --prefix=$PGENV_ROOT/pgsql-$v --with-perl PERL=/usr/bin/perl || exit $?
+        ./configure --prefix=$PGENV_ROOT/pgsql-$v --with-perl PERL=/usr/bin/perl
 
         # make and make install.
         if [ "`echo $v | awk -F . '{print $1}'`" -lt 9 ]; then
             # 8.x doesn't have `make world`.
-            make -j3 || exit $?
-            make install || exit $?
+            make -j3
+            make install
             cd contrib
-            make -j3 || exit $?
-            make install || exit $?            
+            make -j3
+            make install
         else
             # Yay, make world!
-            make world -j3 || exit $?
-            make install-world || exit $?
+            make world -j3
+            make install-world
         fi
         exit
         ;;
 
     clear)
         if $PG_CTL status &> /dev/null; then
-            $PG_CTL stop || exit $?
+            $PG_CTL stop
             echo "PostgreSQL stopped";
         fi
-        rm pgsql || exit $?
+        rm pgsql
         echo "PostgreSQL cleared"
         exit
         ;;
@@ -189,9 +191,9 @@ EOF
             exit 1
         fi
 
-        rm -fr "pgsql-$v" || exit $?
-        rm -fr src/postgresql-$v.tar.bz2 || exit $?
-        rm -fr src/postgresql-$v || exit $?
+        rm -fr "pgsql-$v"
+        rm -fr src/postgresql-$v.tar.bz2
+        rm -fr src/postgresql-$v
         echo "PostgreSQL $v removed"
         exit
         ;;
