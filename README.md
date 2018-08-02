@@ -212,6 +212,8 @@ Outputs a brief usage statement and summary of available commands. The
         version   Show the current PostgreSQL version
         versions  List all Perl versions available to pgenv
         help      Show this usage statement and command summary
+    
+    For full documentation, see: https://github.com/theory/pgenv#readme
 
 # Bug Reporting
 
