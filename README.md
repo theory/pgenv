@@ -71,7 +71,7 @@ Installation
 4.  Build a version of PostgreSQL:
 
     ~~~ sh
-    $ pgenv install 10.4
+    $ pgenv build 10.4
     ~~~
 
 ### Upgrading
