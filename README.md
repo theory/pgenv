@@ -74,6 +74,13 @@ Installation
     $ pgenv build 10.4
     ~~~
 
+### Configuration
+
+By default, all versions of PostgreSQL will be built in the root of the
+project directory (generally, in `~/.pgenv`.). If you'd like them to live
+elsewhere, set the `$PGENV_ROOT` environment variable to the appropriate
+value.
+
 ### Upgrading
 
 You can upgrade your installation to the cutting-edge version at any time

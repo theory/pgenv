@@ -19,7 +19,17 @@
 # https://stackoverflow.com/a/19622569/79202
 set -e
 
-PGENV_ROOT=$(dirname $(dirname $0))
+# Set PGENV_ROOT only if not already set.
+if [ -z "$PGENV_ROOT" ]; then
+    PGENV_ROOT=$(dirname $(dirname $0))
+else
+    echo "Using PGENV_ROOT $PGENV_ROOT"
+fi
+
+cd $PGENV_ROOT
+# Aalways use an absolute path or configure could complain.
+PGENV_ROOT=$(pwd)
+
 PGSQL=$PGENV_ROOT/pgsql
 PG_DATA=$PGSQL/data
 
@@ -27,7 +37,6 @@ PG_DATA=$PGSQL/data
 PG_CTL="$PGSQL/bin/pg_ctl -D $PG_DATA"
 INITDB="$PGSQL/bin/initdb -U postgres --locale en_US.UTF-8 --encoding UNICODE -D $PG_DATA"
 
-cd $PGENV_ROOT
 
 pgversions() {
     if [ -e "pgsql" ]; then
