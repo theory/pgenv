@@ -28,6 +28,8 @@ PG_CTL="$PGSQL/bin/pg_ctl -D $PG_DATA"
 INITDB="$PGSQL/bin/initdb -U postgres --locale en_US.UTF-8 --encoding UNICODE -D $PG_DATA"
 
 cd $PGENV_ROOT
+# use always an absolute path or configure could complain
+PGENV_ROOT=$(pwd)
 
 pgversions() {
     if [ -e "pgsql" ]; then
