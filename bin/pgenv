@@ -19,7 +19,13 @@
 # https://stackoverflow.com/a/19622569/79202
 set -e
 
-PGENV_ROOT=$(dirname $(dirname $0))
+# set PGENV_ROOT only if not already set
+if [ -z "$PGENV_ROOT" ]; then
+    PGENV_ROOT=$(dirname $(dirname $0))
+else
+    echo "Using external PGENV_ROOT environment variable [$PGENV_ROOT]"
+fi
+
 cd $PGENV_ROOT
 # use always an absolute path or configure could complain
 PGENV_ROOT=$(pwd)
@@ -60,6 +66,10 @@ The pgenv commands are:
     version   Show the current PostgreSQL version
     versions  List all PostgreSQL versions available to pgenv
     help      Show this usage statement and command summary
+
+It is possible to specify the directory where PostgreSQL clusters
+will be installed via PGENV_ROOT environment variable, otherwise
+the script directory will be used.
 
 For full documentation, see: https://github.com/theory/pgenv#readme
 EOF
