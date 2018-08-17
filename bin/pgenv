@@ -57,6 +57,7 @@ The pgenv commands are:
     version   Show the current PostgreSQL version
     versions  List all PostgreSQL versions available to pgenv
     help      Show this usage statement and command summary
+    available Shows which versions can be downloaded
 
 For full documentation, see: https://github.com/theory/pgenv#readme
 EOF
@@ -263,6 +264,16 @@ EOF
 
     help)
         pgenvhelp
+        exit
+        ;;
+
+    availables)
+        echo "Available PostgreSQL versions"
+        echo "============================="
+
+        # there should be a simpler single regexp...
+        curl http://ftp.postgresql.org/pub/source/ | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' | sed 's/^v//' | sed 's/\/$//' | sort
+
         exit
         ;;
 
