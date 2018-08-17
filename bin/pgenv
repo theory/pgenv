@@ -194,6 +194,11 @@ case $1 in
     build)
         v=$2
 
+        if [ -z "$2" ]; then
+            echo "Must specify a version number to build"
+            exit
+        fi
+
         # check for all dependencies
         pgenv_check_dependencies
 
