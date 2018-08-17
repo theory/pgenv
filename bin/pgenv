@@ -193,6 +193,10 @@ case $1 in
 
     build)
         v=$2
+
+        # check for all dependencies
+        pgenv_check_dependencies
+
         # Skip it if we already have it.
         if [ -e "pgsql-$v" ]; then
             echo "PostgreSQL $v already built"
@@ -207,7 +211,7 @@ case $1 in
 
         # Download the source if wee don't already have it.
         if [ ! -f "postgresql-$v.tar.bz2" ]; then
-            curl -fLO http://ftp.postgresql.org/pub/source/v$v/postgresql-$v.tar.bz2
+            $PGENV_CURL -fLO http://ftp.postgresql.org/pub/source/v$v/postgresql-$v.tar.bz2
         fi
 
         # Unpack the source.
@@ -217,7 +221,7 @@ case $1 in
 
         # Patch 8.1.
         if [[ $v =~ ^8\.[01]\. ]]; then
-            patch -p1 <<EOF
+            $PGENV_PATCH -p1 <<EOF
 --- a/src/pl/plperl/plperl.c
 +++ b/src/pl/plperl/plperl.c
 @@ -694,7 +694,7 @@
@@ -238,15 +242,15 @@ EOF
         # make and make install.
         if [ "`echo $v | awk -F . '{print $1}'`" -lt 9 ]; then
             # 8.x doesn't have `make world`.
-            make -j3
-            make install
+            $PGENV_MAKE -j3
+            $PGENV_MAKE install
             cd contrib
-            make -j3
-            make install
+            $PGENV_MAKE -j3
+            $PGENV_MAKE install
         else
             # Yay, make world!
-            make world -j3
-            make install-world
+            $PGENV_MAKE world -j3
+            $PGENV_MAKE install-world
         fi
 
         echo "PostgreSQL $v built"
