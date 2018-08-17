@@ -57,9 +57,51 @@ The pgenv commands are:
     version   Show the current PostgreSQL version
     versions  List all PostgreSQL versions available to pgenv
     help      Show this usage statement and command summary
+    check     checks for all dependencies
 
 For full documentation, see: https://github.com/theory/pgenv#readme
 EOF
+}
+
+pgenv_ko_dependency(){
+    echo "Cannot find required program <$1>"
+    exit
+}
+
+pgenv_ok_dependency(){
+    echo "$1 program [$2]"
+}
+
+pgenv_check_dependencies(){
+    local verbose=$1
+
+    PGENV_MAKE=$(which make)
+    if [ -z "$PGENV_MAKE" ]; then
+        PGENV_MAKE=$(which gmake)
+        if [ -z "$PGENV_MAKE" ]; then
+            pgenv_ko_dependency "make"
+        fi
+    fi
+
+
+    PGENV_CURL=$(which curl)
+    if [ -z "$PGENV_CURL" ]; then
+        pgenv_ko_dependency "curl"
+    fi
+
+
+    PGENV_PATCH=$(which patch)
+    if [ -z "$PGENV_PATCH" ]; then
+        pgenv_ko_dependency "patch"
+    fi
+
+
+    if [ ! -z "$verbose" ]; then
+        pgenv_ok_dependency "make" $PGENV_MAKE
+        pgenv_ok_dependency "curl" $PGENV_CURL
+        pgenv_ok_dependency "patch" $PGENV_PATCH
+    fi
+
 }
 
 case $1 in
@@ -264,6 +306,11 @@ EOF
     help)
         pgenvhelp
         exit
+        ;;
+
+    check)
+        # check for all required dependencies
+        pgenv_check_dependencies "verbose"
         ;;
 
     *)
