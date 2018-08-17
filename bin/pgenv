@@ -47,17 +47,17 @@ pgenvhelp() {
 Usage: pgenv <command> [<args>]"
 
 The pgenv commands are:
-    use       Set and start the current PostgreSQL version
-    clear     Stop and unset the current PostgreSQL version
-    start     Start the current PostgreSQL server
-    stop      Stop the current PostgreSQL server
-    restart   Restart the current PostgreSQL server
-    build     Build a specific version of PostgreSQL
-    remove    Remove a specific version of PostgreSQL
-    version   Show the current PostgreSQL version
-    versions  List all PostgreSQL versions available to pgenv
-    help      Show this usage statement and command summary
-    available Shows which versions can be downloaded
+    use        Set and start the current PostgreSQL version
+    clear      Stop and unset the current PostgreSQL version
+    start      Start the current PostgreSQL server
+    stop       Stop the current PostgreSQL server
+    restart    Restart the current PostgreSQL server
+    build      Build a specific version of PostgreSQL
+    remove     Remove a specific version of PostgreSQL
+    version    Show the current PostgreSQL version
+    versions   List all PostgreSQL versions available to pgenv
+    help       Show this usage statement and command summary
+    availables Show which versions can be downloaded
 
 For full documentation, see: https://github.com/theory/pgenv#readme
 EOF
