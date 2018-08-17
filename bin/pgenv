@@ -215,13 +215,19 @@ case $1 in
         cd src
 
         # Download the source if wee don't already have it.
-        if [ ! -f "postgresql-$v.tar.bz2" ]; then
-            $PGENV_CURL -fLO http://ftp.postgresql.org/pub/source/v$v/postgresql-$v.tar.bz2
+        PG_TARBALL="postgresql-$v.tar.bz2"
+        if [ ! -f $PG_TARBALL ]; then
+            $PGENV_CURL -fLO http://ftp.postgresql.org/pub/source/v$v/${PG_TARBALL}
+            # if the source is not there again, download failed
+            if [ ! -f $PG_TARBALL ]; then
+                echo "Cannot download tarball for this version"
+                exit
+            fi
         fi
 
         # Unpack the source.
         rm -rf "postgresql-$v"
-        tar jxf postgresql-$v.tar.bz2
+        tar jxf $PG_TARBALL
         cd postgresql-$v
 
         # Patch 8.1.
