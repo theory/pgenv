@@ -20,6 +20,10 @@
 set -e
 
 PGENV_ROOT=$(dirname $(dirname $0))
+cd $PGENV_ROOT
+# use always an absolute path or configure could complain
+PGENV_ROOT=$(pwd)
+
 PGSQL=$PGENV_ROOT/pgsql
 PG_DATA=$PGSQL/data
 
@@ -27,9 +31,6 @@ PG_DATA=$PGSQL/data
 PG_CTL="$PGSQL/bin/pg_ctl -D $PG_DATA"
 INITDB="$PGSQL/bin/initdb -U postgres --locale en_US.UTF-8 --encoding UNICODE -D $PG_DATA"
 
-cd $PGENV_ROOT
-# use always an absolute path or configure could complain
-PGENV_ROOT=$(pwd)
 
 pgversions() {
     if [ -e "pgsql" ]; then
