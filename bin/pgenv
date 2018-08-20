@@ -279,8 +279,8 @@ EOF
         do
             major=$(echo $version | sed 's/\([[:digit:]]\+\).*/\1/' )
 
-
-            if [ ! -z "$major" -a $major -gt 0 ]; then
+            # check the version is a number!
+            if [[ $major =~ ^[0-9]+$ ]] ; then
                 major=$(printf "%02d" $major)
                 echo $version >> /tmp/pgenv.txt.$major
             fi
