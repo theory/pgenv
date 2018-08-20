@@ -72,45 +72,58 @@ For full documentation, see: https://github.com/theory/pgenv#readme
 EOF
 }
 
-pgenv_ko_dependency(){
-    echo "Cannot find required program <$1>"
-    exit
+# Accepts a name of a command and the value
+# for the executable of such command.
+# Prints a line in a temporary file (need to be created before)
+# with an OK or KO for the command.
+pgenv_detail_command(){
+    local command_name=$1
+    local command=$2
+
+    if [ -z "$command" ]; then
+        echo "[KO] $command_name not found!" >> $PGENV_CHECK_FILE
+    else
+        echo "[OK] $command_name found in [$command]" >> $PGENV_CHECK_FILE
+    fi
 }
 
-pgenv_ok_dependency(){
-    echo "$1 program [$2]"
-}
 
+# Searches for all dependencies
+# and prints the line for the command in the file.
+# If the argument is not null, it prints out the result
+# for every command.
+# In any case prints missing dependencies and exits if
+# something is missing.
 pgenv_check_dependencies(){
     local verbose=$1
+
+
 
     PGENV_MAKE=$(which make)
     if [ -z "$PGENV_MAKE" ]; then
         PGENV_MAKE=$(which gmake)
-        if [ -z "$PGENV_MAKE" ]; then
-            pgenv_ko_dependency "make"
-        fi
+
     fi
+    pgenv_detail_command "make", $PGENV_MAKE
 
 
     PGENV_CURL=$(which curl)
-    if [ -z "$PGENV_CURL" ]; then
-        pgenv_ko_dependency "curl"
-    fi
-
-
+    pgenv_detail_command "curl", $PGENV_CURL
     PGENV_PATCH=$(which patch)
-    if [ -z "$PGENV_PATCH" ]; then
-        pgenv_ko_dependency "patch"
-    fi
+    pgenv_detail_command "patch", $PGENV_PATCH
 
+    missing=$(cat $PGENV_CHECK_FILE | grep 'KO' | wc -l)
+    if [ $missing -gt 0 ]; then
+        echo "Missing dependencies:"
+        grep 'KO' $PGENV_CHECK_FILE
+        exit 1
+    fi
 
     if [ ! -z "$verbose" ]; then
-        pgenv_ok_dependency "make" $PGENV_MAKE
-        pgenv_ok_dependency "curl" $PGENV_CURL
-        pgenv_ok_dependency "patch" $PGENV_PATCH
+        cat $PGENV_CHECK_FILE
     fi
 
+    rm $PGENV_CHECK_FILE
 }
 
 case $1 in
@@ -333,6 +346,7 @@ EOF
         ;;
 
     check)
+        PGENV_CHECK_FILE=$(mktemp)
         # check for all required dependencies
         pgenv_check_dependencies "verbose"
         ;;
