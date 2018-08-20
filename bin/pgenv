@@ -299,6 +299,9 @@ EOF
             rm $version_file
         done
 
+        # extra remove of abandoned files (should never happen)
+        rm /tmp/pgenv.txt.* > /dev/null 2>&1
+
         exit
         ;;
 
