@@ -17,7 +17,8 @@
 # 11beta2
 
 # https://stackoverflow.com/a/19622569/79202
-set -e
+trap 'exit' ERR
+set -E
 
 # Set PGENV_ROOT only if not already set.
 if [ -z "$PGENV_ROOT" ]; then
@@ -66,52 +67,48 @@ The pgenv commands are:
     version   Show the current PostgreSQL version
     versions  List all PostgreSQL versions available to pgenv
     help      Show this usage statement and command summary
-    check     Check for all program dependencies
+    check     Check all program dependencies
 
 For full documentation, see: https://github.com/theory/pgenv#readme
 EOF
 }
 
-# Accepts a name of a command and the value
-# for the executable of such command.
-# Prints a line in a temporary file (need to be created before)
-# with an OK or KO for the command.
+# Accepts the name of a command and the value for the executable of that
+# command. Prints a line in a temporary file (which must already exist) with
+# an OK or KO for the command.
 pgenv_detail_command(){
     local command_name=$1
     local command=$2
 
     if [ -z "$command" ]; then
-        echo "[KO] $command_name not found!" >> $PGENV_CHECK_FILE
+        echo "[KO] $command_name: not found!" >> $PGENV_CHECK_FILE
     else
-        echo "[OK] $command_name found in [$command]" >> $PGENV_CHECK_FILE
+        echo "[OK] $command_name: $command" >> $PGENV_CHECK_FILE
     fi
 }
 
-
-# Searches for all dependencies
-# and prints the line for the command in the file.
-# If the argument is not null, it prints out the result
-# for every command.
-# In any case prints missing dependencies and exits if
-# something is missing.
+# Searches for all dependencies and prints line for each command in a file.
+# Prints a list of missing commands. If none are missing, it prints the
+# locations of all each command if the argument is not null.
 pgenv_check_dependencies(){
     local verbose=$1
-
-
+    # Don't exit on error.
+    trap "" ERR
 
     PGENV_MAKE=$(which make)
     if [ -z "$PGENV_MAKE" ]; then
         PGENV_MAKE=$(which gmake)
-
     fi
-    pgenv_detail_command "make", $PGENV_MAKE
-
+    pgenv_detail_command "make" $PGENV_MAKE
 
     PGENV_CURL=$(which curl)
-    pgenv_detail_command "curl", $PGENV_CURL
-    PGENV_PATCH=$(which patch)
-    pgenv_detail_command "patch", $PGENV_PATCH
+    pgenv_detail_command "curl" $PGENV_CURL
 
+    PGENV_PATCH=$(which patch)
+    pgenv_detail_command "patch" $PGENV_PATCH
+
+    # Go back to exiting on error.
+    trap 'exit' ERR
     missing=$(cat $PGENV_CHECK_FILE | grep 'KO' | wc -l)
     if [ $missing -gt 0 ]; then
         echo "Missing dependencies:"

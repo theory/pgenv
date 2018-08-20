@@ -201,6 +201,12 @@ already running.
     $ pgenv restart
     PostgreSQL restarted
 
+### pgenv check
+
+Checks the list of commands required to download and build PostgreSQL. Prints
+a result for each, with either the location where the command was found, or an
+error if any command was not found.
+
 ### pgenv help
 
 Outputs a brief usage statement and summary of available commands. The
@@ -219,6 +225,7 @@ Outputs a brief usage statement and summary of available commands. The
         version   Show the current PostgreSQL version
         versions  List all Perl versions available to pgenv
         help      Show this usage statement and command summary
+        check     Check all program dependencies
     
     For full documentation, see: https://github.com/theory/pgenv#readme
 
