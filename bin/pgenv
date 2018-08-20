@@ -66,7 +66,7 @@ The pgenv commands are:
     version   Show the current PostgreSQL version
     versions  List all PostgreSQL versions available to pgenv
     help      Show this usage statement and command summary
-    check     checks for all dependencies
+    check     Check for all program dependencies
 
 For full documentation, see: https://github.com/theory/pgenv#readme
 EOF
