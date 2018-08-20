@@ -291,11 +291,13 @@ EOF
         for version_file in `ls /tmp/pgenv.txt.* | sort -r`
         do
             current_version=$(echo $version_file | sed 's/[^0-9]\+//')
+            echo "=============================================="
             echo "PostgreSQL $current_version available versions"
             echo "=============================================="
             cat $version_file | sort -n | tr '\n' '\t'
             echo
             echo "=============================================="
+            echo
             rm $version_file
         done
 
