@@ -57,7 +57,7 @@ The pgenv commands are:
     version    Show the current PostgreSQL version
     versions   List all PostgreSQL versions available to pgenv
     help       Show this usage statement and command summary
-    availables Show which versions can be downloaded
+    available  Show which versions can be downloaded
 
 For full documentation, see: https://github.com/theory/pgenv#readme
 EOF
@@ -267,7 +267,7 @@ EOF
         exit
         ;;
 
-    availables)
+    available)
         echo "Available PostgreSQL versions"
         echo "============================="
 
