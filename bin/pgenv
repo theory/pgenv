@@ -27,7 +27,7 @@ else
 fi
 
 cd $PGENV_ROOT
-# Aalways use an absolute path or configure could complain.
+# Always use an absolute path or configure could complain.
 PGENV_ROOT=$(pwd)
 
 PGSQL=$PGENV_ROOT/pgsql
@@ -53,7 +53,7 @@ pgversions() {
 
 pgenvhelp() {
         cat <<EOF
-Usage: pgenv <command> [<args>]"
+Usage: pgenv <command> [<args>]
 
 The pgenv commands are:
     use       Set and start the current PostgreSQL version
