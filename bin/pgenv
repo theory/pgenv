@@ -272,7 +272,32 @@ EOF
         echo "============================="
 
         # there should be a simpler single regexp...
-        curl http://ftp.postgresql.org/pub/source/ | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' | sed 's/^v//' | sed 's/\/$//' | sort
+        # First of all download the page with the links to each version (href=va.b.c/)
+        # and trim out each version, then extract the major version and produce
+        # a text file with all versions under the brand/major version
+        for version in $(curl http://ftp.postgresql.org/pub/source/ | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' | sed 's/^v//' | sed 's/\/$//')
+        do
+            major=$(echo $version | sed 's/\([[:digit:]]\+\).*/\1/' )
+
+
+            if [ ! -z "$major" -a $major -gt 0 ]; then
+                major=$(printf "%02d" $major)
+                echo $version >> /tmp/pgenv.txt.$major
+            fi
+        done
+
+        # read back the versions files and display the output
+        # displying each version with a separated header
+        for version_file in `ls /tmp/pgenv.txt.* | sort -r`
+        do
+            current_version=$(echo $version_file | sed 's/[^0-9]\+//')
+            echo "PostgreSQL $current_version available versions"
+            echo "=============================================="
+            cat $version_file | sort -n | tr '\n' '\t'
+            echo
+            echo "=============================================="
+            rm $version_file
+        done
 
         exit
         ;;
