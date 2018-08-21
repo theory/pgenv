@@ -200,6 +200,30 @@ already running.
 
     $ pgenv restart
     PostgreSQL restarted
+    
+### pgenv available
+
+Shows which versions of PostgreSQL are currently available for download and build, 
+and is therefore suggested to run before a `build` is issued. Please consider
+that this command produces a quite long output.
+
+    $ pgenv available
+    Available PostgreSQL versions
+    =============================
+    ==============================================
+    PostgreSQL 11 available versions
+    ==============================================
+    11beta1 11beta2 11beta3
+    ==============================================
+
+    ==============================================
+    PostgreSQL 10 available versions
+    ==============================================
+    10.0    10.1    10.2    10.3    10.4    10.5
+    ==============================================
+
+The available versions are organized by "brand" or "major" version; each numeric version
+can then be used for other `pgenv` commands that require a version number specification.
 
 ### pgenv help
 
