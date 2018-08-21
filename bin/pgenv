@@ -33,6 +33,9 @@ PGENV_ROOT=$(pwd)
 
 PGSQL=$PGENV_ROOT/pgsql
 PG_DATA=$PGSQL/data
+PGENV_DOWNLOAD_ROOT='http://ftp.postgresql.org/pub/source/'
+PGENV_CHECK_FILE=$(mktemp)
+
 
 # Now -w because 9.0 and earlier always time out even when successful.
 PG_CTL="$PGSQL/bin/pg_ctl -D $PG_DATA"
@@ -252,7 +255,7 @@ case $1 in
         # Download the source if wee don't already have it.
         PG_TARBALL="postgresql-$v.tar.bz2"
         if [ ! -f $PG_TARBALL ]; then
-            $PGENV_CURL -fLO http://ftp.postgresql.org/pub/source/v$v/${PG_TARBALL}
+            $PGENV_CURL -fLO ${PGENV_DOWNLOAD_ROOT}/v$v/${PG_TARBALL}
         fi
 
         # Unpack the source.
@@ -361,7 +364,7 @@ EOF
         # First of all download the page with the links to each version (href=va.b.c/)
         # and trim out each version, then extract the major version and produce
         # a text file with all versions under the brand/major version
-        for version in $(curl -s http://ftp.postgresql.org/pub/source/ | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' | sed 's/^v//' | sed 's/\/$//')
+        for version in $(curl -s $PGENV_DOWNLOAD_ROOT | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' | sed 's/^v//' | sed 's/\/$//')
         do
             major=$(echo $version | sed 's/\([[:digit:]]\+\).*/\1/' )
 
@@ -404,7 +407,6 @@ EOF
         ;;
 
     check)
-        PGENV_CHECK_FILE=$(mktemp)
         # check for all required dependencies
         pgenv_check_dependencies "verbose"
         ;;
