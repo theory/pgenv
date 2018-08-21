@@ -95,8 +95,11 @@ $ git pull
 ------------
 
 *   bash
-*   curl
-*   Perl
+*   curl (to download PostgreSQL)
+*   sed, grep, cat (Unix command line utilities in general)
+*   patch (to patch particular versions)
+*   make (to build downloaded PostgreSQL versions)
+*   Perl 5 (instances will be built with PL/Perl)
 
 Command Reference
 -----------------

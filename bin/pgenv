@@ -119,6 +119,10 @@ pgenv_check_dependencies(){
     PGENV_SED=$(which sed)
     pgenv_detail_command "sed" $PGENV_SED
 
+    PGENV_PERL=$(which perl)
+    pgenv_detail_command "Perl5" $PGENV_PERL
+
+
     # Go back to exiting on error.
     trap 'exit' ERR
     missing=$(cat $PGENV_CHECK_FILE | grep 'KO' | wc -l)
@@ -274,7 +278,7 @@ EOF
         fi
 
         # Configure.
-        ./configure --prefix=$PGENV_ROOT/pgsql-$v --with-perl PERL=/usr/bin/perl
+        ./configure --prefix=$PGENV_ROOT/pgsql-$v --with-perl PERL=$PGENV_PERL
 
         # make and make install.
         if [ "`echo $v | awk -F . '{print $1}'`" -lt 9 ]; then
