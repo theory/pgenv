@@ -254,7 +254,7 @@ the following
     versions   List all PostgreSQL versions available to pgenv
     help       Show this usage statement and command summary
     available  Show which versions can be downloaded
-    check     Check all program dependencies
+    check      Check all program dependencies
 
     For full documentation, see: https://github.com/theory/pgenv#readme
 
