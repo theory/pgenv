@@ -284,7 +284,7 @@ EOF
         # First of all download the page with the links to each version (href=va.b.c/)
         # and trim out each version, then extract the major version and produce
         # a text file with all versions under the brand/major version
-        for version in $(curl http://ftp.postgresql.org/pub/source/ | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' | sed 's/^v//' | sed 's/\/$//')
+        for version in $(curl -s http://ftp.postgresql.org/pub/source/ | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' | sed 's/^v//' | sed 's/\/$//')
         do
             major=$(echo $version | sed 's/\([[:digit:]]\+\).*/\1/' )
 
