@@ -376,7 +376,7 @@ EOF
         # displying each version with a separated header
         for version_file in `ls /tmp/pgenv.txt.* | sort -r`
         do
-            current_version=$(echo $version_file | sed 's/[^0-9]\+//')
+            current_version=$(echo $version_file | sed 's/[^0-9]\+//' | sed 's/^0//' )
             echo "=============================================="
             echo "   PostgreSQL major version $current_version  "
             echo "=============================================="
