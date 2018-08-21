@@ -116,9 +116,6 @@ pgenv_check_dependencies(){
     PGENV_PATCH=$(which patch)
     pgenv_detail_command "patch" $PGENV_PATCH
 
-    PGENV_GREP=$(which grep)
-    pgenv_detail_command "grep" $PGENV_GREP
-
     PGENV_SED=$(which sed)
     pgenv_detail_command "sed" $PGENV_SED
 
