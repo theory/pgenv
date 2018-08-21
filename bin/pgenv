@@ -72,6 +72,14 @@ For full documentation, see: https://github.com/theory/pgenv#readme
 EOF
 }
 
+trap 'cleanup_temp_files' 0 1 2 3 6 8 14 15
+
+cleanup_temp_files() {
+    # extra remove of abandoned files (should never happen)
+    rm /tmp/pgenv.txt.?? > /dev/null 2>&1
+
+}
+
 case $1 in
     use)
         v=$2
@@ -310,9 +318,8 @@ EOF
             rm $version_file
         done
 
-        # extra remove of abandoned files (should never happen)
-        rm /tmp/pgenv.txt.* > /dev/null 2>&1
-
+        # in the case a temp file has not been removed...
+        cleanup_temp_files
         exit
         ;;
 
