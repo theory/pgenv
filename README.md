@@ -268,7 +268,7 @@ See Also
 *   [plenv] is a binary manager for [Perl], and was the inspiration for pgenv.
 *   plenv, in turn, was inspired by and based on [rbenv], a binary manager for
     Ruby.
-*   [Pgenv] works similarly, but requires [PostgreSQL] manually compiled from
+*   [pgenv] works similarly, but requires [PostgreSQL] manually compiled from
     its Git repo.
 
 License
