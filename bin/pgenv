@@ -17,7 +17,8 @@
 # 11beta2
 
 # https://stackoverflow.com/a/19622569/79202
-set -e
+trap 'exit' ERR
+set -E
 
 # Set PGENV_ROOT only if not already set.
 if [ -z "$PGENV_ROOT" ]; then
@@ -27,7 +28,7 @@ else
 fi
 
 cd $PGENV_ROOT
-# Aalways use an absolute path or configure could complain.
+# Always use an absolute path or configure could complain.
 PGENV_ROOT=$(pwd)
 
 PGSQL=$PGENV_ROOT/pgsql
@@ -53,7 +54,7 @@ pgversions() {
 
 pgenvhelp() {
         cat <<EOF
-Usage: pgenv <command> [<args>]"
+Usage: pgenv <command> [<args>]
 
 The pgenv commands are:
     use        Set and start the current PostgreSQL version
@@ -67,17 +68,68 @@ The pgenv commands are:
     versions   List all PostgreSQL versions available to pgenv
     help       Show this usage statement and command summary
     available  Show which versions can be downloaded
+    check     Check all program dependencies
 
 For full documentation, see: https://github.com/theory/pgenv#readme
 EOF
 }
+
 
 trap 'cleanup_temp_files' 0 1 2 3 6 8 14 15
 
 cleanup_temp_files() {
     # extra remove of abandoned files (should never happen)
     rm /tmp/pgenv.txt.?? > /dev/null 2>&1
+}
 
+# Accepts the name of a command and the value for the executable of that
+# command. Prints a line in a temporary file (which must already exist) with
+# an OK or KO for the command.
+pgenv_detail_command(){
+    local command_name=$1
+    local command=$2
+
+    if [ -z "$command" ]; then
+        echo "[KO] $command_name: not found!" >> $PGENV_CHECK_FILE
+    else
+        echo "[OK] $command_name: $command" >> $PGENV_CHECK_FILE
+    fi
+}
+
+# Searches for all dependencies and prints line for each command in a file.
+# Prints a list of missing commands. If none are missing, it prints the
+# locations of all each command if the argument is not null.
+pgenv_check_dependencies(){
+    local verbose=$1
+    # Don't exit on error.
+    trap "" ERR
+
+    PGENV_MAKE=$(which make)
+    if [ -z "$PGENV_MAKE" ]; then
+        PGENV_MAKE=$(which gmake)
+    fi
+    pgenv_detail_command "make" $PGENV_MAKE
+
+    PGENV_CURL=$(which curl)
+    pgenv_detail_command "curl" $PGENV_CURL
+
+    PGENV_PATCH=$(which patch)
+    pgenv_detail_command "patch" $PGENV_PATCH
+
+    # Go back to exiting on error.
+    trap 'exit' ERR
+    missing=$(cat $PGENV_CHECK_FILE | grep 'KO' | wc -l)
+    if [ $missing -gt 0 ]; then
+        echo "Missing dependencies:"
+        grep 'KO' $PGENV_CHECK_FILE
+        exit 1
+    fi
+
+    if [ ! -z "$verbose" ]; then
+        cat $PGENV_CHECK_FILE
+    fi
+
+    rm $PGENV_CHECK_FILE
 }
 
 case $1 in
@@ -169,6 +221,15 @@ case $1 in
 
     build)
         v=$2
+
+        if [ -z "$2" ]; then
+            echo "Must specify a version number to build"
+            exit
+        fi
+
+        # check for all dependencies
+        pgenv_check_dependencies
+
         # Skip it if we already have it.
         if [ -e "pgsql-$v" ]; then
             echo "PostgreSQL $v already built"
@@ -182,18 +243,19 @@ case $1 in
         cd src
 
         # Download the source if wee don't already have it.
-        if [ ! -f "postgresql-$v.tar.bz2" ]; then
-            curl -fLO http://ftp.postgresql.org/pub/source/v$v/postgresql-$v.tar.bz2
+        PG_TARBALL="postgresql-$v.tar.bz2"
+        if [ ! -f $PG_TARBALL ]; then
+            $PGENV_CURL -fLO http://ftp.postgresql.org/pub/source/v$v/${PG_TARBALL}
         fi
 
         # Unpack the source.
         rm -rf "postgresql-$v"
-        tar jxf postgresql-$v.tar.bz2
+        tar jxf $PG_TARBALL
         cd postgresql-$v
 
         # Patch 8.1.
         if [[ $v =~ ^8\.[01]\. ]]; then
-            patch -p1 <<EOF
+            $PGENV_PATCH -p1 <<EOF
 --- a/src/pl/plperl/plperl.c
 +++ b/src/pl/plperl/plperl.c
 @@ -694,7 +694,7 @@
@@ -214,15 +276,15 @@ EOF
         # make and make install.
         if [ "`echo $v | awk -F . '{print $1}'`" -lt 9 ]; then
             # 8.x doesn't have `make world`.
-            make -j3
-            make install
+            $PGENV_MAKE -j3
+            $PGENV_MAKE install
             cd contrib
-            make -j3
-            make install
+            $PGENV_MAKE -j3
+            $PGENV_MAKE install
         else
             # Yay, make world!
-            make world -j3
-            make install-world
+            $PGENV_MAKE world -j3
+            $PGENV_MAKE install-world
         fi
 
         echo "PostgreSQL $v built"
@@ -321,6 +383,12 @@ EOF
         # in the case a temp file has not been removed...
         cleanup_temp_files
         exit
+        ;;
+
+    check)
+        PGENV_CHECK_FILE=$(mktemp)
+        # check for all required dependencies
+        pgenv_check_dependencies "verbose"
         ;;
 
     *)
