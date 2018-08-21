@@ -90,9 +90,9 @@ pgenv_detail_command(){
     local command=$2
 
     if [ -z "$command" ]; then
-        echo "[KO] $command_name: not found!" >> $PGENV_CHECK_FILE
+        echo -e "[KO]\t$command_name:\tNOT found!" >> $PGENV_CHECK_FILE
     else
-        echo "[OK] $command_name: $command" >> $PGENV_CHECK_FILE
+        echo -e "[OK]\t$command_name:\t$command" >> $PGENV_CHECK_FILE
     fi
 }
 
