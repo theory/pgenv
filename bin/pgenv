@@ -347,8 +347,8 @@ EOF
         ;;
 
     available)
-        echo "Available PostgreSQL versions"
-        echo "============================="
+        echo -e "\tAvailable PostgreSQL versions"
+        echo -e "\t============================="
 
         # there should be a simpler single regexp...
         # First of all download the page with the links to each version (href=va.b.c/)
@@ -371,9 +371,20 @@ EOF
         do
             current_version=$(echo $version_file | sed 's/[^0-9]\+//')
             echo "=============================================="
-            echo "PostgreSQL $current_version available versions"
+            echo "   PostgreSQL major version $current_version  "
             echo "=============================================="
-            cat $version_file | sort -n | tr '\n' '\t'
+            printed=0
+            for numeric in $( cat $version_file | sort -n  )
+            do
+                # new line after 5 numbers
+                if [ $printed -gt 5 ]; then
+                    printed=0
+                    echo
+                fi
+
+                echo -en "$numeric\t"
+                printed=$(( printed +  1 ))
+            done
             echo
             echo "=============================================="
             echo
