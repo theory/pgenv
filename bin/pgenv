@@ -35,9 +35,8 @@ PGSQL=$PGENV_ROOT/pgsql
 PG_DATA=$PGSQL/data
 PGENV_DOWNLOAD_ROOT='http://ftp.postgresql.org/pub/source/'
 
-# temporary directory and check file
-PGENV_TEMP_DIR=$( mktemp -p "$PGENV_ROOT" -d pgenv.d.XXXXX )
-PGENV_CHECK_FILE=$( mktemp -p "$PGENV_TEMP_DIR" pgenv.check.XXXXX )
+# temporary  check file
+PGENV_CHECK_FILE=$( mktemp ${PGENV_ROOT}/pgenv.check.XXXXX )
 
 
 # Now -w because 9.0 and earlier always time out even when successful.
@@ -49,8 +48,8 @@ INITDB="$PGSQL/bin/initdb -U postgres --locale en_US.UTF-8 --encoding UNICODE -D
 trap "exit_cleanup" EXIT
 
 exit_cleanup(){
-    if [ -d "$PGENV_TEMP_DIR" ]; then
-        rm -rf "$PGENV_TEMP_DIR"
+    if [ -f "$PGENV_CHECK_FILE" ]; then
+        rm -f "$PGENV_CHECK_FILE"
     fi
 }
 
@@ -368,8 +367,8 @@ EOF
 
         # there should be a simpler single regexp...
         # First of all download the page with the links to each version (href=va.b.c/)
-        # and trim out each version, then extract the major version and produce
-        # a text file with all versions under the brand/major version
+        # and trim out each version, then extract the major version
+        # and append each version to an hash indexed by the major version number
         versions_found=0
         for version in $(curl -s $PGENV_DOWNLOAD_ROOT | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' | sed 's/^v//' | sed 's/\/$//')
         do
@@ -380,14 +379,18 @@ EOF
                 # Since PostgreSQL 10, a major version is
                 # made by only the first number
                 # (apply the same logic for old versions)
+                # here the major version is considered as multipled
+                # by a ten factor, so that version 10 becomes value 100
+                # while version 9.6 becomes 96
                 if [ $major -ge 10 -o $major -le 6 ]; then
-                    major=$(printf "%02d" $major)
+                    major=$(( major * 10 ))
                 else
-                    # use %s for minor since it could be
-                    # a zero-leading number interpreted as octal value...
-                    major=$(printf "%02d.%s" $major $minor)
+                    major="$major$minor"
                 fi
-                echo $version >> ${PGENV_TEMP_DIR}/pgenv.txt.$major
+
+                # append the current version to the hash
+                # indexed by the major version
+                versions_hash[ "$major" ]+="${version}-"
                 versions_found=$(( versions_found + 1 ))
             fi
         done
@@ -398,16 +401,22 @@ EOF
             exit 1
         fi
 
-        # read back the versions files and display the output
+        # read back the versions and display the output
         # displying each version with a separated header
-        for version_file in `ls ${PGENV_TEMP_DIR}/pgenv.txt.* | sort -r`
+        for major in $( echo ${!versions_hash[@]} | sort -n)
         do
-            current_version=$(basename $version_file | sed 's/[^0-9]\+//' | sed 's/^0//' )
+
+            # normalize version numbers
+            if [ $major -ge 70 -a $major -le 96 ]; then
+                current_version=$( echo $major | sed 's/\([[:digit:]]\)\([[:digit:]]\)/\1\.\2/' )
+            else
+                current_version=$(( major / 10 ))
+            fi
             echo "=============================================="
             echo "   PostgreSQL major version $current_version  "
             echo "=============================================="
             printed=0
-            for numeric in $( cat $version_file | sort -n  )
+            for numeric in $( echo ${versions_hash[$major]} | tr '-' '\n'  | sort -n  )
             do
                 # new line after 5 numbers
                 if [ $printed -gt 5 ]; then
