@@ -390,7 +390,6 @@ EOF
                 # append the current version to the hash
                 # indexed by the major version
                 versions_hash[ "$major" ]+="${version}-"
-                versions_found=$(( versions_found + 1 ))
             fi
         done
 
