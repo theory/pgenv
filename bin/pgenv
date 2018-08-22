@@ -369,9 +369,13 @@ EOF
         # First of all download the page with the links to each version (href=va.b.c/)
         # and trim out each version, then extract the major version
         # and append each version to an hash indexed by the major version number
-        for version in $(curl -s $PGENV_DOWNLOAD_ROOT | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' | sed 's/^v//' | sed 's/\/$//')
+        for version in $( curl -s $PGENV_DOWNLOAD_ROOT \
+                              | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' \
+                              | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' \
+                              | sed 's/^v//' \
+                              | sed 's/\/$//')
         do
-            major=$(echo $version | sed 's/\([[:digit:]]\+\).*/\1/' )
+            major=$( echo $version | sed 's/\([[:digit:]]\+\).*/\1/' )
 
             # check the version is a number!
             if [[ $major =~ ^[0-9]+$ ]] ; then
@@ -384,7 +388,7 @@ EOF
                 if [ $major -ge 10 -o $major -le 6 ]; then
                     minor=0
                 else
-                    minor=$(echo $version | sed 's/[[:digit:]]\.\([[:digit:]]\+\).*/\1/' )
+                    minor=$( echo $version | sed 's/[[:digit:]]\.\([[:digit:]]\+\).*/\1/' )
                 fi
                 major=$(( major * 10 + minor ))
                 # append the current version to the hash
@@ -395,17 +399,18 @@ EOF
 
         # check to have some version in the hash, or
         # the download did go wrong
-        if [  -z "${versions_hash[@]}" ]; then
+        if [ -z "${versions_hash[@]}" ]; then
             echo "No available versions found at URL <$PGENV_DOWNLOAD_ROOT>"
             exit 1
         fi
 
         # read back the versions and display the output
         # displying each version with a separated header
-        for major in $( echo ${!versions_hash[@]} | sort -n)
+        for major in $( echo ${!versions_hash[@]} | sort -n )
         do
 
             # normalize version numbers
+            # (note, use sed instead of bc to avoid introducing another dependency)
             if [ $major -ge 70 -a $major -le 96 ]; then
                 current_version=$( echo $major | sed 's/\([[:digit:]]\)\([[:digit:]]\)/\1\.\2/' )
             else
@@ -415,7 +420,9 @@ EOF
             echo "   PostgreSQL major version $current_version  "
             echo "=============================================="
             printed=0
-            for numeric in $( echo ${versions_hash[$major]} | tr '-' '\n'  | sort -n  )
+            for numeric in $( echo ${versions_hash[$major]} \
+                                  | tr '-' '\n'  \
+                                  | sort -n  )
             do
                 # new line after 5 numbers
                 if [ $printed -gt 5 ]; then
@@ -430,8 +437,6 @@ EOF
             echo "=============================================="
             echo
         done
-
-        exit
         ;;
 
     check)
