@@ -211,22 +211,30 @@ and is therefore suggested to run before a `build` is issued. Please consider
 that this command produces a quite long output.
 
     $ pgenv available
-    Available PostgreSQL versions
-    =============================
+    ...
     ==============================================
-    PostgreSQL 11 available versions
+    PostgreSQL major version 9.6  
     ==============================================
-    11beta1 11beta2 11beta3
+    9.6.0   9.6.1   9.6.2   9.6.3   9.6.4   9.6.5
+    9.6.6   9.6.7   9.6.8   9.6.9   9.6.10
     ==============================================
 
     ==============================================
-    PostgreSQL 10 available versions
+       PostgreSQL major version 10  
     ==============================================
     10.0    10.1    10.2    10.3    10.4    10.5
     ==============================================
 
-The available versions are organized by "brand" or "major" version; each numeric version
-can then be used for other `pgenv` commands that require a version number specification.
+    ==============================================
+       PostgreSQL major version 11  
+    ==============================================
+    11beta1 11beta2 11beta3
+    ==============================================
+
+The available versions are organized in "major" version sections, accordingly to
+the versioning schema of PostgreSQL. Each available version is printed as
+a separated value that can be passed to any other `pgenv` command that require
+such a number.
 
 ### pgenv check
 
