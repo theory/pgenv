@@ -364,6 +364,7 @@ EOF
         # First of all download the page with the links to each version (href=va.b.c/)
         # and trim out each version, then extract the major version and produce
         # a text file with all versions under the brand/major version
+        major_found=0
         for version in $(curl -s $PGENV_DOWNLOAD_ROOT | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' | sed 's/^v//' | sed 's/\/$//')
         do
             major=$(echo $version | sed 's/\([[:digit:]]\+\).*/\1/' )
@@ -372,8 +373,15 @@ EOF
             if [[ $major =~ ^[0-9]+$ ]] ; then
                 major=$(printf "%02d" $major)
                 echo $version >> /tmp/pgenv.txt.$major
+                major_found=$(( major_found + 1 ))
             fi
         done
+
+        # check to have some file or the download did go wrong
+        if [ $major_found == 0 ]; then
+            echo "No available versions found at URL <$PGENV_DOWNLOAD_ROOT>"
+            exit 1
+        fi
 
         # read back the versions files and display the output
         # displying each version with a separated header
