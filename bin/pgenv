@@ -369,7 +369,6 @@ EOF
         # First of all download the page with the links to each version (href=va.b.c/)
         # and trim out each version, then extract the major version
         # and append each version to an hash indexed by the major version number
-        versions_found=0
         for version in $(curl -s $PGENV_DOWNLOAD_ROOT | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' | sed 's/^v//' | sed 's/\/$//')
         do
             major=$(echo $version | sed 's/\([[:digit:]]\+\).*/\1/' )
@@ -395,8 +394,9 @@ EOF
             fi
         done
 
-        # check to have some file or the download did go wrong
-        if [ $versions_found -eq 0 ]; then
+        # check to have some version in the hash, or
+        # the download did go wrong
+        if [  -z "${versions_hash[@]}" ]; then
             echo "No available versions found at URL <$PGENV_DOWNLOAD_ROOT>"
             exit 1
         fi
