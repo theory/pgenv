@@ -34,13 +34,25 @@ PGENV_ROOT=$(pwd)
 PGSQL=$PGENV_ROOT/pgsql
 PG_DATA=$PGSQL/data
 PGENV_DOWNLOAD_ROOT='http://ftp.postgresql.org/pub/source/'
-PGENV_CHECK_FILE=$(mktemp)
+
+# temporary directory and check file
+PGENV_TEMP_DIR=$( mktemp -p "$PGENV_ROOT" -d pgenv.d.XXXXX )
+PGENV_CHECK_FILE=$( mktemp -p "$PGENV_TEMP_DIR" pgenv.check.XXXXX )
 
 
 # Now -w because 9.0 and earlier always time out even when successful.
 PG_CTL="$PGSQL/bin/pg_ctl -D $PG_DATA"
 INITDB="$PGSQL/bin/initdb -U postgres --locale en_US.UTF-8 --encoding UNICODE -D $PG_DATA"
 
+# Ensure all temporary files
+# are removed on exit
+trap "exit_cleanup" EXIT
+
+exit_cleanup(){
+    if [ -d "$PGENV_TEMP_DIR" ]; then
+        rm -rf "$PGENV_TEMP_DIR"
+    fi
+}
 
 pgversions() {
     if [ -e "pgsql" ]; then
@@ -351,10 +363,6 @@ EOF
         ;;
 
     available)
-        # use a temporary directory to store
-        # files for sorting out versions
-        PGENV_TEMP_DIR=$(mktemp -d)
-
         echo -e "\tAvailable PostgreSQL versions"
         echo -e "\t============================="
 
@@ -413,7 +421,6 @@ EOF
             echo
             echo "=============================================="
             echo
-            rm $version_file
         done
 
         exit
