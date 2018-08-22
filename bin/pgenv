@@ -126,6 +126,12 @@ pgenv_check_dependencies(){
 case $1 in
     use)
         v=$2
+
+        if [ -z "$v"  ]; then
+            echo "Which version number do you want?"
+            exit 1
+        fi
+
         # Make sure it's a version we have.
         if [ ! -e "pgsql-$v" ]; then
             echo "PostgreSQL $v not installed; installed versions:"
@@ -213,10 +219,13 @@ case $1 in
     build)
         v=$2
 
-        if [ -z "$2" ]; then
-            echo "Must specify a version number to build"
-            exit
+        if [ -z "$v"  ]; then
+            echo "Which version number do you want?"
+            exit 1
         fi
+
+
+
 
         # check for all dependencies
         pgenv_check_dependencies
@@ -298,6 +307,12 @@ EOF
 
     remove)
         v=$2
+
+        if [ -z "$v"  ]; then
+            echo "Which version number do you want?"
+            exit 1
+        fi
+
         if [ ! -e "pgsql-$v" ]; then
             echo "PostgreSQL $v not installed; installed versions:"
             pgversions
