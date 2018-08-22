@@ -78,12 +78,6 @@ EOF
 }
 
 
-trap 'cleanup_temp_files' 0 1 2 3 6 8 14 15
-
-cleanup_temp_files() {
-    # extra remove of abandoned files (should never happen)
-    rm /tmp/pgenv.txt.?? > /dev/null 2>&1
-}
 
 # Accepts the name of a command and the value for the executable of that
 # command. Prints a line in a temporary file (which must already exist) with
@@ -357,6 +351,10 @@ EOF
         ;;
 
     available)
+        # use a temporary directory to store
+        # files for sorting out versions
+        PGENV_TEMP_DIR=$(mktemp -d)
+
         echo -e "\tAvailable PostgreSQL versions"
         echo -e "\t============================="
 
@@ -381,7 +379,7 @@ EOF
                     # a zero-leading number interpreted as octal value...
                     major=$(printf "%02d.%s" $major $minor)
                 fi
-                echo $version >> /tmp/pgenv.txt.$major
+                echo $version >> ${PGENV_TEMP_DIR}/pgenv.txt.$major
                 major_found=$(( major_found + 1 ))
             fi
         done
@@ -394,9 +392,9 @@ EOF
 
         # read back the versions files and display the output
         # displying each version with a separated header
-        for version_file in `ls /tmp/pgenv.txt.* | sort -r`
+        for version_file in `ls ${PGENV_TEMP_DIR}/pgenv.txt.* | sort -r`
         do
-            current_version=$(echo $version_file | sed 's/[^0-9]\+//' | sed 's/^0//' )
+            current_version=$(basename $version_file | sed 's/[^0-9]\+//' | sed 's/^0//' )
             echo "=============================================="
             echo "   PostgreSQL major version $current_version  "
             echo "=============================================="
@@ -418,8 +416,6 @@ EOF
             rm $version_file
         done
 
-        # in the case a temp file has not been removed...
-        cleanup_temp_files
         exit
         ;;
 
