@@ -273,9 +273,9 @@ EOF
         # Configure.
         ./configure --prefix=$PGENV_ROOT/pgsql-$v --with-perl PERL=/usr/bin/perl
 
-        # make and make install.
-        if [ "`echo $v | awk -F . '{print $1}'`" -lt 9 ]; then
-            # 8.x doesn't have `make world`.
+        # make and make install
+        if [[ $v =~ ^[1-8]\. ]; then
+            # 8.x (and prior versions ?) doesn't have `make world`.
             $PGENV_MAKE -j3
             $PGENV_MAKE install
             cd contrib
