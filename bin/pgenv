@@ -372,7 +372,7 @@ EOF
         for version in $(curl -s $PGENV_DOWNLOAD_ROOT | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' | sed 's/^v//' | sed 's/\/$//')
         do
             major=$(echo $version | sed 's/\([[:digit:]]\+\).*/\1/' )
-            minor=$(echo $version | sed 's/[[:digit:]]\.\([[:digit:]]\+\).*/\1/' )
+
             # check the version is a number!
             if [[ $major =~ ^[0-9]+$ ]] ; then
                 # Since PostgreSQL 10, a major version is
@@ -382,11 +382,11 @@ EOF
                 # by a ten factor, so that version 10 becomes value 100
                 # while version 9.6 becomes 96
                 if [ $major -ge 10 -o $major -le 6 ]; then
-                    major=$(( major * 10 ))
+                    minor=0
                 else
-                    major="$major$minor"
+                    minor=$(echo $version | sed 's/[[:digit:]]\.\([[:digit:]]\+\).*/\1/' )
                 fi
-
+                major=$(( major * 10 + minor ))
                 # append the current version to the hash
                 # indexed by the major version
                 versions_hash[ "$major" ]+="${version}-"
