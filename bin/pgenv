@@ -368,17 +368,26 @@ EOF
         for version in $(curl -s $PGENV_DOWNLOAD_ROOT | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' | sed 's/^v//' | sed 's/\/$//')
         do
             major=$(echo $version | sed 's/\([[:digit:]]\+\).*/\1/' )
-
+            minor=$(echo $version | sed 's/[[:digit:]]\.\([[:digit:]]\+\).*/\1/' )
             # check the version is a number!
             if [[ $major =~ ^[0-9]+$ ]] ; then
-                major=$(printf "%02d" $major)
+                # Since PostgreSQL 10, a major version is
+                # made by only the first number
+                # (apply the same logic for old versions)
+                if [ $major -ge 10 -o $major -le 6 ]; then
+                    major=$(printf "%02d" $major)
+                else
+                    # use %s for minor since it could be
+                    # a zero-leading number interpreted as octal value...
+                    major=$(printf "%02d.%s" $major $minor)
+                fi
                 echo $version >> /tmp/pgenv.txt.$major
                 major_found=$(( major_found + 1 ))
             fi
         done
 
         # check to have some file or the download did go wrong
-        if [ $major_found == 0 ]; then
+        if [ $major_found -eq 0 ]; then
             echo "No available versions found at URL <$PGENV_DOWNLOAD_ROOT>"
             exit 1
         fi
