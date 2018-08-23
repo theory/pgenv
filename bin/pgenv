@@ -113,7 +113,6 @@ pgenv_check_dependencies(){
     pgenv_detail_command "tar" $PGENV_TAR
 
     # Go back to exiting on error.
-    trap 'exit' ERR
     missing=$( grep -c 'KO' $PGENV_CHECK_FILE )
     if [ $missing -gt 0 ]; then
         echo "Missing $missing dependencies:"
@@ -126,6 +125,8 @@ pgenv_check_dependencies(){
     fi
 
     rm $PGENV_CHECK_FILE
+    # re-enable error handling
+    trap 'exit' ERR
 }
 
 case $1 in
