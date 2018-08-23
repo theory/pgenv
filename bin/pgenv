@@ -108,6 +108,9 @@ pgenv_check_dependencies(){
     PGENV_PATCH=$(which patch)
     pgenv_detail_command "patch" $PGENV_PATCH
 
+    PGENV_TAR=$(which tar)
+    pgenv_detail_command "tar" $PGENV_TAR
+
     # Go back to exiting on error.
     trap 'exit' ERR
     missing=$(cat $PGENV_CHECK_FILE | grep 'KO' | wc -l)
@@ -261,7 +264,7 @@ case $1 in
 
         # Unpack the source.
         rm -rf "postgresql-$v"
-        tar $TAR_OPTS $PG_TARBALL
+        $PGENV_TAR $TAR_OPTS $PG_TARBALL
         cd postgresql-$v
 
         # Patch 8.1.
