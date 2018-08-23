@@ -45,13 +45,21 @@ pgversions() {
     if [ -e "pgsql" ]; then
         curr=$(readlink pgsql)
     fi
+    installed=0
     for dir in $(ls | grep pgsql-); do
         if [ "$dir" = "$curr" ]; then
-            echo "  *  $dir"
+            flags=" *"
         else
-            echo "     $dir"
+            flags="  "
         fi
+
+        echo -e "$flags $dir"
+        installed=$(( installed + 1 ))
     done
+
+    if [ $installed -eq 0 ]; then
+        echo "No version installed!"
+    fi
 }
 
 pgenvhelp() {
