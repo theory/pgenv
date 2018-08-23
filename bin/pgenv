@@ -352,7 +352,7 @@ EOF
         fi
 
         rm -fr "pgsql-$v"
-        rm -fr src/postgresql-$v.tar.bz2
+        rm -fr src/postgresql-$v.tar.* # could be .tar.bz2 or .tar.gz
         rm -fr src/postgresql-$v
         echo "PostgreSQL $v removed"
         exit
