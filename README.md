@@ -240,7 +240,7 @@ It is possible to specify a list of major version numbers to use as filters, in
 order to limit the output size. For example, to get only the `9.6` and `10` 
 available versions:
 
-    pgenv available 9.6 10
+    $ pgenv available 9.6 10
             Available PostgreSQL versions
             =============================
     ==============================================
