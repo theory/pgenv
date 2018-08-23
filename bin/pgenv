@@ -362,6 +362,7 @@ EOF
         ;;
 
     available)
+        shift # remove the command from the argument list
         echo -e "\tAvailable PostgreSQL versions"
         echo -e "\t============================="
 
@@ -399,7 +400,8 @@ EOF
 
         # check to have some version in the hash, or
         # the download did go wrong
-        if [ -z "${versions_hash[@]}" ]; then
+        keys="${versions_hash[@]}"
+        if [ -z "$keys" ]; then
             echo "No available versions found at URL <$PGENV_DOWNLOAD_ROOT>"
             exit 1
         fi
@@ -416,6 +418,29 @@ EOF
             else
                 current_version=$(( major / 10 ))
             fi
+
+            # drop away specific versions if the user required only
+            # a few. All arguments, if any, are major version numbers,
+            # so check on each of them to see if it makes match with the
+            # current version, and if not, avoid printing this version.
+            must_print=1 # alway print a version in default
+            if [ $# -ge 1 ]; then
+                must_print=0
+                for required_major in $*
+                do
+                    if [ $current_version = $required_major ]; then
+                        must_print=1
+                        break
+                    fi
+                done
+
+                if [ $must_print -ne 1 ]; then
+                    continue
+                fi
+            fi
+
+
+
             echo "=============================================="
             echo "   PostgreSQL major version $current_version  "
             echo "=============================================="

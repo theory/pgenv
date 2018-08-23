@@ -236,6 +236,27 @@ the versioning schema of PostgreSQL. Each available version is printed as
 a separated value that can be passed to any other `pgenv` command that require
 such a number.
 
+It is possible to specify a list of major version numbers to use as filters, in
+order to limit the output size. For example, to get only the `9.6` and `10` 
+available versions:
+
+    pgenv available 9.6 10
+            Available PostgreSQL versions
+            =============================
+    ==============================================
+       PostgreSQL major version 9.6  
+    ==============================================
+    9.6.0   9.6.1   9.6.2   9.6.3   9.6.4   9.6.5
+    9.6.6   9.6.7   9.6.8   9.6.9   9.6.10
+    ==============================================
+
+    ==============================================
+       PostgreSQL major version 10  
+    ==============================================
+    10.0    10.1    10.2    10.3    10.4    10.5
+    ==============================================
+
+
 ### pgenv check
 
 Checks the list of commands required to download and build PostgreSQL. Prints
