@@ -34,6 +34,7 @@ PGENV_CHECK_FILE=$(mktemp)
 
 PGSQL=$PGENV_ROOT/pgsql
 PG_DATA=$PGSQL/data
+PG_LOG=$PG_DATA/server.log
 
 # Now -w because 9.0 and earlier always time out even when successful.
 PG_CTL="$PGSQL/bin/pg_ctl -D $PG_DATA"
@@ -175,8 +176,9 @@ case $1 in
 
         # Start er up!
         if ! $PG_CTL status &> /dev/null; then
-            $PG_CTL start -l $PG_DATA/server.log
+            $PG_CTL start -l $PG_LOG
             echo "PostgreSQL $v started"
+            echo "Logs are in [$PG_LOG]"
         fi
         exit
         ;;
@@ -202,8 +204,9 @@ case $1 in
         fi
 
         # Start er up!
-        $PG_CTL start -l $PG_DATA/server.log
+        $PG_CTL start -l $PG_LOG
         echo "PostgreSQL $v started"
+        echo "Logs are in [$PG_LOG]"
         exit
         ;;
 
@@ -221,12 +224,13 @@ case $1 in
     restart)
         # Shut down the server unless it's not running.
         if $PG_CTL status &> /dev/null; then
-            $PG_CTL restart -l $PG_DATA/server.log
+            $PG_CTL restart -l $PG_LOG
             echo "PostgreSQL restarted"
         else
-            $PG_CTL start -l $PG_DATA/server.log
+            $PG_CTL start -l $PG_LOG
             echo "PostgreSQL started"
         fi
+        echo "Server logs are in [$PG_LOG]"
         exit
         ;;
 
