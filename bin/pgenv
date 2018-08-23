@@ -30,6 +30,7 @@ fi
 cd $PGENV_ROOT
 # Always use an absolute path or configure could complain.
 PGENV_ROOT=$(pwd)
+PGENV_CHECK_FILE=$(mktemp)
 
 PGSQL=$PGENV_ROOT/pgsql
 PG_DATA=$PGSQL/data
@@ -243,14 +244,24 @@ case $1 in
         cd src
 
         # Download the source if wee don't already have it.
-        PG_TARBALL="postgresql-$v.tar.bz2"
+        # WARNING: older PostgreSQL used .tar.gz instead of .tar.bz2,
+        # so if the version is behind 8 use the first format, otherwise
+        # try to get the most compressed archive
+        if [[ $v =~ ^[1-7]\. ]]; then
+            PG_TARBALL="postgresql-$v.tar.gz"
+            TAR_OPTS="zxf"
+        else
+            PG_TARBALL="postgresql-$v.tar.bz2"
+            TAR_OPTS="jxf"
+        fi
+
         if [ ! -f $PG_TARBALL ]; then
             $PGENV_CURL -fLO http://ftp.postgresql.org/pub/source/v$v/${PG_TARBALL}
         fi
 
         # Unpack the source.
         rm -rf "postgresql-$v"
-        tar jxf $PG_TARBALL
+        tar $TAR_OPTS $PG_TARBALL
         cd postgresql-$v
 
         # Patch 8.1.
@@ -274,7 +285,7 @@ EOF
         ./configure --prefix=$PGENV_ROOT/pgsql-$v --with-perl PERL=/usr/bin/perl
 
         # make and make install
-        if [[ $v =~ ^[1-8]\. ]; then
+        if [[ $v =~ ^[1-8]\. ]]; then
             # 8.x (and prior versions ?) doesn't have `make world`.
             $PGENV_MAKE -j3
             $PGENV_MAKE install
@@ -353,7 +364,6 @@ EOF
         ;;
 
     check)
-        PGENV_CHECK_FILE=$(mktemp)
         # check for all required dependencies
         pgenv_check_dependencies "verbose"
         ;;
