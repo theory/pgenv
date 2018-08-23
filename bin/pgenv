@@ -46,7 +46,7 @@ pgversions() {
         curr=$(readlink pgsql)
     fi
     installed=0
-    for dir in $(ls | grep pgsql-); do
+    for dir in $( ls -d pgsql-* ); do
         if [ "$dir" = "$curr" ]; then
             flags=" *"
         else
