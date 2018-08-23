@@ -37,7 +37,8 @@ PG_DATA=$PGSQL/data
 
 # Now -w because 9.0 and earlier always time out even when successful.
 PG_CTL="$PGSQL/bin/pg_ctl -D $PG_DATA"
-INITDB="$PGSQL/bin/initdb -U postgres --locale en_US.UTF-8 --encoding UNICODE -D $PG_DATA"
+PGENV_PG_USER="postgres"
+INITDB="$PGSQL/bin/initdb -U $PGENV_PG_USER --locale en_US.UTF-8 --encoding UNICODE -D $PG_DATA"
 
 
 pgversions() {
@@ -233,6 +234,16 @@ case $1 in
 
         # check for all dependencies
         pgenv_check_dependencies
+
+        # check if the postgres user exists on this system
+        # or claim
+        trap "" ERR
+        id -u $PGENV_PG_USER > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            echo "You need to create the $PGENV_PG_USER user on this system to continue"
+            exit 1
+        fi
+        trap 'exit' ERR
 
         # Skip it if we already have it.
         if [ -e "pgsql-$v" ]; then
