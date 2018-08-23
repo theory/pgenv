@@ -442,8 +442,8 @@ EOF
 
 
             echo "=============================================="
-            echo "   PostgreSQL major version $current_version  "
-            echo "=============================================="
+            echo "         PostgreSQL major version $current_version"
+            echo "----------------------------------------------"
             printed=0
             for numeric in $( echo ${versions_hash[$major]} \
                                   | tr '-' '\n'  \
@@ -455,7 +455,7 @@ EOF
                     echo
                 fi
 
-                echo -en "$numeric\t"
+                echo -en " $numeric\t"
                 printed=$(( printed +  1 ))
             done
             echo
