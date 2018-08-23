@@ -114,9 +114,9 @@ pgenv_check_dependencies(){
 
     # Go back to exiting on error.
     trap 'exit' ERR
-    missing=$(cat $PGENV_CHECK_FILE | grep 'KO' | wc -l)
+    missing=$( grep -c 'KO' $PGENV_CHECK_FILE )
     if [ $missing -gt 0 ]; then
-        echo "Missing dependencies:"
+        echo "Missing $missing dependencies:"
         grep 'KO' $PGENV_CHECK_FILE
         exit 1
     fi
