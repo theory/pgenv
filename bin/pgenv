@@ -190,11 +190,14 @@ case $1 in
             echo "Run \`pgenv use \$version\` to link and start a specific version"
             echo "Run \`pgenv versions\` to list all installed versions"
             exit 1
+        else
+            # get the version number for messages
+            v=$( readlink pgsql | sed 's/^pgsql-//' )
         fi
 
         # Just stop if already running.
         if $PG_CTL status &> /dev/null; then
-            echo "PostgreSQL is already running"
+            echo "PostgreSQL $v is already running"
             exit
         fi
 
