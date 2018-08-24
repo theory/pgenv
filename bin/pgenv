@@ -423,7 +423,7 @@ EOF
             # a few. All arguments, if any, are major version numbers,
             # so check on each of them to see if it makes match with the
             # current version, and if not, avoid printing this version.
-            must_print=1 # alway print a version in default
+            must_print=1 # always print a version group in default
             if [ $# -ge 1 ]; then
                 must_print=0
                 for required_major in $*
