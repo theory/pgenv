@@ -405,7 +405,10 @@ EOF
         ;;
 
     *)
-        echo "Unknown command \`$1\`"
+        if [ $# -gt 0 ]; then
+            echo "Unknown command \`$1\`"
+        fi
+
         pgenvhelp
         exit 1
         ;;
