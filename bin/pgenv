@@ -446,6 +446,7 @@ EOF
                 done
 
                 if [ $must_print -ne 1 ]; then
+                    pgenv_debug "Skip major version $current_version (required $*)"
                     continue
                 fi
             fi
