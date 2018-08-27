@@ -410,7 +410,7 @@ EOF
 
         # check to have some version in the hash, or
         # the download did go wrong
-        keys="${versions_hash[@]}"
+        keys=$( echo ${!versions_hash[@]} )
         if [ -z "$keys" ]; then
             echo "No available versions found at URL <$PGENV_DOWNLOAD_ROOT>"
             pgenv_debug "Hash content: ${!versions_hash[@]}"
