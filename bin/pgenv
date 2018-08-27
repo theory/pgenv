@@ -384,7 +384,7 @@ EOF
                               | sed 's/^v//' \
                               | sed 's/\/$//')
         do
-            major=$( echo $version | sed 's/\([[:digit:]]\+\).*/\1/' )
+            major=$( echo $version | sed 's/\([[:digit:]]\{1,2\}\).*/\1/' )
             pgenv_debug "Extracted major version [$major]"
 
             # check the version is a number!
@@ -398,7 +398,7 @@ EOF
                 if [ $major -ge 10 -o $major -le 6 ]; then
                     minor=0
                 else
-                    minor=$( echo $version | sed 's/[[:digit:]]\.\([[:digit:]]\+\).*/\1/' )
+                    minor=$( echo $version | sed 's/[[:digit:]]\.\([[:digit:]]\{1,2\}\).*/\1/' )
                 fi
                 major=$(( major * 10 + minor ))
                 pgenv_debug "Normalized major version [$major]"
