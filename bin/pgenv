@@ -458,7 +458,7 @@ EOF
             printed=0
             for numeric in $( echo ${versions_hash[$major]} \
                                   | tr '-' '\n'  \
-                                  | sort -n  )
+                                  | sort -V  )
             do
                 # new line after 5 numbers
                 if [ $printed -gt 5 ]; then
