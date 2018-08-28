@@ -474,11 +474,13 @@ EOF
             echo "=============================================="
             echo
         done
+        exit
         ;;
 
     check)
         # check for all required dependencies
         pgenv_check_dependencies "verbose"
+        exit
         ;;
 
     *)
