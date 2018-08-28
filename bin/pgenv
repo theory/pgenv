@@ -138,14 +138,36 @@ pgenv_check_dependencies(){
     trap 'exit' ERR
 }
 
+# This function checks for its first argument to be
+# a valid PostgreSQL number, soemthing like 10.5 or 9.5.4.
+# In case no version number is specified, or the
+# version number is not valid (e.g., 10, 0.9) the
+# function aborts the script.
+# If no version at all is specified, the `pgversions` function
+# is invoked to display the user with available versions.
+pgenv_input_version_or_exit() {
+    local version=$1
+
+    if [ -z "$version" ]; then
+        echo "Which version of PostgreSQL do you want?"
+        pgversions
+        exit 1
+    fi
+
+    if [[ $version =~ ^[1-9][0-9]?\.[0-9]+.?[0-9]? ]]; then
+        return
+    else
+        echo "Specified version <$version> does not appear to be a PostgreSQL valid version number"
+        exit 1
+    fi
+}
+
 case $1 in
     use)
         v=$2
 
-        if [ -z "$v"  ]; then
-            echo "Which version number do you want?"
-            exit 1
-        fi
+        pgenv_input_version_or_exit $v
+
 
         # Make sure it's a version we have.
         if [ ! -e "pgsql-$v" ]; then
@@ -246,13 +268,7 @@ case $1 in
     build)
         v=$2
 
-        if [ -z "$v"  ]; then
-            echo "Which version number do you want?"
-            exit 1
-        fi
-
-
-
+        pgenv_input_version_or_exit $v
 
         # check for all dependencies
         pgenv_check_dependencies
@@ -355,10 +371,7 @@ EOF
     remove)
         v=$2
 
-        if [ -z "$v"  ]; then
-            echo "Which version number do you want?"
-            exit 1
-        fi
+        pgenv_input_version_or_exit $v
 
         if [ ! -e "pgsql-$v" ]; then
             echo "PostgreSQL $v not installed; installed versions:"
