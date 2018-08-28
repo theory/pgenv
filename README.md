@@ -122,24 +122,18 @@ already running.
 
 ### pgenv versions
 
-Lists all PostgreSQL versions known to pgenv, and shows an asterisk next to the
-currently active version.
+Lists all PostgreSQL versions known to `pgenv`, and shows an asterisk next to the
+currently active version (if any). The first column reports the version number to use
+in other `pgenv` commands, followed by the directory where the version is installed:
 
     $ pgenv versions
-         pgsql-10.4
-      *  pgsql-11beta2
-         pgsql-8.0.26
-         pgsql-8.1.23
-         pgsql-8.2.23
-         pgsql-8.3.23
-         pgsql-8.4.22
-         pgsql-9.0.19
-         pgsql-9.1.24
-         pgsql-9.2.24
-         pgsql-9.3.23
-         pgsql-9.4.18
-         pgsql-9.5.13
-         pgsql-9.6.9
+            10.5            pgsql-10.5
+            10.3            pgsql-10.3
+     *      9.6.10          pgsql-9.6.10
+
+In the above output, version `9.6.10` is currently in use (note the '*'),
+and available versions are `9.6.10`, `10.3` and `10.5` which are installed
+in a `pgsql-` local directory named after the version number.
 
 ### pgenv version
 
