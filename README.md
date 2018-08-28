@@ -95,8 +95,11 @@ $ git pull
 ------------
 
 *   bash
-*   curl
-*   Perl
+*   curl (to download PostgreSQL)
+*   sed, grep, cat, tar (Unix command line utilities in general)
+*   patch (to patch particular versions)
+*   make (to build downloaded PostgreSQL versions)
+*   Perl 5 (instances will be built with PL/Perl)
 
 Command Reference
 -----------------
@@ -200,6 +203,59 @@ already running.
 
     $ pgenv restart
     PostgreSQL restarted
+    
+### pgenv available
+
+Shows which versions of PostgreSQL are currently available for download and build, 
+and is therefore suggested to run before a `build` is issued. Please consider
+that this command produces a quite long output.
+
+    $ pgenv available
+    ...
+    ==============================================
+    PostgreSQL major version 9.6  
+    ==============================================
+    9.6.0   9.6.1   9.6.2   9.6.3   9.6.4   9.6.5
+    9.6.6   9.6.7   9.6.8   9.6.9   9.6.10
+    ==============================================
+
+    ==============================================
+       PostgreSQL major version 10  
+    ==============================================
+    10.0    10.1    10.2    10.3    10.4    10.5
+    ==============================================
+
+    ==============================================
+       PostgreSQL major version 11  
+    ==============================================
+    11beta1 11beta2 11beta3
+    ==============================================
+
+The available versions are organized in "major" version sections, accordingly to
+the versioning schema of PostgreSQL. Each available version is printed as
+a separated value that can be passed to any other `pgenv` command that require
+such a number.
+
+It is possible to specify a list of major version numbers to use as filters, in
+order to limit the output size. For example, to get only the `9.6` and `10` 
+available versions:
+
+    $ pgenv available 9.6 10
+            Available PostgreSQL versions
+            =============================
+    ==============================================
+       PostgreSQL major version 9.6  
+    ==============================================
+    9.6.0   9.6.1   9.6.2   9.6.3   9.6.4   9.6.5
+    9.6.6   9.6.7   9.6.8   9.6.9   9.6.10
+    ==============================================
+
+    ==============================================
+       PostgreSQL major version 10  
+    ==============================================
+    10.0    10.1    10.2    10.3    10.4    10.5
+    ==============================================
+
 
 ### pgenv check
 
@@ -209,24 +265,26 @@ error if any command was not found.
 
 ### pgenv help
 
-Outputs a brief usage statement and summary of available commands. The
+Outputs a brief usage statement and summary of available commands, like
+the following
 
     $ pgenv help
-    Usage: pgenv <command> [<args>]"
+    Usage: pgenv <command> [<args>]
 
     The pgenv commands are:
-        use       Set and start the current PostgreSQL version
-        clear     Stop and unset the current PostgreSQL version
-        start     Start the current PostgreSQL server
-        stop      Stop the current PostgreSQL server
-        restart   Restart the current PostgreSQL server
-        build     Build a specific version of PostgreSQL
-        remove    Remove a specific version of PostgreSQL
-        version   Show the current PostgreSQL version
-        versions  List all Perl versions available to pgenv
-        help      Show this usage statement and command summary
-        check     Check all program dependencies
-    
+    use        Set and start the current PostgreSQL version
+    clear      Stop and unset the current PostgreSQL version
+    start      Start the current PostgreSQL server
+    stop       Stop the current PostgreSQL server
+    restart    Restart the current PostgreSQL server
+    build      Build a specific version of PostgreSQL
+    remove     Remove a specific version of PostgreSQL
+    version    Show the current PostgreSQL version
+    versions   List all PostgreSQL versions available to pgenv
+    help       Show this usage statement and command summary
+    available  Show which versions can be downloaded
+    check      Check all program dependencies
+
     For full documentation, see: https://github.com/theory/pgenv#readme
 
 # Bug Reporting
