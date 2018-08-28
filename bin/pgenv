@@ -44,9 +44,10 @@ INITDB="$PGSQL/bin/initdb -U $PGENV_PG_USER --locale en_US.UTF-8 --encoding UNIC
 
 pgversions() {
     if [ -e "pgsql" ]; then
-        curr=$(readlink pgsql)
+        local curr=$(readlink pgsql)
     fi
-    installed=0
+    local installed=0
+    local flags=""
     for dir in $( ls -d pgsql-* ); do
         if [ "$dir" = "$curr" ]; then
             flags=" *"
@@ -54,7 +55,8 @@ pgversions() {
             flags="  "
         fi
 
-        echo -e "$flags $dir"
+        local version=$( echo $dir | sed 's/^pgsql-//' )
+        echo -e "$flags\t$version\t\t$dir"
         installed=$(( installed + 1 ))
     done
 
