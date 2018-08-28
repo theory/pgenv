@@ -33,11 +33,29 @@ PGENV_ROOT=$(pwd)
 
 PGSQL=$PGENV_ROOT/pgsql
 PG_DATA=$PGSQL/data
+PGENV_DOWNLOAD_ROOT='https://ftp.postgresql.org/pub/source/'
+
+# temporary  check file
+PGENV_CHECK_FILE=$( mktemp ${PGENV_ROOT}/pgenv.check.XXXXX )
 
 # Now -w because 9.0 and earlier always time out even when successful.
 PG_CTL="$PGSQL/bin/pg_ctl -D $PG_DATA"
 INITDB="$PGSQL/bin/initdb -U postgres --locale en_US.UTF-8 --encoding UNICODE -D $PG_DATA"
 
+# Ensure the removal of all temporary files on exit.
+trap "exit_cleanup" EXIT
+
+exit_cleanup() {
+    rm -f "$PGENV_CHECK_FILE"
+}
+
+# Prints a debug message if PGENV_DEBUG
+# variable enabled
+pgenv_debug(){
+    if [ ! -z "$PGENV_DEBUG" ]; then
+        echo "[DEBUG] $1" >&2
+    fi
+}
 
 pgversions() {
     if [ -e "pgsql" ]; then
@@ -57,39 +75,40 @@ pgenvhelp() {
 Usage: pgenv <command> [<args>]
 
 The pgenv commands are:
-    use       Set and start the current PostgreSQL version
-    clear     Stop and unset the current PostgreSQL version
-    start     Start the current PostgreSQL server
-    stop      Stop the current PostgreSQL server
-    restart   Restart the current PostgreSQL server
-    build     Build a specific version of PostgreSQL
-    remove    Remove a specific version of PostgreSQL
-    version   Show the current PostgreSQL version
-    versions  List all PostgreSQL versions available to pgenv
-    help      Show this usage statement and command summary
-    check     Check all program dependencies
+    use        Set and start the current PostgreSQL version
+    clear      Stop and unset the current PostgreSQL version
+    start      Start the current PostgreSQL server
+    stop       Stop the current PostgreSQL server
+    restart    Restart the current PostgreSQL server
+    build      Build a specific version of PostgreSQL
+    remove     Remove a specific version of PostgreSQL
+    version    Show the current PostgreSQL version
+    versions   List all PostgreSQL versions available to pgenv
+    help       Show this usage statement and command summary
+    available  Show which versions can be downloaded (most recent versions last)
+    check      Check all program dependencies
 
 For full documentation, see: https://github.com/theory/pgenv#readme
 EOF
 }
 
-# Accepts the name of a command and the value for the executable of that
-# command. Prints a line in a temporary file (which must already exist) with
-# an OK or KO for the command.
+# Accepts the name of a command and the path to the executable for that command.
+# Prints a line in to temporary file (which must already exist) with an OK or KO
+# for the command.
 pgenv_detail_command(){
     local command_name=$1
     local command=$2
 
     if [ -z "$command" ]; then
-        echo "[KO] $command_name: not found!" >> $PGENV_CHECK_FILE
+        echo -e "[KO]\t$command_name:\tNOT found!" >> $PGENV_CHECK_FILE
     else
-        echo "[OK] $command_name: $command" >> $PGENV_CHECK_FILE
+        echo -e "[OK]\t$command_name:\t$command" >> $PGENV_CHECK_FILE
     fi
 }
 
-# Searches for all dependencies and prints line for each command in a file.
-# Prints a list of missing commands. If none are missing, it prints the
-# locations of all each command if the argument is not null.
+# Searches for all dependencies and prints a line for each command to a file.
+# Prints a list of missing commands. If none are missing and the argument is
+# not null, it prints the paths for all commands.
 pgenv_check_dependencies(){
     local verbose=$1
     # Don't exit on error.
@@ -106,6 +125,12 @@ pgenv_check_dependencies(){
 
     PGENV_PATCH=$(which patch)
     pgenv_detail_command "patch" $PGENV_PATCH
+
+    PGENV_SED=$(which sed)
+    pgenv_detail_command "sed" $PGENV_SED
+
+    PGENV_PERL=$(which perl)
+    pgenv_detail_command "Perl 5" $PGENV_PERL
 
     # Go back to exiting on error.
     trap 'exit' ERR
@@ -236,7 +261,7 @@ case $1 in
         # Download the source if wee don't already have it.
         PG_TARBALL="postgresql-$v.tar.bz2"
         if [ ! -f $PG_TARBALL ]; then
-            $PGENV_CURL -fLO http://ftp.postgresql.org/pub/source/v$v/${PG_TARBALL}
+            $PGENV_CURL -fLO ${PGENV_DOWNLOAD_ROOT}/v$v/${PG_TARBALL}
         fi
 
         # Unpack the source.
@@ -262,7 +287,7 @@ EOF
         fi
 
         # Configure.
-        ./configure --prefix=$PGENV_ROOT/pgsql-$v --with-perl PERL=/usr/bin/perl
+        ./configure --prefix=$PGENV_ROOT/pgsql-$v --with-perl PERL=$PGENV_PERL
 
         # make and make install.
         if [ "`echo $v | awk -F . '{print $1}'`" -lt 9 ]; then
@@ -337,10 +362,116 @@ EOF
         exit
         ;;
 
+    available)
+        shift # remove the command from the argument list
+        echo -e "         Available PostgreSQL versions"
+        echo -e "==============================================\n"
+
+        # there should be a simpler single regexp...
+        # First of all download the page with the links to each version (href=va.b.c/)
+        # and trim out each version, then extract the major version
+        # and append each version to an hash indexed by the major version number
+        for version in $( curl -s $PGENV_DOWNLOAD_ROOT \
+                              | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' \
+                              | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' \
+                              | sed 's/^v//' \
+                              | sed 's/\/$//')
+        do
+            major=$( echo $version | sed 's/\([[:digit:]]\{1,2\}\).*/\1/' )
+            pgenv_debug "Extracted major version [$major]"
+
+            # check the version is a number!
+            if [[ $major =~ ^[0-9]+$ ]] ; then
+                # Since PostgreSQL 10, a major version is
+                # made by only the first number
+                # (apply the same logic for old versions)
+                # here the major version is considered as multipled
+                # by a ten factor, so that version 10 becomes value 100
+                # while version 9.6 becomes 96
+                if [ $major -ge 10 -o $major -le 6 ]; then
+                    minor=0
+                else
+                    minor=$( echo $version | sed 's/[[:digit:]]\.\([[:digit:]]\{1,2\}\).*/\1/' )
+                fi
+                major=$(( major * 10 + minor ))
+                pgenv_debug "Normalized major version [$major]"
+                # append the current version to the hash
+                # indexed by the major version
+                versions_hash[ "$major" ]+="${version}-"
+            fi
+        done
+
+        # check to have some version in the hash, or
+        # the download did go wrong
+        keys=$( echo ${!versions_hash[@]} )
+        if [ -z "$keys" ]; then
+            echo "No available versions found at URL <$PGENV_DOWNLOAD_ROOT>"
+            pgenv_debug "Hash content: ${!versions_hash[@]}"
+            exit 1
+        fi
+
+        # read back the versions and display the output
+        # displying each version with a separated header
+        for major in $( echo ${!versions_hash[@]} | sort -n )
+        do
+
+            # normalize version numbers
+            # (note, use sed instead of bc to avoid introducing another dependency)
+            if [ $major -ge 70 -a $major -le 96 ]; then
+                current_version=$( echo $major | sed 's/\([[:digit:]]\)\([[:digit:]]\)/\1\.\2/' )
+            else
+                current_version=$(( major / 10 ))
+            fi
+
+            # drop away specific versions if the user required only
+            # a few. All arguments, if any, are major version numbers,
+            # so check on each of them to see if it makes match with the
+            # current version, and if not, avoid printing this version.
+            must_print=1 # always print a version group in default
+            if [ $# -ge 1 ]; then
+                must_print=0
+                for required_major in $*
+                do
+                    if [ $current_version = $required_major ]; then
+                        must_print=1
+                        break
+                    fi
+                done
+
+                if [ $must_print -ne 1 ]; then
+                    pgenv_debug "Skip major version $current_version (required $*)"
+                    continue
+                fi
+            fi
+
+
+
+            echo "                PostgreSQL $current_version"
+            echo "-----------------------------------------------"
+            printed=0
+            for numeric in $( echo ${versions_hash[$major]} \
+                                  | tr '-' '\n'  \
+                                  | sort -V  )
+            do
+                # new line after 5 numbers
+                if [ $printed -gt 5 ]; then
+                    printed=0
+                    echo
+                fi
+
+                echo -en " $numeric\t"
+                printed=$(( printed +  1 ))
+            done
+            echo
+            echo
+        done
+        exit
+        ;;
+
     check)
-        PGENV_CHECK_FILE=$(mktemp)
         # check for all required dependencies
         pgenv_check_dependencies "verbose"
+        exit
         ;;
 
     *)
