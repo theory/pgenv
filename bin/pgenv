@@ -401,16 +401,17 @@ EOF
         ;;
 
     clear)
+        v=$( pgenv_current_postgresql_or_exit )
         if $PG_CTL status &> /dev/null; then
             $PG_CTL stop
-            echo "PostgreSQL stopped"
+            echo "PostgreSQL $v stopped"
         fi
-        if [ -e "pgsql" ]; then
-            rm -f pgsql
-            echo "PostgreSQL cleared"
-        else
-            echo "No version of PostgreSQL is currently active"
-        fi
+
+        # we are sure a version is in use,
+        # since pgenv_current_postgresql_or_exit
+        # should have killed the script otherwise
+        rm -f pgsql
+        echo "PostgreSQL $v cleared"
         exit
         ;;
 
