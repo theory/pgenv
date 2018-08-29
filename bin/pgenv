@@ -206,13 +206,13 @@ pgenv_existing_user_or_exit(){
 # the function prints the version number,
 # so it should be called as
 #
-# v=$( pgenv_current_postresql_or_exit )
+# v=$( pgenv_current_postgresql_or_exit )
 #
 # to capture the version number and not
 # print it to the stdout.
 pgenv_current_postgresql_or_exit(){
     if [ ! -e "pgsql" ]; then
-        echo "No current version of PostgreSQL"
+        echo "No version of PostgreSQL currently in use"
         echo "Run \`pgenv use \$version\` to link and start a specific version"
         echo "Run \`pgenv versions\` to list all installed versions"
         exit 1
@@ -436,11 +436,7 @@ EOF
         ;;
 
     version)
-        if [ -e "pgsql" ]; then
-            readlink pgsql
-        else
-            echo "No version of PostgreSQL currently in use"
-        fi
+        pgenv_current_postgresql_or_exit
         exit
         ;;
 
