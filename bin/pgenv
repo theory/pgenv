@@ -199,6 +199,31 @@ pgenv_existing_user_or_exit(){
     trap 'exit' ERR
 }
 
+# Checks if there is a currently selected
+# instance and, in case it is not, claims
+# to the user and aborts the script.
+# In the case an instance is selected,
+# the function prints the version number,
+# so it should be called as
+#
+# v=$( pgenv_current_postresql_or_exit )
+#
+# to capture the version number and not
+# print it to the stdout.
+pgenv_current_postgresql_or_exit(){
+    if [ ! -e "pgsql" ]; then
+        echo "No current version of PostgreSQL"
+        echo "Run \`pgenv use \$version\` to link and start a specific version"
+        echo "Run \`pgenv versions\` to list all installed versions"
+        exit 1
+    else
+        local v=$( readlink pgsql | sed 's/^pgsql-//' )
+        # echo the value, needs to be captured
+        echo $v
+    fi
+
+}
+
 case $1 in
     use)
         v=$2
@@ -237,16 +262,8 @@ case $1 in
         ;;
 
     start)
-        # Do we have a current version?
-        if [ ! -e "pgsql" ]; then
-            echo "No current version of PostgreSQL"
-            echo "Run \`pgenv use \$version\` to link and start a specific version"
-            echo "Run \`pgenv versions\` to list all installed versions"
-            exit 1
-        else
-            # get the version number for messages
-            v=$( readlink pgsql | sed 's/^pgsql-//' )
-        fi
+        # check a version is currently in use
+        v=$( pgenv_current_postgresql_or_exit )
 
         # Just stop if already running.
         if $PG_CTL status &> /dev/null; then
@@ -273,24 +290,30 @@ case $1 in
         ;;
 
     stop)
+        # check a version is currently in use
+        v=$( pgenv_current_postgresql_or_exit )
+
         # Shut down the server unless it's not running.
         if $PG_CTL status &> /dev/null; then
             $PG_CTL stop
-            echo "PostgreSQL stopped"
+            echo "PostgreSQL $v stopped"
         else
-            echo "PostgreSQL not running"
+            echo "PostgreSQL $v not running"
         fi
         exit
         ;;
 
     restart)
+        # check a version is currently in use
+        v=$( pgenv_current_postgresql_or_exit )
+
         # Shut down the server unless it's not running.
         if $PG_CTL status &> /dev/null; then
             $PG_CTL restart -l $PG_LOG
-            echo "PostgreSQL restarted"
+            echo "PostgreSQL $v restarted"
         else
             $PG_CTL start -l $PG_LOG
-            echo "PostgreSQL started"
+            echo "PostgreSQL $v started"
         fi
         echo "Server logs are in [$PG_LOG]"
         exit
