@@ -56,7 +56,7 @@ pgversions() {
         fi
 
         local version=$( echo $dir | sed 's/^pgsql-//' )
-        echo -e "$flags\t$version\t\t$dir"
+        printf "%2s   %6s    %s\n" "$flags" "$version" "$dir"
         installed=$(( installed + 1 ))
     done
 
