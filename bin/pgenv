@@ -364,8 +364,8 @@ EOF
 
     available)
         shift # remove the command from the argument list
-        echo -e "         Available PostgreSQL versions"
-        echo -e "==============================================\n"
+        echo -e "             Available PostgreSQL Versions"
+        echo -e "========================================================\n"
 
         # there should be a simpler single regexp...
         # First of all download the page with the links to each version (href=va.b.c/)
@@ -405,7 +405,7 @@ EOF
         # the download did go wrong
         keys=$( echo ${!versions_hash[@]} )
         if [ -z "$keys" ]; then
-            echo "No available versions found at URL <$PGENV_DOWNLOAD_ROOT>"
+            echo "No versions found at URL <$PGENV_DOWNLOAD_ROOT>"
             pgenv_debug "Hash content: ${!versions_hash[@]}"
             exit 1
         fi
@@ -414,7 +414,6 @@ EOF
         # displying each version with a separated header
         for major in $( echo ${!versions_hash[@]} | sort -n )
         do
-
             # normalize version numbers
             # (note, use sed instead of bc to avoid introducing another dependency)
             if [ $major -ge 70 -a $major -le 96 ]; then
@@ -444,10 +443,9 @@ EOF
                 fi
             fi
 
-
-
-            echo "                PostgreSQL $current_version"
-            echo "------------------*-----------------------------"
+            echo "                     PostgreSQL $current_version"
+            echo "    ------------------------------------------------"
+            echo -n "    "
             printed=0
             for numeric in $( echo ${versions_hash[$major]} \
                                   | tr '-' '\n'  \
@@ -457,6 +455,7 @@ EOF
                 if [ $printed -gt 5 ]; then
                     printed=0
                     echo
+                    echo -n "    "
                 fi
 
                 # the output string will be 'a.b.cd'
@@ -464,8 +463,7 @@ EOF
                 printf " %-6s " $numeric
                 printed=$(( printed +  1 ))
             done
-
-            echo -e "\n\n"
+            echo -e "\n"
         done
         exit
         ;;
