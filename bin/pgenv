@@ -100,9 +100,9 @@ pgenv_detail_command(){
     local command=$2
 
     if [ -z "$command" ]; then
-        echo -e "[KO]\t$command_name:\tNOT found!" >> $PGENV_CHECK_FILE
+        echo -e "[KO] $command_name:\tNOT found!" >> $PGENV_CHECK_FILE
     else
-        echo -e "[OK]\t$command_name:\t$command" >> $PGENV_CHECK_FILE
+        echo -e "[OK] $command_name:\t$command" >> $PGENV_CHECK_FILE
     fi
 }
 
@@ -130,19 +130,17 @@ pgenv_check_dependencies(){
     pgenv_detail_command "sed" $PGENV_SED
 
     PGENV_PERL=$(which perl)
-    pgenv_detail_command "Perl 5" $PGENV_PERL
+    pgenv_detail_command "perl" $PGENV_PERL
 
     # Go back to exiting on error.
-    trap 'exit' ERR
     missing=$(cat $PGENV_CHECK_FILE | grep 'KO' | wc -l)
-    if [ $missing -gt 0 ]; then
+    trap 'exit' ERR
+    if [ ! -z "$verbose" ]; then
+        cat $PGENV_CHECK_FILE
+    elif [ $missing -gt 0 ]; then
         echo "Missing dependencies:"
         grep 'KO' $PGENV_CHECK_FILE
         exit 1
-    fi
-
-    if [ ! -z "$verbose" ]; then
-        cat $PGENV_CHECK_FILE
     fi
 
     rm $PGENV_CHECK_FILE
