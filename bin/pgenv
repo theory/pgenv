@@ -447,7 +447,7 @@ EOF
 
 
             echo "                PostgreSQL $current_version"
-            echo "-----------------------------------------------"
+            echo "------------------*-----------------------------"
             printed=0
             for numeric in $( echo ${versions_hash[$major]} \
                                   | tr '-' '\n'  \
@@ -459,11 +459,13 @@ EOF
                     echo
                 fi
 
-                echo -en " $numeric\t"
+                # the output string will be 'a.b.cd'
+                # therefore no more than 6 chars, left aligned
+                printf " %-6s " $numeric
                 printed=$(( printed +  1 ))
             done
-            echo
-            echo
+
+            echo -e "\n\n"
         done
         exit
         ;;
