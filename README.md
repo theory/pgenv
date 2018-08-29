@@ -249,9 +249,9 @@ To limit the list to specific major releases, pass those releases to
 
 ### pgenv check
 
-Checks the list of commands required to download and build PostgreSQL. Prints
-a result for each, with either the location where the command was found, or an
-error if any command was not found.
+Checks the list of commands required to download and build PostgreSQL. Prints a
+result for each, with either the path to the command or an error reporting that
+the command was not found.
 
 ### pgenv help
 
