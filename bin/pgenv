@@ -1,21 +1,5 @@
 #!/bin/bash
 
-# Released versions:
-# 8.0.26
-# 8.1.23
-# 8.2.23
-# 8.3.23
-# 8.4.22
-# 9.0.19
-# 9.1.24
-# 9.2.24
-# 9.3.23
-# 9.4.18
-# 9.5.13
-# 9.6.9
-# 10.4
-# 11beta2
-
 # https://stackoverflow.com/a/19622569/79202
 trap 'exit' ERR
 set -E
@@ -35,19 +19,9 @@ PGSQL=$PGENV_ROOT/pgsql
 PG_DATA=$PGSQL/data
 PGENV_DOWNLOAD_ROOT='https://ftp.postgresql.org/pub/source/'
 
-# temporary  check file
-PGENV_CHECK_FILE=$( mktemp ${PGENV_ROOT}/pgenv.check.XXXXX )
-
 # Now -w because 9.0 and earlier always time out even when successful.
 PG_CTL="$PGSQL/bin/pg_ctl -D $PG_DATA"
 INITDB="$PGSQL/bin/initdb -U postgres --locale en_US.UTF-8 --encoding UNICODE -D $PG_DATA"
-
-# Ensure the removal of all temporary files on exit.
-trap "exit_cleanup" EXIT
-
-exit_cleanup() {
-    rm -f "$PGENV_CHECK_FILE"
-}
 
 # Prints a debug message if PGENV_DEBUG
 # variable enabled
@@ -92,27 +66,28 @@ For full documentation, see: https://github.com/theory/pgenv#readme
 EOF
 }
 
-# Accepts the name of a command and the path to the executable for that command.
-# Prints a line in to temporary file (which must already exist) with an OK or KO
-# for the command.
-pgenv_detail_command(){
-    local command_name=$1
-    local command=$2
-
-    if [ -z "$command" ]; then
-        echo -e "[KO] $command_name:\tNOT found!" >> $PGENV_CHECK_FILE
-    else
-        echo -e "[OK] $command_name:\t$command" >> $PGENV_CHECK_FILE
-    fi
-}
-
-# Searches for all dependencies and prints a line for each command to a file.
-# Prints a list of missing commands. If none are missing and the argument is
-# not null, it prints the paths for all commands.
+# Searches for all dependencies and prints a report. If the argument is null,
+# only missing depencencies will be reported. Otherwise, it prints the paths for
+# all commands.
 pgenv_check_dependencies(){
     local verbose=$1
     # Don't exit on error.
     trap "" ERR
+
+    local present=""
+    local missing=""
+
+    pgenv_detail_command(){
+        local command_name=$1
+        local command=$2
+        local nl=$'\n'
+        local tab=$'\t'
+        if [ -z "$command" ]; then
+            missing+="[KO] $command_name:${tab}NOT found!$nl"
+        else
+            present+="[OK] $command_name:$tab$command$nl"
+        fi
+    }
 
     PGENV_MAKE=$(which make)
     if [ -z "$PGENV_MAKE" ]; then
@@ -133,17 +108,14 @@ pgenv_check_dependencies(){
     pgenv_detail_command "perl" $PGENV_PERL
 
     # Go back to exiting on error.
-    missing=$(cat $PGENV_CHECK_FILE | grep 'KO' | wc -l)
     trap 'exit' ERR
     if [ ! -z "$verbose" ]; then
-        cat $PGENV_CHECK_FILE
-    elif [ $missing -gt 0 ]; then
-        echo "Missing dependencies:"
-        grep 'KO' $PGENV_CHECK_FILE
+        echo -n "$present"
+    fi
+    if [ ! -z "$missing" ]; then
+        echo "$missing"
         exit 1
     fi
-
-    rm $PGENV_CHECK_FILE
 }
 
 case $1 in
