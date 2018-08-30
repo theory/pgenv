@@ -89,16 +89,34 @@ pgenv_check_dependencies(){
 
     local present=""
     local missing=""
+    local warning=""
 
     pgenv_detail_command(){
         local command_name=$1
         local command=$2
+        local language=$3
+
         local nl=$'\n'
         local tab=$'\t'
         if [ -z "$command" ]; then
-            missing+="[KO] $command_name:${tab}NOT found!$nl"
+            if [ -z "$language" ]; then
+                missing+="[KO] $command_name:${tab}NOT found!$nl"
+            else
+                warning+="[KO] $command_name:${tab}NOT found (cannot build $language)$nl"
+            fi
         else
             present+="[OK] $command_name:$tab$command$nl"
+        fi
+    }
+
+    # Appends a language interpreter configuration
+    # to the 'configure' variable used to build the system
+    pgenv_configure_pl(){
+        local language=$1
+        local interpreter=$2
+
+        if [ ! -z "$interpreter" ]; then
+            PGENV_CONFIGURE_PL+="--with-${language}  $( echo $language | tr 'a-z' 'A-Z' )=${interpreter} "
         fi
     }
 
@@ -121,13 +139,21 @@ pgenv_check_dependencies(){
     pgenv_detail_command "sed" $PGENV_SED
 
     PGENV_PERL=$(which perl)
-    pgenv_detail_command "perl" $PGENV_PERL
+    pgenv_detail_command "perl" "$PGENV_PERL" "PL/Perl"
+    pgenv_configure_pl "perl" $PGENV_PERL
+
+    PGENV_PYTHON=$(which python)
+    pgenv_detail_command "python" "$PGENV_PYTHON" "PL/Python"
+    pgenv_configure_pl "python" $PGENV_PYTHON
 
 
     # Go back to exiting on error.
     trap 'exit' ERR
     if [ ! -z "$verbose" ]; then
         echo -n "$present"
+    fi
+    if [ ! -z "$verbose" ]; then
+        echo -n "$warning"
     fi
     if [ ! -z "$missing" ]; then
         echo "$missing"
