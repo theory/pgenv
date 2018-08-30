@@ -397,8 +397,9 @@ case $1 in
 EOF
         fi
 
-        # Configure.
-        ./configure --prefix=$PGENV_ROOT/pgsql-$v --with-perl PERL=$PGENV_PERL
+        # Configure: use the variable PGENV_CONFIGURE_PL for PL/Perl and PL/Python languages
+        # that has been auto-computed by pgenv_check_dependencies
+        ./configure --prefix=$PGENV_ROOT/pgsql-$v $PGENV_CONFIGURE_PL
 
         # make and make install
         if [[ $v =~ ^[1-8]\. ]]; then

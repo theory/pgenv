@@ -99,7 +99,8 @@ $ git pull
 *   sed, grep, cat, tar - General Unix command line utilities
 *   patch - For patching versions that need patching
 *   make -  Builds PostgreSQL
-*   Perl 5 - To build PL/Perl
+*   Perl 5 - To build PL/Perl (not mandatory)
+*   Python - To build PL/Python (not mandatory)
 
 Command Reference
 -----------------
@@ -166,6 +167,11 @@ before building. If the version is already built, it will not be rebuilt; use
     $ pgenv build 10.3
     # Curl, configure, and make output elided
     PostgreSQL 10.3 built
+
+The build will install PL/Perl and/or PL/Python depending on the current environment:
+if Perl and/or Python interpreters are available, the `configure` part of the build
+process will reflect their presence and will build interpreters into the
+PostgreSQL instance.
 
 ### pgenv remove
 
