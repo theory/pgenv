@@ -151,8 +151,6 @@ pgenv_check_dependencies(){
     trap 'exit' ERR
     if [ ! -z "$verbose" ]; then
         echo -n "$present"
-    fi
-    if [ ! -z "$verbose" ]; then
         echo -n "$warning"
     fi
     if [ ! -z "$missing" ]; then
