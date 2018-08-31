@@ -139,14 +139,24 @@ pgenv_check_dependencies(){
 # In case no version number is specified, or the
 # version number is not valid (e.g., 10, 0.9) the
 # function aborts the script.
-# If no version at all is specified, the `pgversions` function
-# is invoked to display the user with available versions.
+# If no version has been specified, and a non-empty string is
+# passed as second argument, the function prints
+# out a list of available installed version.
+#
+# Invoking with:
+#   pgenv_input_version_or_exit "$v" "verbose"
+# will produce a list among which the user can choose, while:
+#  pgenv_input_version_or_exit "$v"
+# will not. Mind the quotes!
 pgenv_input_version_or_exit() {
     local version=$1
+    local verbose=$2
 
     if [ -z "$version" ]; then
         echo "Which version of PostgreSQL do you want?"
-        pgversions
+        if [ ! -z "$verbose" ]; then
+            pgversions
+        fi
         exit 1
     fi
 
@@ -205,7 +215,7 @@ case $1 in
     use)
         v=$2
 
-        pgenv_input_version_or_exit $v
+        pgenv_input_version_or_exit "$v" 'show-installed-versions'
         pgenv_installed_version_or_exit $v
 
 
@@ -392,7 +402,7 @@ EOF
     remove)
         v=$2
 
-        pgenv_input_version_or_exit $v
+        pgenv_input_version_or_exit "$v" 'show-installed-versions'
         pgenv_installed_version_or_exit $v
 
 
