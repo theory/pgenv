@@ -222,11 +222,12 @@ produces copious output.
         ------------------------------------------------
         11beta1  11beta2  11beta3
 
-The versions are organized by major release version. Any listed version may be
-passed to `pgenv` commands that require a version.
+The versions are organized and sorted by major release number. 
+Any listed version may be passed to `pgenv` commands that require a version.
 
 To limit the list to specific major releases, pass those releases to
-`available`. For example, to list only the `9.6` and `10` available versions:
+`available` (in no particular order). 
+For example, to list only the `9.6` and `10` available versions:
 
     $ pgenv available 9.6 10
                 Available PostgreSQL Versions
