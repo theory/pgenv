@@ -247,7 +247,7 @@ case $1 in
         if ! $PG_CTL status &> /dev/null; then
             $PG_CTL start -l $PG_LOG
             echo "PostgreSQL $v started"
-            echo "Logs are in [$PG_LOG]"
+            echo "Logs are in $PG_LOG"
         fi
         exit
         ;;
@@ -272,7 +272,7 @@ case $1 in
         $PG_CTL start -w -l $PG_LOG
         if [ $? -eq 0 ]; then
             echo "PostgreSQL $v started"
-            echo "Logs are in [$PG_LOG]"
+            echo "Logs are in $PG_LOG"
         else
             echo "PostgreSQL $v NOT started, examine logs in $PG_LOG"
         fi
@@ -306,7 +306,7 @@ case $1 in
             $PG_CTL start -l $PG_LOG
             echo "PostgreSQL $v started"
         fi
-        echo "Server logs are in [$PG_LOG]"
+        echo "Server logs are in $PG_LOG"
         exit
         ;;
 
