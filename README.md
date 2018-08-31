@@ -81,6 +81,12 @@ project directory (generally, in `~/.pgenv`.). If you'd like them to live
 elsewhere, set the `$PGENV_ROOT` environment variable to the appropriate
 value.
 
+Each instance will be compiled with support for PL/Perl and/or PL/Python
+depending on the existance of interpreters. It is possible to compile
+an instance with a particular interpreter or without PL/Perl or PL/Python
+setting variables before the build process is started. See the section
+about `build`.
+
 ### Upgrading
 
 You can upgrade your installation to the cutting-edge version at any time
@@ -172,6 +178,21 @@ The build will install PL/Perl and/or PL/Python depending on the current environ
 if Perl and/or Python interpreters are available, the `configure` part of the build
 process will reflect their presence and will build interpreters into the
 PostgreSQL instance.
+It is possible tro drive the PL/Perl and PL/Python `configure` process settings
+the special variables `PGENV_PERL` and `PGENV_PYTHON` to the location of the
+desired interpreter. In particular, the behavior for both variables is as follows:
+- if the variable is not set or set to an empty string, the system will try to
+  figure out if an interpreter exists within the user's `PATH` and will use such
+  interpreter to build the PL-language;
+- if the variable is set to an executable interpreter, the language will be built
+  using such interpreter
+- if the variable is set to a non-executable value, the language will not be built.
+
+As an example, the following will build an instance without PL/Perl and
+with a specific version of Python:
+
+    $ PGENV_PERL=no PGENV_PYTHON=/usr/python/2.7/bin/python pgenv build 10.5
+
 
 ### pgenv remove
 

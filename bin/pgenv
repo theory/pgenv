@@ -138,11 +138,23 @@ pgenv_check_dependencies(){
     PGENV_SED=$(which sed)
     pgenv_detail_command "sed" $PGENV_SED
 
-    PGENV_PERL=$(which perl)
+    # if PGENV_PERL has been set from outside
+    # of the script and points to an executable
+    # use that, otherwise try to figure it out
+    if [ -z "$PGENV_PERL" ]; then
+        PGENV_PERL=$(which perl)
+    elif [ ! -x "$PGENV_PERL" ]; then
+        PGENV_PERL=""
+    fi
     pgenv_detail_command "perl" "$PGENV_PERL" "PL/Perl"
     pgenv_configure_pl "perl" $PGENV_PERL
 
-    PGENV_PYTHON=$(which python)
+    # same reason for python
+    if [ -z "$PGENV_PYTHON" ]; then
+        PGENV_PYTHON=$(which python)
+    elif [ ! -x "$PGENV_PYTHON" ]; then
+        PGENV_PYTHON=""
+    fi
     pgenv_detail_command "python" "$PGENV_PYTHON" "PL/Python"
     pgenv_configure_pl "python" $PGENV_PYTHON
 
