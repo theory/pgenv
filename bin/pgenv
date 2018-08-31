@@ -177,20 +177,6 @@ pgenv_installed_version_or_exit(){
 
 }
 
-# Checks if the user PGENV_PG_USER
-# does exists on this system or aborts the script.
-# This is used to check that the user
-# does exist before a build is started.
-pgenv_existing_user_or_exit(){
-    trap "" ERR
-    id -u $PGENV_PG_USER > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "You need to create the <$PGENV_PG_USER> user on this system to continue"
-        exit 1
-    fi
-    trap 'exit' ERR
-}
-
 # Checks if there is a currently selected
 # instance and, in case it is not, claims
 # to the user and aborts the script.
@@ -316,9 +302,6 @@ case $1 in
         # sanity checks before building
         pgenv_input_version_or_exit $v
         pgenv_check_dependencies
-        pgenv_existing_user_or_exit
-
-
 
         # Skip it if we already have it.
         if [ -e "pgsql-$v" ]; then
