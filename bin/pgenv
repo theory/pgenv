@@ -14,7 +14,6 @@ fi
 cd $PGENV_ROOT
 # Always use an absolute path or configure could complain.
 PGENV_ROOT=$(pwd)
-PGENV_CHECK_FILE=$(mktemp)
 
 PGSQL=$PGENV_ROOT/pgsql
 PG_DATA=$PGSQL/data
