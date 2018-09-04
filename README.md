@@ -76,16 +76,13 @@ Installation
 
 ### Configuration
 
-By default, all versions of PostgreSQL will be built in the root of the
-project directory (generally, in `~/.pgenv`.). If you'd like them to live
-elsewhere, set the `$PGENV_ROOT` environment variable to the appropriate
-value.
+By default, all versions of PostgreSQL will be built in the root of the project
+directory (generally, in `~/.pgenv`.). If you'd like them to live elsewhere, set
+the `$PGENV_ROOT` environment variable to the appropriate directory.
 
-Each instance will be compiled with support for PL/Perl and/or PL/Python
-depending on the existance of interpreters. It is possible to compile
-an instance with a particular interpreter or without PL/Perl or PL/Python
-setting variables before the build process is started. See the section
-about `build`.
+Each version will be compiled with support for PL/Perl and PL/Python when
+`pgenv` can find their interpreters or using the value of the `$PERL` and
+`$PYTHON` variables. See [`pgenv build`](#pgenv-build) below for details.
 
 ### Upgrading
 
@@ -100,13 +97,14 @@ $ git pull
 ### Dependencies
 ------------
 
-*   bash (env from GNU coreutils to launch the script)
+*   env - Sets environment for execution
+*   bash - Shell environment for execution
 *   curl - Used to download files
 *   sed, grep, cat, tar - General Unix command line utilities
 *   patch - For patching versions that need patching
 *   make -  Builds PostgreSQL
-*   Perl 5 - To build PL/Perl (not mandatory)
-*   Python - To build PL/Python (not mandatory)
+*   Perl 5 - To build PL/Perl (optional)
+*   Python - To build PL/Python (optional)
 
 Command Reference
 -----------------
@@ -117,11 +115,11 @@ first argument. The subcommands are:
 ### pgenv use
 
 Sets the version of PostgreSQL to be used in all shells by symlinking its
-directory to `~/.pgenv/pgsql` and starting it. Initializes the data directory if
-none exists. If another version is currently active, it will be stopped before
-switching. If the specified version is already in use, the `use` command won't
-stop it, but will initialize its data directory and start it if it is not
-already running.
+directory to `~/$PGENV_ROOT/pgsql` and starting it. Initializes the data
+directory if none exists. If another version is currently active, it will be
+stopped before switching. If the specified version is already in use, the `use`
+command won't stop it, but will initialize its data directory and start it if it
+is not already running.
 
     $ pgenv use 10.4
     waiting for server to shut down.... done
@@ -132,18 +130,20 @@ already running.
 
 ### pgenv versions
 
-Lists all PostgreSQL versions known to `pgenv`, and shows an asterisk next to the
-currently active version (if any). The first column reports the version number to use
-in other `pgenv` commands, followed by the directory where the version is installed:
+Lists all PostgreSQL versions known to `pgenv`, and shows an asterisk next to
+the currently active version (if any). The first column reports versions
+available for use by `pgenv` and the second lists the subdirectory of
+`$PGENV_ROOT` in which the each version is installed:
 
     $ pgenv versions
-            10.5            pgsql-10.5
-            10.3            pgsql-10.3
-     *      9.6.10          pgsql-9.6.10
+          10.4      pgsql-10.4
+          11beta3   pgsql-11beta3
+          9.5.13    pgsql-9.5.13
+      *   9.6.9     pgsql-9.6.9
 
-In the above output, version `9.6.10` is currently in use (note the '*'),
-and available versions are `9.6.10`, `10.3` and `10.5` which are installed
-in a `pgsql-` local directory named after the version number.
+In this example, versions `9.5.13`, `9.6.9`, `10.4`, and `11beta3` are available
+for use, and the `*` indicates that  `9.6.10` is the currently active version.
+Each version is installed in a `pgsql-` subdirectory of `$PGENV_ROOT`.
 
 ### pgenv version
 
@@ -171,28 +171,26 @@ before building. If the version is already built, it will not be rebuilt; use
 `clear` to remove an existing version before building it again.
 
     $ pgenv build 10.3
-    # Curl, configure, and make output elided
+    # [Curl, configure, and make output elided]
     PostgreSQL 10.3 built
 
-The build will install PL/Perl and/or PL/Python depending on the current environment:
-if Perl and/or Python interpreters are available, the `configure` part of the build
-process will reflect their presence and will build interpreters into the
-PostgreSQL instance.
-It is possible tro drive the PL/Perl and PL/Python `configure` process settings
-the special variables `PGENV_PERL` and `PGENV_PYTHON` to the location of the
-desired interpreter. In particular, the behavior for both variables is as follows:
-- if the variable is not set or set to an empty string, the system will try to
-  figure out if an interpreter exists within the user's `PATH` and will use such
-  interpreter to build the PL-language;
-- if the variable is set to an executable interpreter, the language will be built
-  using such interpreter
-- if the variable is set to a non-executable value, the language will not be built.
+The build will include PL/Perl and PL/Python if `pgenv` can find their
+interpreters in the current environment. To manually configure PL/Perl and
+PL/Python support, set the `$PGENV_PERL` or `$PGENV_PYTHON` to the location of
+the desired interpreter. The behavior for both variables is as follows:
 
-As an example, the following will build an instance without PL/Perl and
+-   If the variable is empty or not set, `pgenv` will look for an interpreter in
+    the current path.
+-   If the variable points to an executable representing the language
+    interpreter, the procedural language will be configured using that
+    executable.
+-   If the variable is set to a non-executable value, such as `no`, the
+    procedural language will not be built.
+
+For example, the following will build an instance without PL/Perl and
 with a specific version of Python:
 
     $ PGENV_PERL=no PGENV_PYTHON=/usr/python/2.7/bin/python pgenv build 10.5
-
 
 ### pgenv remove
 
@@ -249,14 +247,13 @@ produces copious output.
         ------------------------------------------------
         11beta1  11beta2  11beta3
 
-The versions are organized and sorted by major release number. 
-Any listed version may be passed to `pgenv` commands that require a version.
+The versions are organized and sorted by major release number. Any listed
+version may be passed to the `build` command.
 
-To limit the list to specific major releases, pass those releases to
-`available` (in no particular order). 
-For example, to list only the `9.6` and `10` available versions:
+To limit the list to versions for specific major releases, pass them to
+`available`. For example, to list only the `9.6` and `10` available versions:
 
-    $ pgenv available 9.6 10
+    $ pgenv available 10 9.6
                 Available PostgreSQL Versions
     ========================================================
 
