@@ -459,8 +459,8 @@ EOF
 
     remove)
         v=$2
-        pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
-        pgenv_installed_version_or_exit $v
+        # pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
+        # pgenv_installed_version_or_exit $v
 
         if [ "`readlink pgsql`" = "pgsql-$v" ]; then
             echo "PostgreSQL $v currently in use"
