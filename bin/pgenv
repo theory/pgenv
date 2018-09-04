@@ -39,7 +39,7 @@ pgversions() {
     fi
     local installed=0
     local flags=""
-    for dir in $( ls -d pgsql-* ); do
+    for dir in $( ls -d pgsql-* 2>/dev/null); do
         if [ "$dir" = "$curr" ]; then
             flags=" *"
         else
@@ -188,13 +188,38 @@ pgenv_check_dependencies(){
 pgenv_input_version_or_exit() {
     local version=$1
     local verbose=$2
+    local hint=$3
 
     if [ -z "$version" ]; then
-        echo "Which version of PostgreSQL do you want?"
-        if [ ! -z "$verbose" ]; then
-            pgversions
+
+        if [ ! -z "$hint" ]; then
+            # count how many versions are there
+            local installed_versions=0
+            for installed in $( ls -d pgsql-* 2>/dev/null )
+            do
+                installed_versions=$(( installed_versions + 1 ))
+            done
+        else
+            # make it a fake value to
+            # use the following if statement
+            installed_versions=-1
         fi
-        exit 1
+
+        # if no version is installed, suggest the user
+        # to build at least one
+        if [ $installed_versions -eq 0 ]; then
+            echo "No PostgreSQL version is installed!"
+            echo "Are you looking for command \`$hint\` instead?"
+            exit 1
+        else
+            # at least one version is available,
+            # ask more details to the user
+            echo "Which version of PostgreSQL do you want?"
+            if [ ! -z "$verbose" ]; then
+                pgversions
+            fi
+            exit 1
+        fi
     fi
 
     if [[ $version =~ ^[1-9][0-9]?\.[0-9]+(\.[0-9]+)?$ ]]; then
@@ -227,32 +252,31 @@ pgenv_installed_version_or_exit(){
 # Checks if there is a currently selected
 # instance and, in case it is not, claims
 # to the user and aborts the script.
-# In the case an instance is selected,
-# the function prints the version number,
-# so it should be called as
-#
-# v=$( pgenv_current_postgresql_or_exit )
-#
-# to capture the version number and not
-# print it to the stdout.
 pgenv_current_postgresql_or_exit(){
     if [ ! -e "pgsql" ]; then
         echo "No version of PostgreSQL currently in use"
         echo "Run \`pgenv use \$version\` to link and start a specific version"
         echo "Run \`pgenv versions\` to list all installed versions"
         exit 1
-    else
-        local v=$( readlink pgsql | sed 's/^pgsql-//' )
-        # echo the value, needs to be captured
-        echo $v
     fi
 }
+
+# Prints out the current version number.
+# Must be captured into a variable
+# with a call like
+# v=&( pgenv_current_version_number )
+pgenv_current_version_number(){
+    local v=$( readlink pgsql | sed 's/^pgsql-//' )
+    # echo the value, needs to be captured
+    echo $v
+}
+
 
 case $1 in
     use)
         v=$2
 
-        pgenv_input_version_or_exit "$v" 'show-installed-versions'
+        pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
         pgenv_installed_version_or_exit $v
 
 
@@ -287,7 +311,9 @@ case $1 in
 
     start)
         # check a version is currently in use
-        v=$( pgenv_current_postgresql_or_exit )
+        pgenv_current_postgresql_or_exit
+        v=$( pgenv_current_version_number )
+        pgenv_debug "Current version $v"
 
         # Just stop if already running.
         if $PG_CTL status &> /dev/null; then
@@ -315,7 +341,9 @@ case $1 in
 
     stop)
         # check a version is currently in use
-        v=$( pgenv_current_postgresql_or_exit )
+        pgenv_current_postgresql_or_exit
+        v=$( pgenv_current_version_number )
+        pgenv_debug "Current version $v"
 
         # Shut down the server unless it's not running.
         if $PG_CTL status &> /dev/null; then
@@ -329,7 +357,9 @@ case $1 in
 
     restart)
         # check a version is currently in use
-        v=$( pgenv_current_postgresql_or_exit )
+        pgenv_current_postgresql_or_exit
+        v=$( pgenv_current_version_number )
+        pgenv_debug "Current version $v"
 
         # Shut down the server unless it's not running.
         if $PG_CTL status &> /dev/null; then
@@ -347,7 +377,7 @@ case $1 in
         v=$2
 
         # sanity checks before building
-        pgenv_input_version_or_exit $v
+        pgenv_input_version_or_exit "$v"
         pgenv_check_dependencies
 
         # Skip it if we already have it.
@@ -440,7 +470,7 @@ EOF
     remove)
         v=$2
 
-        pgenv_input_version_or_exit "$v" 'show-installed-versions'
+        pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
         pgenv_installed_version_or_exit $v
 
 
