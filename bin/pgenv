@@ -41,13 +41,13 @@ pgversions() {
     local flags=""
     for dir in $( ls -d pgsql-* 2>/dev/null); do
         if [ "$dir" = "$curr" ]; then
-            flags=" *"
+            flags="  *"
         else
-            flags="  "
+            flags="   "
         fi
 
         local version=$( echo $dir | sed 's/^pgsql-//' )
-        printf "%2s   %6s    %s\n" "$flags" "$version" "$dir"
+        printf "%s   %-6s    %s\n" "$flags" "$version" "$dir"
         installed=$(( installed + 1 ))
     done
 
@@ -249,9 +249,8 @@ pgenv_installed_version_or_exit(){
 
 }
 
-# Checks if there is a currently selected
-# instance and, in case it is not, claims
-# to the user and aborts the script.
+# Checks if there is a currently selected instance and, in case it is not,
+# claims to the user and aborts the script.
 pgenv_current_postgresql_or_exit(){
     if [ ! -e "pgsql" ]; then
         echo "No version of PostgreSQL currently in use"
@@ -490,6 +489,7 @@ EOF
 
     version)
         pgenv_current_postgresql_or_exit
+        echo $(pgenv_current_version_number)
         exit
         ;;
 
