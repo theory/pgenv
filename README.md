@@ -6,10 +6,10 @@ Synopsis
 
     pgenv help
 
-    # Check dependencies.
+    # Check dependencies
     pgenv check
 
-    # Show PostgreSQL versions that can be built.
+    # Show PostgreSQL versions that can be built
     pgenv available
 
     # Build PostgreSQL server
