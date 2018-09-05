@@ -6,6 +6,12 @@ Synopsis
 
     pgenv help
 
+    # Check dependencies.
+    pgenv check
+
+    # Show PostgreSQL versions that can be built.
+    pgenv available
+
     # Build PostgreSQL server
     pgenv build 10.4
     
@@ -154,8 +160,8 @@ Displays the currently active PostgreSQL version.
 
 ### pgenv clear
 
-Clears the currently active version of PostgreSQL. If the current version is running,
-`clear` will stop it before clearing it.
+Clears the currently active version of PostgreSQL. If the current version is
+running, `clear` will stop it before clearing it.
 
     $ pgenv clear
     waiting for server to shut down.... done
