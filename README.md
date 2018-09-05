@@ -81,8 +81,8 @@ directory (generally, in `~/.pgenv`.). If you'd like them to live elsewhere, set
 the `$PGENV_ROOT` environment variable to the appropriate directory.
 
 Each version will be compiled with support for PL/Perl and PL/Python when
-`pgenv` can find their interpreters or using the value of the `$PERL` and
-`$PYTHON` variables. See [`pgenv build`](#pgenv-build) below for details.
+`pgenv` can find their interpreters or using the value of the `$PGENV_PERL` and
+`$PGENV_PYTHON` variables. See [`pgenv build`](#pgenv-build) below for details.
 
 ### Upgrading
 
