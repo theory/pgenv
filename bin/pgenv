@@ -220,16 +220,11 @@ pgenv_input_version_or_exit() {
     fi
 
     if [[ $version =~ ^[1-9][0-9]?\.[0-9]+(\.[0-9]+)?$ ]]; then
-        return
+        return # versions 9.5.4 or 10.1 and alike
     elif [[ $version =~ ^[1-9][1-9]beta[1-9]?$ ]]; then
-        return
+        return # versions 11beta1 and alike
     else
-        if [ ! -z "$verbose" ]; then
-            echo "Version $version not installed; installed versions:"
-            pgversions
-        else
-            echo "Value \"$version\" does not appear to be a PostgreSQL valid version number"
-        fi
+        echo "Value \"$version\" does not appear to be a PostgreSQL valid version number"
         exit 1
     fi
 }
@@ -459,8 +454,7 @@ EOF
 
     remove)
         v=$2
-        # pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
-        # pgenv_installed_version_or_exit $v
+        pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
 
         if [ "`readlink pgsql`" = "pgsql-$v" ]; then
             echo "PostgreSQL $v currently in use"
