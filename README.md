@@ -222,14 +222,20 @@ Stops the currently active version of PostgreSQL.
     PostgreSQL 10.5 stopped
     
 It is possible to specify a stop mode as one of the `pg_ctl` recognized modes:
-- `smart` (the default)
+- `smart`
 - `fast`
 - `immediate`
 
+If none is specified, the server will be stopped with the default
+stop mode for such instance (which depends on the version).
+See `pg_ctl(1)` documentation for more information about stop modes.
+
+``` sh
     $ pgenv stop immediate
     PostgreSQL 10.5 stopped
+```
 
-See `pg_ctl(1)` documentation for more information about stop modes.
+
 It is also possible to define the special `PGENV_STOP_MODE` variable
 to a valid stop mode flag for `pg_ctl(1)` in order to configure
 the mode:
