@@ -325,37 +325,72 @@ case $1 in
         exit
         ;;
 
-    stop)
+    stop|restart)
         # check a version is currently in use
         pgenv_current_postgresql_or_exit
         v=$( pgenv_current_version_number )
         pgenv_debug "Current version $v"
 
-        # Shut down the server unless it's not running.
-        if $PG_CTL status &> /dev/null; then
-            $PG_CTL stop
-            echo "PostgreSQL $v stopped"
-        else
-            echo "PostgreSQL $v not running"
-        fi
-        exit
-        ;;
+        # either stop or restart
+        command="$1"
 
-    restart)
-        # check a version is currently in use
-        pgenv_current_postgresql_or_exit
-        v=$( pgenv_current_version_number )
-        pgenv_debug "Current version $v"
-
-        # Shut down the server unless it's not running.
-        if $PG_CTL status &> /dev/null; then
-            $PG_CTL restart -l $PG_LOG
-            echo "PostgreSQL $v restarted"
+        # if the user specified a stop mode
+        # use it, otherwise the PGENV_STOP_MODE
+        # variable will be used.
+        if [ ! -z "$2" ]; then
+            stop_mode="$2"
         else
-            $PG_CTL start -l $PG_LOG
-            echo "PostgreSQL $v started"
+            stop_mode=$PGENV_STOP_MODE
         fi
-        echo "Logging to $PG_LOG"
+
+        case $stop_mode in
+            f|fast)
+                PGENV_STOP_MODE="--mode=fast"
+                ;;
+            i|immediate)
+                PGENV_STOP_MODE="--mode=immediate"
+                ;;
+            s|smart)
+                PGENV_STOP_MODE="--mode=smart"
+                ;;
+            *)
+                # do not allow the user to screw up pg_ctl flags!
+                PGENV_STOP_MODE=""
+                ;;
+        esac
+
+        pgenv_debug "Stop mode set to [$PGENV_STOP_MODE]"
+
+
+
+
+        # Test if the server is running
+        if $PG_CTL status &> /dev/null; then
+            # ok, server running, apply the command
+            case $command in
+                stop)
+                    $PG_CTL stop $PGENV_STOP_MODE
+                    echo "PostgreSQL $v stopped"
+                    ;;
+                restart)
+                    $PG_CTL restart -l "$PG_LOG" $PGENV_STOP_MODE
+                    echo "PostgreSQL $v restarted"
+                    echo "Logging to $PG_LOG"
+                    ;;
+            esac
+        else
+            # server not running
+            case $command in
+                stop)
+                    echo "PostgreSQL $v not running"
+                    ;;
+                restart)
+                    $PG_CTL start -l $PG_LOG
+                    echo "PostgreSQL $v started"
+                    echo "Logging to $PG_LOG"
+                    ;;
+            esac
+        fi
         exit
         ;;
 
