@@ -293,6 +293,69 @@ pgenv_load_configuration(){
     pgenv_debug "No configuration loaded"
 }
 
+
+# Wrapper function to start the current instance.
+# If the instance is already running, nothing happens.
+# If the instance does not have already a PG_DATA
+# directory, it will be initdb-ed.
+pgenv_start_instance(){
+    trap "" ERR
+
+    # if the instance is already running, do nothing
+    if $PG_CTL status &> /dev/null; then
+        echo "PostgreSQL $v is already running"
+        return
+    fi
+
+    # Init the database if needed.
+    if [ ! -d $PG_DATA ]; then
+        $INITDB
+    fi
+
+
+    $PG_CTL start -w -l $PG_LOG
+    if [ $? -eq 0 ]; then
+        echo "PostgreSQL $v started"
+        echo "Logging to $PG_LOG"
+    else
+        echo "PostgreSQL $v NOT started, examine logs in $PG_LOG"
+    fi
+    trap 'exit' ERR
+}
+
+# Wrapper function to stop or restart the current instance.
+# Accepts an optional argument 'command' that specifies
+# if 'stop' or 'restart' action need to be performed.
+pgenv_stop_or_restart_instance(){
+    local command=$1
+    if $PG_CTL status &> /dev/null; then
+        # ok, server running, apply the command
+        case $command in
+            stop)
+                $PG_CTL stop $PGENV_STOP_MODE
+                echo "PostgreSQL $v stopped"
+                ;;
+            restart)
+                $PG_CTL restart -l "$PG_LOG" $PGENV_STOP_MODE
+                echo "PostgreSQL $v restarted"
+                echo "Logging to $PG_LOG"
+                ;;
+        esac
+    else
+        # server not running
+        case $command in
+            stop)
+                echo "PostgreSQL $v not running"
+                ;;
+            restart)
+                $PG_CTL start -l $PG_LOG
+                echo "PostgreSQL $v started"
+                echo "Logging to $PG_LOG"
+                ;;
+        esac
+    fi
+}
+
 case $1 in
     use)
         v=$2
@@ -336,27 +399,8 @@ case $1 in
         pgenv_debug "Current version $v"
         pgenv_load_configuration $v
 
-        # Just stop if already running.
-        if $PG_CTL status &> /dev/null; then
-            echo "PostgreSQL $v is already running"
-            exit
-        fi
-
-        # Init the database if needed.
-        if [ ! -d $PG_DATA ]; then
-            $INITDB
-        fi
-
         # Start er up!
-        trap "" ERR
-        $PG_CTL start -w -l $PG_LOG
-        if [ $? -eq 0 ]; then
-            echo "PostgreSQL $v started"
-            echo "Logging to $PG_LOG"
-        else
-            echo "PostgreSQL $v NOT started, examine logs in $PG_LOG"
-        fi
-
+        pgenv_start_instance
         exit
         ;;
 
@@ -398,35 +442,8 @@ case $1 in
         pgenv_debug "Stop mode set to [$PGENV_STOP_MODE]"
 
 
-
-
-        # Test if the server is running
-        if $PG_CTL status &> /dev/null; then
-            # ok, server running, apply the command
-            case $command in
-                stop)
-                    $PG_CTL stop $PGENV_STOP_MODE
-                    echo "PostgreSQL $v stopped"
-                    ;;
-                restart)
-                    $PG_CTL restart -l "$PG_LOG" $PGENV_STOP_MODE
-                    echo "PostgreSQL $v restarted"
-                    echo "Logging to $PG_LOG"
-                    ;;
-            esac
-        else
-            # server not running
-            case $command in
-                stop)
-                    echo "PostgreSQL $v not running"
-                    ;;
-                restart)
-                    $PG_CTL start -l $PG_LOG
-                    echo "PostgreSQL $v started"
-                    echo "Logging to $PG_LOG"
-                    ;;
-            esac
-        fi
+        # stop the current instance (or restart it)
+        pgenv_stop_or_restart_instance $command
         exit
         ;;
 
@@ -514,10 +531,8 @@ EOF
         v=$( pgenv_current_postgresql_or_exit )
         pgenv_load_configuration $v
 
-        if $PG_CTL status &> /dev/null; then
-            $PG_CTL stop
-            echo "PostgreSQL $v stopped"
-        fi
+        # stop the instance
+        pgenv_stop_or_restart_instance 'stop'
 
         # We know a version is in use, since pgenv_current_postgresql_or_exit
         # otherwise would have killed the script.
