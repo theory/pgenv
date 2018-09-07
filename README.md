@@ -336,8 +336,91 @@ the following:
         help       Show this usage statement and command summary
         available  Show which versions can be downloaded (most recent versions last)
         check      Check all program dependencies
+        config     View, edit, delete the program configuration
 
     For full documentation, see: https://github.com/theory/pgenv#readme
+
+### pgenv config
+
+The `config` command allows the user to see and/or manipulate the configuration.
+`pgenv` handles configuration on a per-version basis: each PostgreSQL instance can have
+its own configuration set, which is contained in a Bash file that contains variables
+definition. It is possible to store also a *default* configuration, that is applied
+if no specific per-version configuration is found.
+If neither the per-version nor the default configuration is found, the program tries
+to guess its own configuration whenever possible, applying defaults in many cases.
+
+The `config` command accepts the following subcommands:
+- `show` prints the current configuration, or the specific version one;
+- `write` stores the current configuration or the specific version one;
+- `edit` fires your favourite editor (using `$EDITOR`);
+- `delete` removes the specific configuration.
+
+Every sub-command accepts a PostgreSQL version number (e.g., `10.5`), and special
+keywords can be used:
+- `current` or `version` to let the program automatically "compute" the version number
+  for the PostgreSQL currently in use;
+- `default` operates on the default configuration.
+
+If no version is explicitly passed to any of the `config` subcommands, the program will
+work against the currently in use PostgreSQL instance.
+
+In order to start with a default configuration, use the `write` subcommand:
+
+    $ pgenv config write default
+    pgenv configuration file [~/.pgenv/.pgenv.conf] written
+    
+so that a `show` will give you back the defaults:
+ 
+   $ pgenv config show
+   ###############################
+   #
+   #
+   # PostgreSQL 
+   # pgenv configuration for PostgreSQL 
+   # File: ~/.pgenv/.pgenv.conf 
+   # Dumped on:  lun 10 set 2018, 10.56.01, CEST
+   #
+   # 8<-8<-8<-8<-8<-8<-8<-8<-8<-8<-8<-8<-
+   # Enables debug output
+   # PGENV_DEBUG=
+
+   # Cluster stop mode for 'stop' and 'restart'
+   # PGENV_STOP_MODE=
+   
+   # <output omitted>
+
+   # ->8->8->8->8->8->8->8->8->8->8->8->8
+   #
+   # End of configuration
+   ###############################
+
+You can edit the file and adjust parameters to your needs.
+
+In order to create a configuration file from scratch for a specific version, specify it
+to the `write` subcommand:
+
+   $ pgenv config write 10.5
+   pgenv configuration file [~/.pgenv/.pgenv.10.5.conf] written
+
+and you can use the `edit` subcommand to fire up your favourite editor:
+
+   $ pgenv config edit 10.5
+   <output omitted>
+
+To delete a configuration, use the `delete` subcommand:
+
+   $ pgenv config delete 10.5
+   Configuration file [~/.pgenv/.pgenv.10.5.conf] deleted
+
+It is worth noting that you cannot delete the default configuration unless all instances
+have been removed (e.g., by `pgenv remove`). This is made to prevent you to accidentally
+loose your configuration:
+
+   $ pgenv config delete
+   Cannot delete default configuration while instances installed
+   You need to manually remove [~/.pgenv/.pgenv.conf]
+
 
 # Bug Reporting
 

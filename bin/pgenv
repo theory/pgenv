@@ -17,13 +17,19 @@ PGENV_ROOT=$(pwd)
 
 PGSQL=$PGENV_ROOT/pgsql
 PG_DATA=$PGSQL/data
-PG_LOG=$PG_DATA/server.log
 PGENV_DOWNLOAD_ROOT='https://ftp.postgresql.org/pub/source/'
 
 # Now -w because 9.0 and earlier always time out even when successful.
-PG_CTL="$PGSQL/bin/pg_ctl -D $PG_DATA"
+PG_CTL="$PGSQL/bin/pg_ctl "
+INITDB="$PGSQL/bin/initdb "
+
+#############################################
+# Configuration variable and default settings
+
+PGENV_LOG=$PG_DATA/server.log
 PGENV_PG_USER="postgres"
-INITDB="$PGSQL/bin/initdb -U $PGENV_PG_USER --locale en_US.UTF-8 --encoding UNICODE -D $PG_DATA"
+PGENV_FLAGS_INITDB="-U $PGENV_PG_USER --locale en_US.UTF-8 --encoding UNICODE"
+#############################################
 
 # Prints a debug message if PGENV_DEBUG
 # variable enabled
@@ -73,6 +79,7 @@ The pgenv commands are:
     help       Show this usage statement and command summary
     available  Show which versions can be downloaded (most recent versions last)
     check      Check all program dependencies
+    config     View, edit, delete the program configuration
 
 For full documentation, see: https://github.com/theory/pgenv#readme
 EOF
@@ -260,6 +267,49 @@ pgenv_current_version_number(){
     echo $v
 }
 
+# Provides the configuration file name
+# for the specified version.
+#
+# If no version is specified, the default configuration
+# file is provided.
+pgenv_configuration_file_name(){
+    local v=$1
+
+    PGENV_DEFAULT_CONFIG_FILE="${PGENV_ROOT}/.pgenv.conf"
+    if [ ! -z "$v" ]; then
+        echo "${PGENV_ROOT}/.pgenv.$v.conf"
+    else
+        echo "${PGENV_DEFAULT_CONFIG_FILE}"
+    fi
+}
+
+# Dumps the specified configuration file (if exists) or aborts.
+#
+# The function accept two option arguments:
+# - the version number (if not specified the default configuration will be considered)
+# - a title to use for printing the configruation file
+#
+# If the file cannot be found the function exits.
+pgenv_configuration_dump_or_exit(){
+    local v=$1
+    local title=$2
+
+    CONF=$( pgenv_configuration_file_name $v )
+    if [ -r $CONF ]; then
+        echo -e "###############################\n#"
+        echo -e "#\n# $title\n# pgenv configuration for PostgreSQL $v"
+        echo -e "# File: $CONF "
+        echo -n "# Dumped on: " $( date )
+        echo -e "\n#\n# 8<-8<-8<-8<-8<-8<-8<-8<-8<-8<-8<-8<-"
+        cat $CONF
+        echo -e "\n# ->8->8->8->8->8->8->8->8->8->8->8->8"
+        echo -e "#\n# End of configuration"
+        echo -e "###############################\n"
+    else
+        echo "No configuration found for version <$title> [$CONF]" >&2
+        exit 1
+    fi
+}
 
 # Function to load the configuration from a file.
 # A configuration file is a shell file that contains variables that
@@ -269,15 +319,11 @@ pgenv_current_version_number(){
 # to search for. A configuration file with such version number
 # will be used as configuration, and in the case it is missing, the default
 # configuration file will be used.
-pgenv_load_configuration(){
+pgenv_configuration_load(){
     local v=$1
 
-    PGENV_DEFAULT_CONFIG_FILE="${PGENV_ROOT}/.pgenv.conf"
-    if [ ! -z "$v" ]; then
-        PGENV_CONFIG_FILE="${PGENV_ROOT}/.pgenv.$v.conf"
-    else
-        PGENV_CONFIG_FILE=${PGENV_DEFAULT_CONFIG_FILE}
-    fi
+    PGENV_DEFAULT_CONFIG_FILE=$( pgenv_configuration_file_name )
+    PGENV_CONFIG_FILE=$( pgenv_configuration_file_name $v )
 
     for conf in $( echo "$PGENV_CONFIG_FILE" "$PGENV_DEFAULT_CONFIG_FILE" )
     do
@@ -291,6 +337,118 @@ pgenv_load_configuration(){
     done
 
     pgenv_debug "No configuration loaded"
+}
+
+# Utility function to remove the configuration file.
+# It does remove the default file only if there are no more installed instances
+# on this system.
+pgenv_configuration_delete(){
+    local v=$1
+    PGENV_DEFAULT_CONFIG_FILE=$( pgenv_configuration_file_name )
+    PGENV_CONFIG_FILE=$( pgenv_configuration_file_name $v )
+
+    # if the file is not here, nothing to do!
+    if [ ! -f "$PGENV_CONFIG_FILE" ]; then
+        return
+    fi
+
+    # if the file is the default one, delete only if there are
+    # no installed instances
+    if [ "$PGENV_CONFIG_FILE" = "$PGENV_DEFAULT_CONFIG_FILE" ]; then
+        local installed_versions=0
+        for installed in $( ls -d pgsql-* 2>/dev/null )
+        do
+            installed_versions=$(( installed_versions + 1 ))
+        done
+
+        if [ $installed_versions -gt 0 ]; then
+            pgenv_debug "Refusing to delete default configuration unless all instances are removed"
+            echo "Cannot delete default configuration while instances installed"
+            echo "You need to manually remove [$PGENV_CONFIG_FILE]"
+            return
+        fi
+    fi
+
+    # remove the file
+    pgenv_debug "Deleting configuration file [$PGENV_CONFIG_FILE]"
+    rm -f "$PGENV_CONFIG_FILE"
+    echo "Configuration file [$PGENV_CONFIG_FILE] deleted"
+}
+
+
+# Utility function to write a single variable in the configuration file.
+#
+# Accepts:
+# - the configuration file name to which write to
+# - the name of the variable
+# - the value of the variable
+# - an optional comment.
+#
+#
+# Invoking it as
+#   pgenv_configuration_write_variable 'pgenv.conf' 'foo' 'bar' 'A foo option'
+#
+# will result in the file in the following:
+#
+#   # A foo option
+#   foo=bar
+#
+# If the variable value is not set, the variable name is placed with a comment sign.
+pgenv_configuration_write_variable(){
+    local file=$1
+    local name=$2
+    local value=$3
+    local comment=$4
+
+    if [ ! -z "comment" ]; then
+        echo "# $comment" >> "$file"
+    fi
+
+    # if no value supplied, put a comment
+    if [ -z "$value" ]; then
+        echo -n "# " >> "$file"
+    fi
+    echo "${name}=${value}" >> "$file"
+    echo >> "$file"
+}
+
+# Writes the whole current configuration to the current version file
+# or the version file specified. It does a backup copy in the case
+# the file already exists.
+pgenv_configuration_write() {
+    local v=$1
+    CONF=$( pgenv_configuration_file_name $v )
+
+    # sanity check
+    if [ -z "$CONF" ]; then
+        echo "Cannot determine which configuration file to use!"
+        exit 1
+    fi
+
+    # make a backup copy
+    if [ -f "$CONF" ]; then
+        CONF_BACKUP="${CONF}.backup"
+        pgenv_debug "Making backup copy of [$CONF] into [$CONF_BACKUP]"
+        mv "$CONF" "$CONF_BACKUP"
+    fi
+
+    # ok, write the configuration
+    echo "# pgenv configuration created on $(date)" > "$CONF"
+    echo "" >> "$CONF"
+    pgenv_configuration_write_variable "$CONF" "PGENV_DEBUG" "" 'Enables debug output'
+    pgenv_configuration_write_variable "$CONF" "PGENV_STOP_MODE" "$PGENV_STOP_MODE" "Cluster stop mode for 'stop' and 'restart'"
+    pgenv_configuration_write_variable "$CONF" "PGENV_LOG" "$PGENV_LOG" "Path to the cluster log file"
+    pgenv_configuration_write_variable "$CONF" "PGENV_PG_USER" "$PGENV_PG_USER" "Cluster administrator user"
+    pgenv_configuration_write_variable "$CONF" "PGENV_FLAGS_INITDB" "$PGENV_FLAGS_INITDB" "Initdb flags"
+    pgenv_configuration_write_variable "$CONF" "PGENV_PLPERL" "$PGENV_PLPERL" 'Perl 5 executable to build PL/Perl'
+    pgenv_configuration_write_variable "$CONF" "PGENV_PLPYTHON" "$PGENV_PLpython" 'Python executable to build PL/Perl'
+    pgenv_configuration_write_variable "$CONF" "PGENV_MAKE" "$PGENV_MAKE" 'Make command to use for build'
+    pgenv_configuration_write_variable "$CONF" "PGENV_CURL" "$PGENV_CURL" 'Curl command to download source code'
+    pgenv_configuration_write_variable "$CONF" "PGENV_PATCH" "$PGENV_PATCH" 'Patch command for specific versions'
+    pgenv_configuration_write_variable "$CONF" "PGENV_SED" "$PGENV_SED" 'Sed used to manipulate strings'
+
+
+    echo "pgenv configuration file [$CONF] written"
 }
 
 
@@ -308,19 +466,26 @@ pgenv_start_instance(){
     fi
 
     # Init the database if needed.
-    if [ ! -d $PG_DATA ]; then
-        $INITDB
-    fi
+    pgenv_initdb
 
 
-    $PG_CTL start -w -l $PG_LOG
+    $PG_CTL start -w -l $PGENV_LOG -D "$PGDATA"
     if [ $? -eq 0 ]; then
         echo "PostgreSQL $v started"
-        echo "Logging to $PG_LOG"
+        echo "Logging to $PGENV_LOG"
     else
-        echo "PostgreSQL $v NOT started, examine logs in $PG_LOG"
+        echo "PostgreSQL $v NOT started, examine logs in $PGENV_LOG"
     fi
     trap 'exit' ERR
+}
+
+# Initializes and instance if no data directory is found.
+# Requires PG_DATA to be set.
+# It is safe to call multiple times.
+pgenv_initdb(){
+    if [ ! -d $PG_DATA ]; then
+        $INITDB "$PGENV_FLAGS_INITDB" -D "$PGDATA"
+    fi
 }
 
 # Wrapper function to stop or restart the current instance.
@@ -328,17 +493,17 @@ pgenv_start_instance(){
 # if 'stop' or 'restart' action need to be performed.
 pgenv_stop_or_restart_instance(){
     local command=$1
-    if $PG_CTL status &> /dev/null; then
+    if $PG_CTL status -D "$PGDATA"  &> /dev/null; then
         # ok, server running, apply the command
         case $command in
             stop)
-                $PG_CTL stop $PGENV_STOP_MODE
+                $PG_CTL stop -D "$PGDATA" $PGENV_STOP_MODE
                 echo "PostgreSQL $v stopped"
                 ;;
             restart)
-                $PG_CTL restart -l "$PG_LOG" $PGENV_STOP_MODE
+                $PG_CTL restart -D "$PGDATA" -l "$PGENV_LOG" $PGENV_STOP_MODE
                 echo "PostgreSQL $v restarted"
-                echo "Logging to $PG_LOG"
+                echo "Logging to $PGENV_LOG"
                 ;;
         esac
     else
@@ -348,9 +513,9 @@ pgenv_stop_or_restart_instance(){
                 echo "PostgreSQL $v not running"
                 ;;
             restart)
-                $PG_CTL start -l $PG_LOG
+                $PG_CTL start -D "$PGDATA" -l $PGENV_LOG
                 echo "PostgreSQL $v started"
-                echo "Logging to $PG_LOG"
+                echo "Logging to $PGENV_LOG"
                 ;;
         esac
     fi
@@ -361,7 +526,7 @@ case $1 in
         v=$2
         pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
         pgenv_installed_version_or_exit $v
-        pgenv_load_configuration $v
+        pgenv_configuration_load $v
 
         # Check if current version?
         if [ "`readlink pgsql`" = "pgsql-$v" ]; then
@@ -369,8 +534,8 @@ case $1 in
         else
             # Shut down existing running instance.
             if [ -e "pgsql" ]; then
-                if $PG_CTL status &> /dev/null; then
-                    $PG_CTL stop
+                if $PG_CTL status -D "$PGDATA" &> /dev/null; then
+                    $PG_CTL stop -D "$PGDATA"
                 fi
             fi
 
@@ -379,15 +544,13 @@ case $1 in
         fi
 
         # Init if needed.
-        if [ ! -d $PG_DATA ]; then
-            $INITDB
-        fi
+        pgenv_initdb
 
         # Start er up!
-        if ! $PG_CTL status &> /dev/null; then
-            $PG_CTL start -l $PG_LOG
+        if ! $PG_CTL status -D "$PGDATA" &> /dev/null; then
+            $PG_CTL start -l $PGENV_LOG -D "$PGDATA"
             echo "PostgreSQL $v started"
-            echo "Logging to $PG_LOG"
+            echo "Logging to $PGENV_LOG"
         fi
         exit
         ;;
@@ -397,7 +560,7 @@ case $1 in
         pgenv_current_postgresql_or_exit
         v=$( pgenv_current_version_number )
         pgenv_debug "Current version $v"
-        pgenv_load_configuration $v
+        pgenv_configuration_load $v
 
         # Start er up!
         pgenv_start_instance
@@ -409,7 +572,7 @@ case $1 in
         pgenv_current_postgresql_or_exit
         v=$( pgenv_current_version_number )
         pgenv_debug "Current version $v"
-        pgenv_load_configuration $v
+        pgenv_configuration_load $v
 
         # either stop or restart
         command="$1"
@@ -452,7 +615,7 @@ case $1 in
         # sanity checks before building
         pgenv_input_version_or_exit "$v"
         pgenv_check_dependencies
-        pgenv_load_configuration $v
+        pgenv_configuration_load $v
 
         # Skip it if we already have it.
         if [ -e "pgsql-$v" ]; then
@@ -529,7 +692,7 @@ EOF
 
     clear)
         v=$( pgenv_current_postgresql_or_exit )
-        pgenv_load_configuration $v
+        pgenv_configuration_load $v
 
         # stop the instance
         pgenv_stop_or_restart_instance 'stop'
@@ -555,6 +718,8 @@ EOF
         rm -fr "pgsql-$v"
         rm -fr src/postgresql-$v.tar.* # could be .tar.bz2 or .tar.gz
         rm -fr src/postgresql-$v
+        pgenv_configuration_delete $v  # remove this particular configuration
+        pgenv_configuration_delete     # remove default configuration if no instances are left
         echo "PostgreSQL $v removed"
         exit
         ;;
@@ -687,6 +852,54 @@ EOF
     check)
         # check for all required dependencies
         pgenv_check_dependencies "verbose"
+        exit
+        ;;
+
+    config|configuration)
+        action=$2
+        v=$3
+
+        # which version does the user wants?
+        case "$v" in
+            version|current)
+                v=$( pgenv_current_version_number )
+                title='PostgreSQL currently in use'
+                ;;
+            default)
+                v=''
+                title='Default configuration'
+                ;;
+            *)
+                # get the currently in use if none specified
+                if [ -z "$v" ]; then
+                    v=$( pgenv_current_version_number )
+                fi
+
+                title="PostgreSQL $v"
+                ;;
+        esac
+
+
+        case $action in
+            show)
+                pgenv_configuration_dump_or_exit "$v" "$title" ;;
+            write)
+                pgenv_configuration_write "$v" ;;
+            edit)
+                configuration_file=$( pgenv_configuration_file_name $v )
+                if [ ! -z "$EDITOR" ]; then
+                    $EDITOR $configuration_file
+                else
+                    echo "No EDITOR variable set, fire up manually your editor to edit the file [$configuration_file]"
+                    exit 1
+                fi
+                ;;
+            delete)
+                pgenv_configuration_delete "$v" ;;
+            *)
+                echo "Configuration action \`$action\` not supported"
+                exit 1
+        esac
         exit
         ;;
 
