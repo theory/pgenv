@@ -260,11 +260,45 @@ pgenv_current_version_number(){
     echo $v
 }
 
+
+# Function to load the configuration from a file.
+# A configuration file is a shell file that contains variables that
+# will be 'sourced' into the current script runtime.
+#
+# The function accepts an optional argument which is the version number
+# to search for. A configuration file with such version number
+# will be used as configuration, and in the case it is missing, the default
+# configuration file will be used.
+pgenv_load_configuration(){
+    local v=$1
+
+    PGENV_DEFAULT_CONFIG_FILE="${PGENV_ROOT}/.pgenv.conf"
+    if [ ! -z "$v" ]; then
+        PGENV_CONFIG_FILE="${PGENV_ROOT}/.pgenv.$v.conf"
+    else
+        PGENV_CONFIG_FILE=${PGENV_DEFAULT_CONFIG_FILE}
+    fi
+
+    for conf in $( echo "$PGENV_CONFIG_FILE" "$PGENV_DEFAULT_CONFIG_FILE" )
+    do
+        pgenv_debug "Looking for configuration in $conf"
+
+        if [ -r "$conf" ]; then
+            pgenv_debug "Load configuration from [$conf]"
+            source "$conf"
+            break
+        fi
+    done
+
+    pgenv_debug "No configuration loaded"
+}
+
 case $1 in
     use)
         v=$2
         pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
         pgenv_installed_version_or_exit $v
+        pgenv_load_configuration $v
 
         # Check if current version?
         if [ "`readlink pgsql`" = "pgsql-$v" ]; then
@@ -300,6 +334,7 @@ case $1 in
         pgenv_current_postgresql_or_exit
         v=$( pgenv_current_version_number )
         pgenv_debug "Current version $v"
+        pgenv_load_configuration $v
 
         # Just stop if already running.
         if $PG_CTL status &> /dev/null; then
@@ -330,6 +365,7 @@ case $1 in
         pgenv_current_postgresql_or_exit
         v=$( pgenv_current_version_number )
         pgenv_debug "Current version $v"
+        pgenv_load_configuration $v
 
         # either stop or restart
         command="$1"
@@ -399,6 +435,7 @@ case $1 in
         # sanity checks before building
         pgenv_input_version_or_exit "$v"
         pgenv_check_dependencies
+        pgenv_load_configuration $v
 
         # Skip it if we already have it.
         if [ -e "pgsql-$v" ]; then
@@ -475,6 +512,8 @@ EOF
 
     clear)
         v=$( pgenv_current_postgresql_or_exit )
+        pgenv_load_configuration $v
+
         if $PG_CTL status &> /dev/null; then
             $PG_CTL stop
             echo "PostgreSQL $v stopped"
