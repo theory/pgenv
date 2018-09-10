@@ -403,7 +403,10 @@ to the `write` subcommand:
    $ pgenv config write 10.5
    pgenv configuration file [~/.pgenv/.pgenv.10.5.conf] written
 
-and you can use the `edit` subcommand to fire up your favourite editor:
+Each time a configuration file is written, a backup copy with the suffix `.backup` is created
+to retain the very last copy before the last write.
+
+You can use the `edit` subcommand to fire up your favourite editor:
 
    $ pgenv config edit 10.5
    <output omitted>
