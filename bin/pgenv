@@ -686,6 +686,10 @@ EOF
             $PGENV_MAKE install-world
         fi
 
+
+        # write the configuration
+        pgenv_configuration_write "$v"
+
         echo "PostgreSQL $v built"
         exit
         ;;
