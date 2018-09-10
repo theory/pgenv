@@ -90,6 +90,9 @@ Each version will be compiled with support for PL/Perl and PL/Python when
 `pgenv` can find their interpreters or using the value of the `$PGENV_PERL` and
 `$PGENV_PYTHON` variables. See [`pgenv build`](#pgenv-build) below for details.
 
+For a more detailed configuration, see the [`pgenv config`](#pgenv-config) command
+below.
+
 ### Upgrading
 
 You can upgrade your installation to the cutting-edge version at any time
