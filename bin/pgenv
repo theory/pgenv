@@ -493,7 +493,9 @@ pgenv_start_instance(){
 pgenv_initdb(){
     if [ ! -d $PG_DATA ]; then
         pgenv_debug "initdb running with flags [$PGENV_FLAGS_INITDB]"
-        $INITDB "$PGENV_FLAGS_INITDB" -D "$PG_DATA"
+        $INITDB -D "$PG_DATA" "$PGENV_FLAGS_INITDB"
+    else
+        pgenv_debug "Directory $PG_DATA exists, not initdb-ing!"
     fi
 }
 
