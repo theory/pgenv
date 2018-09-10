@@ -452,6 +452,8 @@ pgenv_configuration_write() {
     pgenv_configuration_write_variable "$CONF" "PGENV_PATCH" "$PGENV_PATCH" 'Patch command for specific versions'
     pgenv_configuration_write_variable "$CONF" "PGENV_SED" "$PGENV_SED" 'Sed used to manipulate strings'
     pgenv_configuration_write_variable "$CONF" "PGENV_FLAGS_PGCTL_START" "$PGENV_FLAGS_PGCTL_START" 'Start configuration flags'
+    pgenv_configuration_write_variable "$CONF" "PGENV_FLAGS_PGCTL_stop" "$PGENV_FLAGS_PGCTL_STOP" 'Stop configuration flags'
+    pgenv_configuration_write_variable "$CONF" "PGENV_FLAGS_PGCTL_RESTART" "$PGENV_FLAGS_PGCTL_RESTART" 'Restart configuration flags'
 
 
     echo "pgenv configuration written to file [$CONF]"
@@ -474,7 +476,7 @@ pgenv_start_instance(){
     # Init the database if needed.
     pgenv_initdb
 
-
+    pgenv_debug "pg_ctl starting instance with flags [$PGENV_FLAGS_PGCTL_START]"
     $PG_CTL start -D "$PG_DATA" "$PGENV_FLAGS_PGCTL_START" -l $PGENV_LOG
     if [ $? -eq 0 ]; then
         echo "PostgreSQL $v started"
@@ -490,6 +492,7 @@ pgenv_start_instance(){
 # It is safe to call multiple times.
 pgenv_initdb(){
     if [ ! -d $PG_DATA ]; then
+        pgenv_debug "initdb running with flags [$PGENV_FLAGS_INITDB]"
         $INITDB "$PGENV_FLAGS_INITDB" -D "$PG_DATA"
     fi
 }
@@ -503,11 +506,13 @@ pgenv_stop_or_restart_instance(){
         # ok, server running, apply the command
         case $command in
             stop)
-                $PG_CTL stop -D "$PG_DATA" $PGENV_STOP_MODE
+                pgenv_debug "pg_ctl stopping with mode [$PGENV_STOP_MODE] and flags [$PGENV_FLAGS_PGCTL_STOP]"
+                $PG_CTL stop -D "$PG_DATA" "$PGENV_STOP_MODE" "$PGENV_FLAGS_PGCTL_STOP"
                 echo "PostgreSQL $v stopped"
                 ;;
             restart)
-                $PG_CTL restart -D "$PG_DATA" -l "$PGENV_LOG" $PGENV_STOP_MODE
+                pgenv_debug "pg_ctl restarting with mode [$PGENV_STOP_MODE] and flags [$PGENV_FLAGS_PGCTL_RESTART]"
+                $PG_CTL restart -D "$PG_DATA" -l "$PGENV_LOG" "$PGENV_STOP_MODE" "$PGENV_FLAGS_PGCTL_RESTART"
                 echo "PostgreSQL $v restarted"
                 echo "Logging to $PGENV_LOG"
                 ;;
@@ -519,9 +524,7 @@ pgenv_stop_or_restart_instance(){
                 echo "PostgreSQL $v not running"
                 ;;
             restart)
-                $PG_CTL start -D "$PG_DATA" -l $PGENV_LOG
-                echo "PostgreSQL $v started"
-                echo "Logging to $PGENV_LOG"
+                pgenv_start_instance
                 ;;
         esac
     fi
