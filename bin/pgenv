@@ -29,6 +29,7 @@ INITDB="$PGSQL/bin/initdb "
 PGENV_LOG=$PG_DATA/server.log
 PGENV_PG_USER="postgres"
 PGENV_FLAGS_INITDB="-U $PGENV_PG_USER --locale en_US.UTF-8 --encoding UNICODE"
+PGENV_FLAGS_MAKE="-j3"
 #############################################
 
 # Prints a debug message if PGENV_DEBUG
@@ -440,6 +441,7 @@ pgenv_configuration_write() {
     pgenv_configuration_write_variable "$CONF" "PGENV_LOG" "$PGENV_LOG" "Path to the cluster log file"
     pgenv_configuration_write_variable "$CONF" "PGENV_PG_USER" "$PGENV_PG_USER" "Cluster administrator user"
     pgenv_configuration_write_variable "$CONF" "PGENV_FLAGS_INITDB" "$PGENV_FLAGS_INITDB" "Initdb flags"
+    pgenv_configuration_write_variable "$CONF" "PGENV_FLAGS_MAKE" "$PGENV_FLAGS_MAKE" "Make flags"
     pgenv_configuration_write_variable "$CONF" "PGENV_PLPERL" "$PGENV_PLPERL" 'Perl 5 executable to build PL/Perl'
     pgenv_configuration_write_variable "$CONF" "PGENV_PLPYTHON" "$PGENV_PLpython" 'Python executable to build PL/Perl'
     pgenv_configuration_write_variable "$CONF" "PGENV_MAKE" "$PGENV_MAKE" 'Make command to use for build'
@@ -675,14 +677,14 @@ EOF
         # make and make install
         if [[ $v =~ ^[1-8]\. ]]; then
             # 8.x (and prior versions?) doesn't have `make world`.
-            $PGENV_MAKE -j3
+            $PGENV_MAKE "$PGENV_FLAGS_MAKE
             $PGENV_MAKE install
             cd contrib
-            $PGENV_MAKE -j3
+            $PGENV_MAKE "$PGENV_FLAGS_MAKE
             $PGENV_MAKE install
         else
             # Yay, make world!
-            $PGENV_MAKE world -j3
+            $PGENV_MAKE world "$PGENV_FLAGS_MAKE
             $PGENV_MAKE install-world
         fi
 
