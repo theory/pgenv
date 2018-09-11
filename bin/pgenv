@@ -913,6 +913,7 @@ EOF
                     echo "Configuration action \`$action\` not supported"
                 fi
                 exit 1
+                ;;
         esac
         exit
         ;;
