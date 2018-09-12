@@ -209,6 +209,8 @@ version. Use the `clear` command to clear the active version before removing it.
     $ pgenv remove 10.3
     PostgreSQL 10.3 removed
 
+The command removes the instance, data directory, source code and configuration.
+
 ### pgenv start
 
 Starts the currently active version of PostgreSQL if it's not already running.
@@ -375,28 +377,46 @@ In order to start with a default configuration, use the `write` subcommand:
     
 so that a `show` will give you back the defaults:
  
-   $ pgenv config show
-   ###############################
-   #
-   #
-   # PostgreSQL 
+   $ pgenv config show default
+   # Default configuration
    # pgenv configuration for PostgreSQL 
-   # File: ~/.pgenv/.pgenv.conf 
-   # Dumped on:  lun 10 set 2018, 10.56.01, CEST
-   #
-   # 8<-8<-8<-8<-8<-8<-8<-8<-8<-8<-8<-8<-
+   # File: /home/luca/git/misc/PostgreSQL/pgenv/.pgenv.conf
+   # ---------------------------------------------------
+   # pgenv configuration created on mer 12 set 2018, 08.35.52, CEST
+
    # Enables debug output
-   # PGENV_DEBUG=
+   # PGENV_DEBUG=''
 
-   # Cluster stop mode for 'stop' and 'restart'
-   # PGENV_STOP_MODE=
-   
-   # <output omitted>
+   ###### Build settings #####
+   # Make command to use for build
+   # PGENV_MAKE=''
 
-   # ->8->8->8->8->8->8->8->8->8->8->8->8
-   #
-   # End of configuration
-   ###############################
+   # Make flags
+   PGENV_MAKE_OPTS='-j3'
+
+   # Configure flags
+   # PGENV_CONFIGURE_OPTS=''
+
+   # Perl 5 executable to build PL/Perl
+   # PGENV_PLPERL=''
+
+   # Python executable to build PL/Perl
+   # PGENV_PLPYTHON=''
+
+   # ...
+
+   ##### Runtime options #####
+   # Path to the cluster log file
+   PGENV_LOG='/home/luca/git/misc/PostgreSQL/pgenv/pgsql/data/server.log'
+
+   # Cluster administrator user
+   PGENV_PG_USER='postgres'
+
+   # Initdb flags
+   PGENV_INITDB_OPTS='-U postgres --locale en_US.UTF-8 --encoding UNICODE'
+
+   # ...
+
 
 You can edit the file and adjust parameters to your needs.
 
@@ -427,6 +447,9 @@ loose your configuration:
    Cannot delete default configuration while instances installed
    You need to manually remove [~/.pgenv/.pgenv.conf]
 
+Please note that when a configuration file is removed, also its backup copy is deleted.
+When an instance is removed by means of `pgenv remove`, also its configuration (if any) is
+removed.
 
 # Bug Reporting
 
