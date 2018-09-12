@@ -739,7 +739,7 @@ EOF
         exit
         ;;
 
-    version)
+    version|current)
         pgenv_current_postgresql_or_exit
         pgenv_current_version_number
         exit
