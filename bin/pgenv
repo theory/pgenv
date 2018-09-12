@@ -131,22 +131,33 @@ pgenv_check_dependencies(){
         fi
     }
 
-    PGENV_MAKE=$(which make)
     if [ -z "$PGENV_MAKE" ]; then
-        PGENV_MAKE=$(which gmake)
+        PGENV_MAKE=$(which make)
+        if [ -z "$PGENV_MAKE" ]; then
+            PGENV_MAKE=$(which gmake)
+        fi
     fi
     pgenv_detail_command "make" $PGENV_MAKE
 
-    PGENV_CURL=$(which curl)
+
+    if [ -z "$PGENV_CURL" ]; then
+        PGENV_CURL=$(which curl)
+    fi
     pgenv_detail_command "curl" $PGENV_CURL
 
-    PGENV_PATCH=$(which patch)
+    if [ -z "$PGENV_PATCH" ]; then
+        PGENV_PATCH=$(which patch)
+    fi
     pgenv_detail_command "patch" $PGENV_PATCH
 
-    PGENV_TAR=$(which tar)
+    if [ -z "$PGENV_TAR" ]; then
+        PGENV_TAR=$(which tar)
+    fi
     pgenv_detail_command "tar" $PGENV_TAR
 
-    PGENV_SED=$(which sed)
+    if [ -z "$PGENV_SED" ]; then
+        PGENV_SED=$(which sed)
+    fi
     pgenv_detail_command "sed" $PGENV_SED
 
     # if PGENV_PERL has been set from outside
@@ -444,8 +455,8 @@ pgenv_configuration_write() {
     pgenv_configuration_write_variable "$CONF" "PGENV_MAKE" "$PGENV_MAKE" 'Make command to use for build'
     pgenv_configuration_write_variable "$CONF" "PGENV_MAKE_OPTS" "$PGENV_MAKE_OPTS" "Make flags"
     pgenv_configuration_write_variable "$CONF" "PGENV_CONFIGURE_OPTS" "$PGENV_CONFIGURE_OPTS" "Configure flags"
-    pgenv_configuration_write_variable "$CONF" "PGENV_PLPERL" "$PGENV_PLPERL" 'Perl 5 executable to build PL/Perl'
-    pgenv_configuration_write_variable "$CONF" "PGENV_PLPYTHON" "$PGENV_PLPYTHON" 'Python executable to build PL/Perl'
+    pgenv_configuration_write_variable "$CONF" "PGENV_PERL" "$PGENV_PERL" 'Perl 5 executable to build PL/Perl'
+    pgenv_configuration_write_variable "$CONF" "PGENV_PYTHON" "$PGENV_PYTHON" 'Python executable to build PL/Perl'
     pgenv_configuration_write_variable "$CONF" "PGENV_CURL" "$PGENV_CURL" 'Curl command to download source code'
     pgenv_configuration_write_variable "$CONF" "PGENV_PATCH" "$PGENV_PATCH" 'Patch command for specific versions'
     pgenv_configuration_write_variable "$CONF" "PGENV_SED" "$PGENV_SED" 'Sed used to manipulate strings'
@@ -625,8 +636,10 @@ case $1 in
         v=$2
         # sanity checks before building
         pgenv_input_version_or_exit "$v"
-        pgenv_check_dependencies
         pgenv_configuration_load $v
+        pgenv_check_dependencies
+
+
 
         # Skip it if we already have it.
         if [ -e "pgsql-$v" ]; then
@@ -681,6 +694,7 @@ EOF
 
         # Configure: use the variable PGENV_CONFIGURE_PL for PL/Perl and PL/Python languages
         # that have been auto-computed by pgenv_check_dependencies
+        pgenv_debug "configure command line [--prefix=$PGENV_ROOT/pgsql-$v $PGENV_CONFIGURE_PL] + [$PGENV_CONFIGURE_OPTS]"
         ./configure --prefix=$PGENV_ROOT/pgsql-$v $PGENV_CONFIGURE_PL "$PGENV_CONFIGURE_OPTS"
 
         # make and make install
