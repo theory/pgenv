@@ -879,6 +879,8 @@ EOF
         ;;
 
     check)
+        # load default configuration
+        pgenv_configuration_load
         # check for all required dependencies
         pgenv_check_dependencies "verbose"
         exit
