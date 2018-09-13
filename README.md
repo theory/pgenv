@@ -159,7 +159,12 @@ Each version is installed in a `pgsql-` subdirectory of `$PGENV_ROOT`.
 Displays the currently active PostgreSQL version.
 
     $ pgenv version
-    pgsql-10.4
+    10.4
+    
+Please note that `current` is a command synonim for version:
+
+    $ pgenv current
+    10.4
 
 ### pgenv clear
 
@@ -200,6 +205,9 @@ For example, the following will build an instance without PL/Perl and
 with a specific version of Python:
 
     $ PGENV_PERL=no PGENV_PYTHON=/usr/python/2.7/bin/python pgenv build 10.5
+    
+You can also set the `PGENV_PERL` and `PGENV_PYTHON` variables in the configuration
+file (see [pgenv config](#pgenv-config)).
 
 ### pgenv remove
 
@@ -267,7 +275,8 @@ already running.
     Logging to pgsql/data/server.log
 
 It is possible to provide the stop mode similarly to the `stop`, by either
-passing it as command line argument or via `PGENV_STOP_MODE` variable:
+passing it as command line argument or via `PGENV_STOP_MODE` variable 
+(either in the command line or in the configuration file):
 
     $ pgenv restart immediate
     $ PGENV_STOP_MODE="immediate" pgenv restart

@@ -27,8 +27,7 @@ INITDB="$PGSQL/bin/initdb"
 # Configuration variable and default settings
 
 PGENV_LOG=$PG_DATA/server.log
-PGENV_PG_USER="postgres"
-PGENV_INITDB_OPTS="-U $PGENV_PG_USER --locale en_US.UTF-8 --encoding UNICODE"
+PGENV_INITDB_OPTS='-U postgres --locale en_US.UTF-8 --encoding UNICODE'
 PGENV_MAKE_OPTS="-j3"
 PGENV_CONFIGURE_OPTS=""
 PGENV_START_OPTS="-w"
@@ -127,7 +126,7 @@ pgenv_check_dependencies(){
 
         if [ ! -z "$interpreter" ]; then
             pgenv_debug "Configuring PL/${language} with ${interpreter}"
-            PGENV_CONFIGURE_PL+="--with-${language}  $( echo $language | tr 'a-z' 'A-Z' )=${interpreter} "
+            PGENV_CONFIGURE_OPTS+="--with-${language}  $( echo $language | tr 'a-z' 'A-Z' )=${interpreter} "
         fi
     }
 
@@ -453,18 +452,17 @@ pgenv_configuration_write() {
 
     echo "###### Build settings #####" >> "$CONF"
     pgenv_configuration_write_variable "$CONF" "PGENV_MAKE" "$PGENV_MAKE" 'Make command to use for build'
-    pgenv_configuration_write_variable "$CONF" "PGENV_MAKE_OPTS" "$PGENV_MAKE_OPTS" "Make flags"
-    pgenv_configuration_write_variable "$CONF" "PGENV_CONFIGURE_OPTS" "$PGENV_CONFIGURE_OPTS" "Configure flags"
+    pgenv_configuration_write_variable "$CONF" "PGENV_MAKE_OPTS" "$PGENV_MAKE_OPTS" 'Make flags'
+    pgenv_configuration_write_variable "$CONF" "PGENV_CONFIGURE_OPTS" "$PGENV_CONFIGURE_OPTS" 'Configure flags, without --prefix, --with-perl nor --with-python (they are dynamically computed)'
     pgenv_configuration_write_variable "$CONF" "PGENV_PERL" "$PGENV_PERL" 'Perl 5 executable to build PL/Perl'
-    pgenv_configuration_write_variable "$CONF" "PGENV_PYTHON" "$PGENV_PYTHON" 'Python executable to build PL/Perl'
+    pgenv_configuration_write_variable "$CONF" "PGENV_PYTHON" "$PGENV_PYTHON" 'Python executable to build PL/Python'
     pgenv_configuration_write_variable "$CONF" "PGENV_CURL" "$PGENV_CURL" 'Curl command to download source code'
     pgenv_configuration_write_variable "$CONF" "PGENV_PATCH" "$PGENV_PATCH" 'Patch command for specific versions'
     pgenv_configuration_write_variable "$CONF" "PGENV_SED" "$PGENV_SED" 'Sed used to manipulate strings'
 
     echo "##### Runtime options #####" >> "$CONF"
-    pgenv_configuration_write_variable "$CONF" "PGENV_LOG" "$PGENV_LOG" "Path to the cluster log file"
-    pgenv_configuration_write_variable "$CONF" "PGENV_PG_USER" "$PGENV_PG_USER" "Cluster administrator user"
-    pgenv_configuration_write_variable "$CONF" "PGENV_INITDB_OPTS" "$PGENV_INITDB_OPTS" "Initdb flags"
+    pgenv_configuration_write_variable "$CONF" "PGENV_LOG" "$PGENV_LOG" 'Path to the cluster log file (mandatory)'
+    pgenv_configuration_write_variable "$CONF" "PGENV_INITDB_OPTS" "$PGENV_INITDB_OPTS" 'Initdb flags'
     pgenv_configuration_write_variable "$CONF" "PGENV_STOP_OPTS" "$PGENV_STOP_OPTS" 'Stop configuration flags'
     pgenv_configuration_write_variable "$CONF" "PGENV_STOP_MODE" "$PGENV_STOP_MODE" "Cluster stop mode for 'stop' and 'restart'"
     pgenv_configuration_write_variable "$CONF" "PGENV_START_OPTS" "$PGENV_START_OPTS" 'Start configuration flags'
@@ -491,8 +489,8 @@ pgenv_start_instance(){
     # Init the database if needed.
     pgenv_initdb
 
-    pgenv_debug "pg_ctl starting instance with flags [$PGENV_START_OPTS]"
-    $PG_CTL start -D "$PG_DATA" "$PGENV_START_OPTS" -l $PGENV_LOG
+    pgenv_debug "pg_ctl starting instance with flags [$PGENV_START_OPTS] log [$PGENV_LOG]"
+    $PG_CTL start -D "$PG_DATA" "$PGENV_START_OPTS" -l "$PGENV_LOG"
     if [ $? -eq 0 ]; then
         echo "PostgreSQL $v started"
         echo "Logging to $PGENV_LOG"
@@ -692,10 +690,9 @@ case $1 in
 EOF
         fi
 
-        # Configure: use the variable PGENV_CONFIGURE_PL for PL/Perl and PL/Python languages
-        # that have been auto-computed by pgenv_check_dependencies
-        pgenv_debug "configure command line [--prefix=$PGENV_ROOT/pgsql-$v $PGENV_CONFIGURE_PL] + [$PGENV_CONFIGURE_OPTS]"
-        ./configure --prefix=$PGENV_ROOT/pgsql-$v $PGENV_CONFIGURE_PL "$PGENV_CONFIGURE_OPTS"
+
+        pgenv_debug "configure command line [--prefix=$PGENV_ROOT/pgsql-$v] + [$PGENV_CONFIGURE_OPTS]"
+        ./configure --prefix=$PGENV_ROOT/pgsql-$v "$PGENV_CONFIGURE_OPTS"
 
         # make and make install
         if [[ $v =~ ^[1-8]\. ]]; then
@@ -915,6 +912,9 @@ EOF
             show)
                 pgenv_configuration_dump_or_exit "$v" "$title" ;;
             write)
+                # in an explicit write load first the variables from the runtime
+                # environment, so PL/Perl, make, and stuff can be already set
+                pgenv_check_dependencies
                 pgenv_configuration_write "$v" ;;
             edit)
                 configuration_file=$( pgenv_configuration_file_name $v )
