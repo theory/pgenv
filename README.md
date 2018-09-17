@@ -161,7 +161,7 @@ Displays the currently active PostgreSQL version.
     $ pgenv version
     10.4
     
-Please note that `current` is a command synonim for version:
+Please note that `current` is a command synonym for version:
 
     $ pgenv current
     10.4
