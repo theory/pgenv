@@ -80,7 +80,7 @@ The pgenv commands are:
     version    Show the current PostgreSQL version
     versions   List all PostgreSQL versions available to pgenv
     help       Show this usage statement and command summary
-    available  Show which versions can be downloaded (most recent versions last)
+    available  Show which versions can be downloaded
     check      Check all program dependencies
     config     View, edit, delete the program configuration
 
@@ -371,8 +371,8 @@ pgenv_configuration_delete(){
         done
 
         if [ $installed_versions -gt 0 ]; then
-            echo "Cannot delete default configuration while instances installed"
-            echo "If you really want to delete, manually remove [$PGENV_CONFIG_FILE]"
+            echo "Cannot delete default configuration while version configurations exist"
+            echo "To remove it anyway, delete $PGENV_CONFIG_FILE"
             exit 1
         fi
         # if the file is not here, nothing to do!
@@ -385,7 +385,7 @@ pgenv_configuration_delete(){
     pgenv_debug "Deleting configuration file [$PGENV_CONFIG_FILE]"
     rm -f "$PGENV_CONFIG_FILE"           # remove config file
     rm -f "${PGENV_CONFIG_FILE}.backup"  # remove also backup file
-    echo "Configuration file [$PGENV_CONFIG_FILE] (and backup) deleted"
+    echo "Configuration file $PGENV_CONFIG_FILE (and backup) deleted"
 }
 
 
@@ -921,7 +921,7 @@ EOF
                 if [ ! -z "$EDITOR" ]; then
                     $EDITOR $configuration_file
                 else
-                    echo "No EDITOR variable set, fire up manually your editor to edit the file [$configuration_file]"
+                    echo "No EDITOR variable set, manually start your editor to edit $configuration_file"
                     exit 1
                 fi
                 ;;
