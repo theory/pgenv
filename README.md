@@ -382,10 +382,11 @@ work against the currently in use PostgreSQL instance.
 In order to start with a default configuration, use the `write` subcommand:
 
     $ pgenv config write default
-    pgenv configuration file [~/.pgenv/.pgenv.conf] written
+    pgenv configuration file ~/.pgenv/.pgenv.conf written
     
 so that a `show` will give you back the defaults:
- 
+
+```sh
    $ pgenv config show default
    # Default configuration
    # pgenv configuration for PostgreSQL 
@@ -425,7 +426,7 @@ so that a `show` will give you back the defaults:
    PGENV_INITDB_OPTS='-U postgres --locale en_US.UTF-8 --encoding UNICODE'
 
    # ...
-
+```
 
 You can edit the file and adjust parameters to your needs.
 
