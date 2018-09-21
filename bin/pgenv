@@ -125,8 +125,8 @@ pgenv_check_dependencies(){
         local interpreter=$2
 
         if [ ! -z "$interpreter" ]; then
-            pgenv_debug "Configuring PL/${language} with ${interpreter}"
-            PGENV_CONFIGURE_OPTS+="--with-${language}  $( echo $language | tr 'a-z' 'A-Z' )=${interpreter} "
+                pgenv_debug "Configuring PL/${language} with ${interpreter}"
+                PGENV_CONFIGURE_OPTS+=" --with-${language}  $( echo $language | tr 'a-z' 'A-Z' )=${interpreter} "
         fi
     }
 
@@ -453,7 +453,7 @@ pgenv_configuration_write() {
     echo "###### Build settings #####" >> "$CONF"
     pgenv_configuration_write_variable "$CONF" "PGENV_MAKE" "$PGENV_MAKE" 'Make command to use for build'
     pgenv_configuration_write_variable "$CONF" "PGENV_MAKE_OPTS" "$PGENV_MAKE_OPTS" 'Make flags'
-    pgenv_configuration_write_variable "$CONF" "PGENV_CONFIGURE_OPTS" "$PGENV_CONFIGURE_OPTS" 'Configure flags, without --prefix, --with-perl nor --with-python (they are dynamically computed)'
+    pgenv_configuration_write_variable "$CONF" "PGENV_CONFIGURE_OPTS" '' 'Configure flags, without --prefix, --with-perl nor --with-python (they are dynamically computed)'
     pgenv_configuration_write_variable "$CONF" "PGENV_PERL" "$PGENV_PERL" 'Perl 5 executable to build PL/Perl'
     pgenv_configuration_write_variable "$CONF" "PGENV_PYTHON" "$PGENV_PYTHON" 'Python executable to build PL/Python'
     pgenv_configuration_write_variable "$CONF" "PGENV_CURL" "$PGENV_CURL" 'Curl command to download source code'
