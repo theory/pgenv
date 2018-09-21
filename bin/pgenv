@@ -277,6 +277,10 @@ pgenv_current_postgresql_or_exit(){
 # Prints the currently active version number. To capture the value instead of
 # printing it, make a call like `v=&( pgenv_current_version_number )`
 pgenv_current_version_number(){
+    # find sed even without the configuration/dependencies
+    if [ -z "$PGENV_SED" ]; then
+        PGENV_SED=$(which sed)
+    fi
     local v=$( readlink pgsql | $PGENV_SED 's/^pgsql-//' )
     echo $v
 }
