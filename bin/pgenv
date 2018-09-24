@@ -55,7 +55,7 @@ pgenv_versions() {
             flags="   "
         fi
 
-        local version=$( echo $dir | sed 's/^pgsql-//' )
+        local version=$( echo $dir | $PGENV_SED 's/^pgsql-//' )
         printf "%s   %-6s    %s\n" "$flags" "$version" "$dir"
         installed=$(( installed + 1 ))
     done
@@ -764,6 +764,8 @@ EOF
         ;;
 
     versions)
+        pgenv_configuration_load
+        pgenv_check_dependencies
         pgenv_versions
         exit
         ;;
