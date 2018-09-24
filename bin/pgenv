@@ -126,8 +126,8 @@ pgenv_check_dependencies(){
         local interpreter=$2
 
         if [ ! -z "$interpreter" ]; then
-                pgenv_debug "Configuring PL/${language} with ${interpreter}"
-                PGENV_CONFIGURE_OPTS+=" --with-${language}  $( echo $language | tr 'a-z' 'A-Z' )=${interpreter} "
+            pgenv_debug "Configuring PL/${language} with ${interpreter}"
+            PGENV_CONFIGURE_OPTS+=" --with-${language}  $( echo $language | tr 'a-z' 'A-Z' )=${interpreter} "
         fi
     }
 
@@ -337,11 +337,16 @@ pgenv_configuration_dump_or_exit(){
 # to search for. A configuration file with such version number
 # will be used as configuration, and in the case it is missing, the default
 # configuration file will be used.
+#
+# The function sets the PGENV_CONFIGURATION_FILE variable to the name of the
+# file loaded or to an empty string. This helps understanding later on
+# if the configuration has been loaded.
 pgenv_configuration_load(){
     local v=$1
 
     local PGENV_DEFAULT_CONFIG_FILE=$( pgenv_configuration_file_name )
     local PGENV_CONFIG_FILE=$( pgenv_configuration_file_name $v )
+    PGENV_CONFIGURATION_FILE=''
 
     for conf in $( echo "$PGENV_CONFIG_FILE" "$PGENV_DEFAULT_CONFIG_FILE" )
     do
@@ -350,6 +355,7 @@ pgenv_configuration_load(){
         if [ -r "$conf" ]; then
             pgenv_debug "Load configuration from [$conf]"
             source "$conf"
+            PGENV_CONFIGURATION_FILE="$conf"
             return
         fi
     done
