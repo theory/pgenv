@@ -42,7 +42,7 @@ pgenv_debug(){
     fi
 }
 
-pgversions() {
+pgenv_versions() {
     if [ -e "pgsql" ]; then
         local curr=$(readlink pgsql)
     fi
@@ -65,7 +65,7 @@ pgversions() {
     fi
 }
 
-pgenvhelp() {
+pgenv_help() {
         cat <<EOF
 Usage: pgenv <command> [<args>]
 
@@ -78,6 +78,7 @@ The pgenv commands are:
     build      Build a specific version of PostgreSQL
     remove     Remove a specific version of PostgreSQL
     version    Show the current PostgreSQL version
+    current    Same as 'version'
     versions   List all PostgreSQL versions available to pgenv
     help       Show this usage statement and command summary
     available  Show which versions can be downloaded
@@ -197,7 +198,7 @@ pgenv_check_dependencies(){
     fi
 }
 
-# This function checks whther its first argument is a valid PostgreSQL version
+# This function checks if its first argument is a valid PostgreSQL version
 # number, like "10.5" or "9.5.4". In case no version number is specified, or the
 # version number is invalid (e.g., "10", "0.9") the function aborts the script.
 # If no version has been specified, and a non-empty string is passed as second
@@ -234,7 +235,7 @@ pgenv_input_version_or_exit() {
             # ask more details to the user
             echo "Which version of PostgreSQL do you want?"
             if [ ! -z "$verbose" ]; then
-                pgversions
+                pgenv_versions
             fi
             exit 1
         fi
@@ -258,7 +259,7 @@ pgenv_installed_version_or_exit(){
     local version=$1
     if [ ! -e "pgsql-${version}" ]; then
         echo "PostgreSQL $version not installed; installed versions:"
-        pgversions
+        pgenv_versions
         exit 1
     fi
 }
@@ -763,12 +764,12 @@ EOF
         ;;
 
     versions)
-        pgversions
+        pgenv_versions
         exit
         ;;
 
     help)
-        pgenvhelp
+        pgenv_help
         exit
         ;;
 
@@ -950,7 +951,7 @@ EOF
             echo "Unknown command \`$1\`"
         fi
 
-        pgenvhelp
+        pgenv_help
         exit 1
         ;;
 esac

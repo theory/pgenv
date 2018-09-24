@@ -335,7 +335,6 @@ the following:
 
     $ pgenv help
     Usage: pgenv <command> [<args>]
-
     The pgenv commands are:
         use        Set and start the current PostgreSQL version
         clear      Stop and unset the current PostgreSQL version
@@ -345,6 +344,7 @@ the following:
         build      Build a specific version of PostgreSQL
         remove     Remove a specific version of PostgreSQL
         version    Show the current PostgreSQL version
+        current    Same as 'version'
         versions   List all PostgreSQL versions available to pgenv
         help       Show this usage statement and command summary
         available  Show which versions can be downloaded
