@@ -30,7 +30,7 @@ PGENV_LOG=$PG_DATA/server.log
 PGENV_INITDB_OPTS='-U postgres --locale en_US.UTF-8 --encoding UNICODE'
 PGENV_MAKE_OPTS="-j3"
 PGENV_CONFIGURE_OPTS=""
-PGENV_START_OPTS="-w"
+PGENV_START_OPTS=""
 PGENV_STOP_OPTS=""
 #############################################
 
