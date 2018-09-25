@@ -428,7 +428,7 @@ pgenv_configuration_write() {
     echo "###### Build settings #####" >> "$CONF"
     pgenv_configuration_write_variable "$CONF" "PGENV_MAKE" "$PGENV_MAKE" 'Make command to use for build'
     pgenv_configuration_write_variable "$CONF" "PGENV_MAKE_OPTS" "$PGENV_MAKE_OPTS" 'Make flags'
-    pgenv_configuration_write_variable "$CONF" "PGENV_CONFIGURE_OPTS" "$PGENV_CONFIGURE_OPTS" Configure flags, including PL languages but without --prefix'
+    pgenv_configuration_write_variable "$CONF" "PGENV_CONFIGURE_OPTS" "$PGENV_CONFIGURE_OPTS" 'Configure flags, including PL languages but without --prefix'
 
     pgenv_configuration_write_variable "$CONF" "PGENV_CURL" "$PGENV_CURL" 'Curl command to download source code'
     pgenv_configuration_write_variable "$CONF" "PGENV_PATCH" "$PGENV_PATCH" 'Patch command for specific versions'
@@ -612,18 +612,6 @@ case $1 in
         pgenv_check_dependencies
 
 
-        # warn if no configuration was loaded
-        if [ -z "$PGENV_CONFIGURATION_FILE" ]; then
-            echo "WARNING: no configuration file found for version $v"
-            echo "if you wish to customize the build process please"
-            echo "stop the execution within 5 seconds and run first"
-            echo "    pgenv config write $v && pgenv config edit $v"
-            echo "adjust configure and make options and flags and run again"
-            echo "    pgenv build $v"
-            echo
-            sleep 5
-        fi
-
         # Skip it if we already have it.
         if [ -e "pgsql-$v" ]; then
             echo "PostgreSQL $v already built"
@@ -651,6 +639,20 @@ case $1 in
         if [ ! -f $PG_TARBALL ]; then
             $PGENV_CURL -fLO ${PGENV_DOWNLOAD_ROOT}/v$v/${PG_TARBALL}
         fi
+
+
+        # warn if no configuration was loaded
+        if [ -z "$PGENV_CONFIGURATION_FILE" ]; then
+            echo "WARNING: no configuration file found for version $v"
+            echo "if you wish to customize the build process please"
+            echo "stop the execution within 5 seconds and run first"
+            echo "    pgenv config write $v && pgenv config edit $v"
+            echo "adjust configure and make options and flags and run again"
+            echo "    pgenv build $v"
+            echo
+            sleep 5
+        fi
+
 
         # Unpack the source.
         rm -rf "postgresql-$v"
