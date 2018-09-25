@@ -104,32 +104,16 @@ pgenv_check_dependencies(){
     pgenv_detail_command(){
         local command_name=$1
         local command=$2
-        local language=$3
 
         local nl=$'\n'
         local tab=$'\t'
         if [ -z "$command" ]; then
-            if [ -z "$language" ]; then
                 missing+="[KO] $command_name:${tab}NOT found!$nl"
-            else
-                warning+="[KO] $command_name:${tab}NOT found - Cannot build $language: try setting $( echo PGENV_${command_name} | tr 'a-z' 'A-Z'  )$nl"
-            fi
         else
             present+="[OK] $command_name:$tab$command$nl"
         fi
     }
 
-    # Appends a language interpreter configuration
-    # to the 'configure' variable used to build the system
-    pgenv_configure_pl(){
-        local language=$1
-        local interpreter=$2
-
-        if [ ! -z "$interpreter" ]; then
-            pgenv_debug "Configuring PL/${language} with ${interpreter}"
-            PGENV_CONFIGURE_OPTS+=" --with-${language}  $( echo $language | tr 'a-z' 'A-Z' )=${interpreter} "
-        fi
-    }
 
     if [ -z "$PGENV_MAKE" ]; then
         PGENV_MAKE=$(which make)
@@ -159,26 +143,6 @@ pgenv_check_dependencies(){
         PGENV_SED=$(which sed)
     fi
     pgenv_detail_command "sed" $PGENV_SED
-
-    # if PGENV_PERL has been set from outside
-    # of the script and points to an executable
-    # use that, otherwise try to figure it out
-    if [ -z "$PGENV_PERL" ]; then
-        PGENV_PERL=$(which perl)
-    elif [ ! -x "$PGENV_PERL" ]; then
-        PGENV_PERL=""
-    fi
-    pgenv_detail_command "perl" "$PGENV_PERL" "PL/Perl"
-    pgenv_configure_pl "perl" $PGENV_PERL
-
-    # same reason for python
-    if [ -z "$PGENV_PYTHON" ]; then
-        PGENV_PYTHON=$(which python)
-    elif [ ! -x "$PGENV_PYTHON" ]; then
-        PGENV_PYTHON=""
-    fi
-    pgenv_detail_command "python" "$PGENV_PYTHON" "PL/Python"
-    pgenv_configure_pl "python" $PGENV_PYTHON
 
 
     # Go back to exiting on error.
@@ -464,9 +428,8 @@ pgenv_configuration_write() {
     echo "###### Build settings #####" >> "$CONF"
     pgenv_configuration_write_variable "$CONF" "PGENV_MAKE" "$PGENV_MAKE" 'Make command to use for build'
     pgenv_configuration_write_variable "$CONF" "PGENV_MAKE_OPTS" "$PGENV_MAKE_OPTS" 'Make flags'
-    pgenv_configuration_write_variable "$CONF" "PGENV_CONFIGURE_OPTS" '' 'Configure flags, without --prefix, --with-perl nor --with-python (they are dynamically computed)'
-    pgenv_configuration_write_variable "$CONF" "PGENV_PERL" "$PGENV_PERL" 'Perl 5 executable to build PL/Perl'
-    pgenv_configuration_write_variable "$CONF" "PGENV_PYTHON" "$PGENV_PYTHON" 'Python executable to build PL/Python'
+    pgenv_configuration_write_variable "$CONF" "PGENV_CONFIGURE_OPTS" '' 'Configure flags, including PL languages but without --prefix'
+
     pgenv_configuration_write_variable "$CONF" "PGENV_CURL" "$PGENV_CURL" 'Curl command to download source code'
     pgenv_configuration_write_variable "$CONF" "PGENV_PATCH" "$PGENV_PATCH" 'Patch command for specific versions'
     pgenv_configuration_write_variable "$CONF" "PGENV_SED" "$PGENV_SED" 'Sed used to manipulate strings'

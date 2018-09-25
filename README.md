@@ -87,11 +87,8 @@ project directory (generally in `~/.pgenv`.). If you'd like them to live
 elsewhere, set the `$PGENV_ROOT` environment variable to the appropriate
 directory.
 
-pgenv compiles each version with support for PL/Perl and PL/Python when it can
-find their interpreters, or by using the values of the `$PGENV_PERL` and
-`$PGENV_PYTHON` variables. See [`pgenv build`](#pgenv-build) below for
-details.
-
+It is possible to configure which programs, flags and languages to build
+using a configuration file before the program launches the build. 
 For a more detailed configuration, see the [`pgenv config`](#pgenv-config)
 command below.
 
@@ -114,8 +111,11 @@ $ git pull
 *   sed, grep, cat, tar - General Unix command line utilities
 *   patch - For patching versions that need patching
 *   make -  Builds PostgreSQL
-*   Perl 5 - To build PL/Perl (optional)
-*   Python - To build PL/Python (optional)
+
+Optional dependencies:
+
+*   Perl 5 - To build PL/Perl 
+*   Python - To build PL/Python
 
 Command Reference
 -----------------
@@ -191,27 +191,16 @@ before building. If the version is already built, it will not be rebuilt; use
     # [Curl, configure, and make output elided]
     PostgreSQL 10.3 built
 
-The build will include PL/Perl and PL/Python if `pgenv` can find their
-interpreters in the current environment. To manually configure PL/Perl and
-PL/Python support, set the `$PGENV_PERL` or `$PGENV_PYTHON` to the location of
-the desired interpreters. The behavior for both variables is as follows:
+In order to build an instance with PL/Perl, PL/Python, PL/Tcl and more in
+general with particular `configure` flags, write first the configuration
+and ajust the `PGENV_CONFIGURE_OPTS` line to include specific
+flags, so for instance:
 
--   If the variable is empty or not set, `pgenv` will look for an interpreter in
-    the current path.
--   If the variable points to an executable representing the language
-    interpreter, the procedural language will be configured using that
-    executable.
--   If the variable is set to a non-executable value, such as `no`, the
-    procedural language will not be built.
-
-For example, the following will build PostgreSQL 10.5 without PL/Perl and with
-a specific version of Python:
-
-    $ PGENV_PERL=no PGENV_PYTHON=/usr/python/2.7/bin/python pgenv build 10.5
-
-You can also set the `PGENV_PERL` and `PGENV_PYTHON` variables in the
-configuration file (see [pgenv config](#pgenv-config)).
-
+    $ pgenv config write 10.5
+    $ pgenv config edit 10.5
+    # adjust PGENV_CONFIGURE_OPTS
+    $ pgenv build 10.5
+    
 ### pgenv remove
 
 Removes the specified version of PostgreSQL unless it is the currently-active
@@ -407,11 +396,6 @@ PGENV_MAKE_OPTS='-j3'
 # Configure flags
 # PGENV_CONFIGURE_OPTS=''
 
-# Perl 5 executable to build PL/Perl
-# PGENV_PLPERL=''
-
-# Python executable to build PL/Perl
-# PGENV_PLPYTHON=''
 
 # ...
 
