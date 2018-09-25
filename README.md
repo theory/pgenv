@@ -218,6 +218,10 @@ Initializes the data directory if none exists.
 
     $ pgenv start
     PostgreSQL started
+    
+It is possible to specify flags to pass to `pg_ctl(1)` when performing the
+`START` action, setting the `PGENV_START_OPTS` in the [configuration](#pgenv-config).
+Such options must not include the data directory, nor the log file.
 
 ### pgenv stop
 
@@ -226,32 +230,8 @@ Stops the currently active version of PostgreSQL.
     $ pgenv stop
     PostgreSQL 10.5 stopped
 
-Optionally pass a `pg_ctl` stop mode:
-
-    $ pgenv stop immediate
-    PostgreSQL 10.5 stopped
-
-Or specify it in the `PGENV_STOP_MODE` environment or [config](#pgenv-config))
-variable:
-
-    $ PGENV_STOP_MODE="immediate" pgenv stop
-    PostgreSQL 10.5 stopped
-
-The supported modes are:
-
-- `smart`
-- `fast`
-- `immediate`
-
-With no stop mode specified, the server's default stop mode will be used, and
-varies by PostgreSQL release. See the `pg_ctl(1)` documentation for more
-information about stop modes.
-
-It is worth noting that the command-line argument stop mode takes precedence
-over the `PGENV_STOP_MODE` variable; for example, the following will stop the
-server in `immediate` mode:
-
-    PGENV_STOP_MODE="fast" pgenv stop immediate
+It is possible to specify flags to pass to `pg_ctl(1)` when performing the
+`stop` action, setting the `PGENV_STOP_OPTS` in the [configuration](#pgenv-config).
 
 ### pgenv restart
 
@@ -262,11 +242,9 @@ already running.
     PostgreSQL 10.1 restarted
     Logging to pgsql/data/server.log
 
-As with the `stop` command, `restart` takes an optional `pg_ctl` stop mode
-argument and respects the `PGENV_STOP_MODE` variable:
+It is possible to specify flags to pass to `pg_ctl(1)` when performing the
+`restart` action, setting the `PGENV_RESTART_OPTS` in the [configuration](#pgenv-config).
 
-    $ pgenv restart immediate
-    $ PGENV_STOP_MODE="immediate" pgenv restart
 
 ### pgenv available
 

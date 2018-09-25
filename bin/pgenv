@@ -438,7 +438,6 @@ pgenv_configuration_write() {
     pgenv_configuration_write_variable "$CONF" "PGENV_LOG" "$PGENV_LOG" 'Path to the cluster log file (mandatory)'
     pgenv_configuration_write_variable "$CONF" "PGENV_INITDB_OPTS" "$PGENV_INITDB_OPTS" 'Initdb flags'
     pgenv_configuration_write_variable "$CONF" "PGENV_STOP_OPTS" "$PGENV_STOP_OPTS" 'Stop configuration flags'
-    pgenv_configuration_write_variable "$CONF" "PGENV_STOP_MODE" "$PGENV_STOP_MODE" "Cluster stop mode for 'stop' and 'restart'"
     pgenv_configuration_write_variable "$CONF" "PGENV_START_OPTS" "$PGENV_START_OPTS" 'Start configuration flags'
     pgenv_configuration_write_variable "$CONF" "PGENV_RESTART_OPTS" "$PGENV_RESTART_OPTS" 'Restart configuration flags'
 
@@ -495,13 +494,13 @@ pgenv_stop_or_restart_instance(){
         # ok, server running, apply the command
         case $command in
             stop)
-                pgenv_debug "pg_ctl stopping with mode [$PGENV_STOP_MODE] and flags [$PGENV_STOP_OPTS]"
-                $PG_CTL stop -D "$PG_DATA" $PGENV_STOP_MODE $PGENV_STOP_OPTS
+                pgenv_debug "pg_ctl stopping with  flags [$PGENV_STOP_OPTS]"
+                $PG_CTL stop -D "$PG_DATA" $PGENV_STOP_OPTS
                 echo "PostgreSQL $v stopped"
                 ;;
             restart)
-                pgenv_debug "pg_ctl restarting with mode [$PGENV_STOP_MODE] and flags [$PGENV_RESTART_OPTS]"
-                $PG_CTL restart -D "$PG_DATA" -l "$PGENV_LOG" $PGENV_STOP_MODE $PGENV_RESTART_OPTS
+                pgenv_debug "pg_ctl restarting with flags [$PGENV_RESTART_OPTS]"
+                $PG_CTL restart -D "$PG_DATA" -l "$PGENV_LOG"  $PGENV_RESTART_OPTS
                 echo "PostgreSQL $v restarted"
                 echo "Logging to $PGENV_LOG"
                 ;;
@@ -570,34 +569,6 @@ case $1 in
 
         # either stop or restart
         command="$1"
-
-        # if the user specified a stop mode
-        # use it, otherwise the PGENV_STOP_MODE
-        # variable will be used.
-        if [ ! -z "$2" ]; then
-            stop_mode="$2"
-        else
-            stop_mode=$PGENV_STOP_MODE
-        fi
-
-        case $stop_mode in
-            f|fast)
-                PGENV_STOP_MODE="--mode=fast"
-                ;;
-            i|immediate)
-                PGENV_STOP_MODE="--mode=immediate"
-                ;;
-            s|smart)
-                PGENV_STOP_MODE="--mode=smart"
-                ;;
-            *)
-                # do not allow the user to screw up pg_ctl flags!
-                PGENV_STOP_MODE=""
-                ;;
-        esac
-
-        pgenv_debug "Stop mode set to [$PGENV_STOP_MODE]"
-
 
         # stop the current instance (or restart it)
         pgenv_stop_or_restart_instance $command
