@@ -612,6 +612,17 @@ case $1 in
         pgenv_check_dependencies
 
 
+        # warn if no configuration was loaded
+        if [ -z "$PGENV_CONFIGURATION_FILE" ]; then
+            echo "WARNING: no configuration file found for version $v"
+            echo "if you wish to customize the build process please"
+            echo "stop the execution within 5 seconds and run first"
+            echo "    pgenv config write $v && pgenv config edit $v"
+            echo "adjust configure and make options and flags and run again"
+            echo "    pgenv build $v"
+            echo
+            sleep 5
+        fi
 
         # Skip it if we already have it.
         if [ -e "pgsql-$v" ]; then
