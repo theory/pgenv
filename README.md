@@ -108,7 +108,7 @@ $ git pull
 *   env - Sets environment for execution
 *   bash - Command shell interpreter
 *   curl - Used to download files
-*   sed, grep, cat, tar - General Unix command line utilities
+*   sed, grep, cat, tar, sort, tr - General Unix command line utilities
 *   patch - For patching versions that need patching
 *   make -  Builds PostgreSQL
 
