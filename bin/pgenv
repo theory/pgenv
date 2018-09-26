@@ -104,32 +104,16 @@ pgenv_check_dependencies(){
     pgenv_detail_command(){
         local command_name=$1
         local command=$2
-        local language=$3
 
         local nl=$'\n'
         local tab=$'\t'
         if [ -z "$command" ]; then
-            if [ -z "$language" ]; then
                 missing+="[KO] $command_name:${tab}NOT found!$nl"
-            else
-                warning+="[KO] $command_name:${tab}NOT found - Cannot build $language: try setting $( echo PGENV_${command_name} | tr 'a-z' 'A-Z'  )$nl"
-            fi
         else
             present+="[OK] $command_name:$tab$command$nl"
         fi
     }
 
-    # Appends a language interpreter configuration
-    # to the 'configure' variable used to build the system
-    pgenv_configure_pl(){
-        local language=$1
-        local interpreter=$2
-
-        if [ ! -z "$interpreter" ]; then
-                pgenv_debug "Configuring PL/${language} with ${interpreter}"
-                PGENV_CONFIGURE_OPTS+=" --with-${language}  $( echo $language | tr 'a-z' 'A-Z' )=${interpreter} "
-        fi
-    }
 
     if [ -z "$PGENV_MAKE" ]; then
         PGENV_MAKE=$(which make)
@@ -160,31 +144,11 @@ pgenv_check_dependencies(){
     fi
     pgenv_detail_command "sed" $PGENV_SED
 
+
     # check for sort and tr, but not place into
     # variables (do we need to push to that extent?)
     pgenv_detail_command "sort" $(which sort)
     pgenv_detail_command "tr" $(which tr)
-
-    # if PGENV_PERL has been set from outside
-    # of the script and points to an executable
-    # use that, otherwise try to figure it out
-    if [ -z "$PGENV_PERL" ]; then
-        PGENV_PERL=$(which perl)
-    elif [ ! -x "$PGENV_PERL" ]; then
-        PGENV_PERL=""
-    fi
-    pgenv_detail_command "perl" "$PGENV_PERL" "PL/Perl"
-    pgenv_configure_pl "perl" $PGENV_PERL
-
-    # same reason for python
-    if [ -z "$PGENV_PYTHON" ]; then
-        PGENV_PYTHON=$(which python)
-    elif [ ! -x "$PGENV_PYTHON" ]; then
-        PGENV_PYTHON=""
-    fi
-    pgenv_detail_command "python" "$PGENV_PYTHON" "PL/Python"
-    pgenv_configure_pl "python" $PGENV_PYTHON
-
 
     # Go back to exiting on error.
     trap 'exit' ERR
@@ -342,11 +306,16 @@ pgenv_configuration_dump_or_exit(){
 # to search for. A configuration file with such version number
 # will be used as configuration, and in the case it is missing, the default
 # configuration file will be used.
+#
+# The function sets the PGENV_CONFIGURATION_FILE variable to the name of the
+# file loaded or to an empty string. This helps understanding later on
+# if the configuration has been loaded.
 pgenv_configuration_load(){
     local v=$1
 
     local PGENV_DEFAULT_CONFIG_FILE=$( pgenv_configuration_file_name )
     local PGENV_CONFIG_FILE=$( pgenv_configuration_file_name $v )
+    PGENV_CONFIGURATION_FILE=''
 
     for conf in $( echo "$PGENV_CONFIG_FILE" "$PGENV_DEFAULT_CONFIG_FILE" )
     do
@@ -355,6 +324,7 @@ pgenv_configuration_load(){
         if [ -r "$conf" ]; then
             pgenv_debug "Load configuration from [$conf]"
             source "$conf"
+            PGENV_CONFIGURATION_FILE="$conf"
             return
         fi
     done
@@ -463,9 +433,8 @@ pgenv_configuration_write() {
     echo "###### Build settings #####" >> "$CONF"
     pgenv_configuration_write_variable "$CONF" "PGENV_MAKE" "$PGENV_MAKE" 'Make command to use for build'
     pgenv_configuration_write_variable "$CONF" "PGENV_MAKE_OPTS" "$PGENV_MAKE_OPTS" 'Make flags'
-    pgenv_configuration_write_variable "$CONF" "PGENV_CONFIGURE_OPTS" '' 'Configure flags, without --prefix, --with-perl nor --with-python (they are dynamically computed)'
-    pgenv_configuration_write_variable "$CONF" "PGENV_PERL" "$PGENV_PERL" 'Perl 5 executable to build PL/Perl'
-    pgenv_configuration_write_variable "$CONF" "PGENV_PYTHON" "$PGENV_PYTHON" 'Python executable to build PL/Python'
+    pgenv_configuration_write_variable "$CONF" "PGENV_CONFIGURE_OPTS" "$PGENV_CONFIGURE_OPTS" 'Configure flags, including PL languages but without --prefix'
+
     pgenv_configuration_write_variable "$CONF" "PGENV_CURL" "$PGENV_CURL" 'Curl command to download source code'
     pgenv_configuration_write_variable "$CONF" "PGENV_PATCH" "$PGENV_PATCH" 'Patch command for specific versions'
     pgenv_configuration_write_variable "$CONF" "PGENV_SED" "$PGENV_SED" 'Sed used to manipulate strings'
@@ -474,7 +443,6 @@ pgenv_configuration_write() {
     pgenv_configuration_write_variable "$CONF" "PGENV_LOG" "$PGENV_LOG" 'Path to the cluster log file (mandatory)'
     pgenv_configuration_write_variable "$CONF" "PGENV_INITDB_OPTS" "$PGENV_INITDB_OPTS" 'Initdb flags'
     pgenv_configuration_write_variable "$CONF" "PGENV_STOP_OPTS" "$PGENV_STOP_OPTS" 'Stop configuration flags'
-    pgenv_configuration_write_variable "$CONF" "PGENV_STOP_MODE" "$PGENV_STOP_MODE" "Cluster stop mode for 'stop' and 'restart'"
     pgenv_configuration_write_variable "$CONF" "PGENV_START_OPTS" "$PGENV_START_OPTS" 'Start configuration flags'
     pgenv_configuration_write_variable "$CONF" "PGENV_RESTART_OPTS" "$PGENV_RESTART_OPTS" 'Restart configuration flags'
 
@@ -531,13 +499,13 @@ pgenv_stop_or_restart_instance(){
         # ok, server running, apply the command
         case $command in
             stop)
-                pgenv_debug "pg_ctl stopping with mode [$PGENV_STOP_MODE] and flags [$PGENV_STOP_OPTS]"
-                $PG_CTL stop -D "$PG_DATA" $PGENV_STOP_MODE $PGENV_STOP_OPTS
+                pgenv_debug "pg_ctl stopping with  flags [$PGENV_STOP_OPTS]"
+                $PG_CTL stop -D "$PG_DATA" $PGENV_STOP_OPTS
                 echo "PostgreSQL $v stopped"
                 ;;
             restart)
-                pgenv_debug "pg_ctl restarting with mode [$PGENV_STOP_MODE] and flags [$PGENV_RESTART_OPTS]"
-                $PG_CTL restart -D "$PG_DATA" -l "$PGENV_LOG" $PGENV_STOP_MODE $PGENV_RESTART_OPTS
+                pgenv_debug "pg_ctl restarting with flags [$PGENV_RESTART_OPTS]"
+                $PG_CTL restart -D "$PG_DATA" -l "$PGENV_LOG"  $PGENV_RESTART_OPTS
                 echo "PostgreSQL $v restarted"
                 echo "Logging to $PGENV_LOG"
                 ;;
@@ -607,34 +575,6 @@ case $1 in
         # either stop or restart
         command="$1"
 
-        # if the user specified a stop mode
-        # use it, otherwise the PGENV_STOP_MODE
-        # variable will be used.
-        if [ ! -z "$2" ]; then
-            stop_mode="$2"
-        else
-            stop_mode=$PGENV_STOP_MODE
-        fi
-
-        case $stop_mode in
-            f|fast)
-                PGENV_STOP_MODE="--mode=fast"
-                ;;
-            i|immediate)
-                PGENV_STOP_MODE="--mode=immediate"
-                ;;
-            s|smart)
-                PGENV_STOP_MODE="--mode=smart"
-                ;;
-            *)
-                # do not allow the user to screw up pg_ctl flags!
-                PGENV_STOP_MODE=""
-                ;;
-        esac
-
-        pgenv_debug "Stop mode set to [$PGENV_STOP_MODE]"
-
-
         # stop the current instance (or restart it)
         pgenv_stop_or_restart_instance $command
         exit
@@ -646,7 +586,6 @@ case $1 in
         pgenv_input_version_or_exit "$v"
         pgenv_configuration_load $v
         pgenv_check_dependencies
-
 
 
         # Skip it if we already have it.
@@ -676,6 +615,20 @@ case $1 in
         if [ ! -f $PG_TARBALL ]; then
             $PGENV_CURL -fLO ${PGENV_DOWNLOAD_ROOT}/v$v/${PG_TARBALL}
         fi
+
+
+        # warn if no configuration was loaded
+        if [ -z "$PGENV_CONFIGURATION_FILE" ]; then
+            echo "WARNING: no configuration file found for version $v"
+            echo "if you wish to customize the build process please"
+            echo "stop the execution within 5 seconds and run first"
+            echo "    pgenv config write $v && pgenv config edit $v"
+            echo "adjust configure and make options and flags and run again"
+            echo "    pgenv build $v"
+            echo
+            sleep 5
+        fi
+
 
         # Unpack the source.
         rm -rf "postgresql-$v"
