@@ -160,6 +160,11 @@ pgenv_check_dependencies(){
     fi
     pgenv_detail_command "sed" $PGENV_SED
 
+    # check for sort and tr, but not place into
+    # variables (do we need to push to that extent?)
+    pgenv_detail_command "sort" $(which sort)
+    pgenv_detail_command "tr" $(which tr)
+
     # if PGENV_PERL has been set from outside
     # of the script and points to an executable
     # use that, otherwise try to figure it out
@@ -776,6 +781,9 @@ EOF
         ;;
 
     available)
+        # load executables
+        pgenv_check_dependencies
+
         shift # remove the command from the argument list
         echo -e "             Available PostgreSQL Versions"
         echo -e "========================================================\n"
@@ -790,7 +798,7 @@ EOF
                               | sed 's/^v//' \
                               | sed 's/\/$//')
         do
-            major=$( echo $version | sed 's/\([[:digit:]]\{1,2\}\).*/\1/' )
+            major=$( echo $version | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
             pgenv_debug "Extracted major version [$major]"
 
             # check the version is a number!
@@ -804,7 +812,7 @@ EOF
                 if [ $major -ge 10 -o $major -le 6 ]; then
                     minor=0
                 else
-                    minor=$( echo $version | sed 's/[[:digit:]]\.\([[:digit:]]\{1,2\}\).*/\1/' )
+                    minor=$( echo $version | $PGENV_SED 's/[[:digit:]]\.\([[:digit:]]\{1,2\}\).*/\1/' )
                 fi
                 major=$(( major * 10 + minor ))
                 pgenv_debug "Normalized major version [$major]"
@@ -830,7 +838,7 @@ EOF
             # normalize version numbers
             # (note, use sed instead of bc to avoid introducing another dependency)
             if [ $major -ge 70 -a $major -le 96 ]; then
-                current_version=$( echo $major | sed 's/\([[:digit:]]\)\([[:digit:]]\)/\1\.\2/' )
+                current_version=$( echo $major | $PGENV_SED 's/\([[:digit:]]\)\([[:digit:]]\)/\1\.\2/' )
             else
                 current_version=$(( major / 10 ))
             fi
