@@ -200,10 +200,10 @@ and start over the build process:
 $ pgenv build 10.3
   ...
 WARNING: no configuration file found for version 10.3
-if you wish to customize the build process please
-stop the execution within 5 seconds and run first
+HINT: if you wish to customize the build process please
+stop the execution within 5 seconds (CTRL-c) and run
     pgenv config write 10.3 && pgenv config edit 10.3
-adjust configure and make options and flags and run again
+adjust 'configure' and 'make' options and flags and run again
     pgenv build 10.3
 ```
 
