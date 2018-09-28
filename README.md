@@ -447,7 +447,7 @@ loss of configuration:
    Cannot delete default configuration while version configurations exist
    To remove it anyway, delete ~/.pgenv/.pgenv.conf.
 
-The `delete` subcommand deletes both the configuration faile and its backup
+The `delete` subcommand deletes both the configuration file and its backup
 copy. The `pgenv remove` command also deletes any configuration for the
 removed version.
 
