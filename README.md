@@ -87,11 +87,8 @@ project directory (generally in `~/.pgenv`.). If you'd like them to live
 elsewhere, set the `$PGENV_ROOT` environment variable to the appropriate
 directory.
 
-pgenv compiles each version with support for PL/Perl and PL/Python when it can
-find their interpreters, or by using the values of the `$PGENV_PERL` and
-`$PGENV_PYTHON` variables. See [`pgenv build`](#pgenv-build) below for
-details.
-
+It is possible to configure which programs, flags and languages to build
+using a configuration file before the program launches the build. 
 For a more detailed configuration, see the [`pgenv config`](#pgenv-config)
 command below.
 
@@ -114,8 +111,11 @@ $ git pull
 *   sed, grep, cat, tar, sort, tr - General Unix command line utilities
 *   patch - For patching versions that need patching
 *   make -  Builds PostgreSQL
-*   Perl 5 - To build PL/Perl (optional)
-*   Python - To build PL/Python (optional)
+
+Optional dependencies:
+
+*   Perl 5 - To build PL/Perl 
+*   Python - To build PL/Python
 
 Command Reference
 -----------------
@@ -191,26 +191,42 @@ before building. If the version is already built, it will not be rebuilt; use
     # [Curl, configure, and make output elided]
     PostgreSQL 10.3 built
 
-The build will include PL/Perl and PL/Python if `pgenv` can find their
-interpreters in the current environment. To manually configure PL/Perl and
-PL/Python support, set the `$PGENV_PERL` or `$PGENV_PYTHON` to the location of
-the desired interpreters. The behavior for both variables is as follows:
+The build phase can be customized via a configuration file, in the case
+the system does not find a configuration file when the `build` is executed,
+a warning is shown to the user to remind she can edit a configuration file
+and start over the build process:
 
--   If the variable is empty or not set, `pgenv` will look for an interpreter in
-    the current path.
--   If the variable points to an executable representing the language
-    interpreter, the procedural language will be configured using that
-    executable.
--   If the variable is set to a non-executable value, such as `no`, the
-    procedural language will not be built.
+```sh
+$ pgenv build 10.3
+  ...
+WARNING: no configuration file found for version 10.3
+if you wish to customize the build process please
+stop the execution within 5 seconds and run first
+    pgenv config write 10.3 && pgenv config edit 10.3
+adjust configure and make options and flags and run again
+    pgenv build 10.3
+```
 
-For example, the following will build PostgreSQL 10.5 without PL/Perl and with
-a specific version of Python:
+Within the configuration file it is possible to instrument
+the build phase from the configuration to the actual build. For instance,
+in order to build with PL/Perl, it is possible to configure
+the variable `PGENV_CONFIGURE_OPTS` adding `--with-perl`. Please note that
+it is possiblwe to pass argument variables within the command line to
+instrument the build phase. As an example, the following is a possible
+work-flow to configure and build a customized 10.5 instance:
 
-    $ PGENV_PERL=no PGENV_PYTHON=/usr/python/2.7/bin/python pgenv build 10.5
 
-You can also set the `PGENV_PERL` and `PGENV_PYTHON` variables in the
-configuration file (see [pgenv config](#pgenv-config)).
+    $ pgenv config write 10.5
+    $ pgenv config edit 10.5
+    # adjust PGENV_CONFIGURE_OPTS
+    $ pgenv build 10.5
+
+In the case you need to specify a particular variable, such as the Perl interpreter,
+pass it on the command line at the time of build:
+
+   $ PERL=/usr/local/my-fancy-perl pgenv build 10.5
+   
+  
 
 ### pgenv remove
 
@@ -229,6 +245,10 @@ Initializes the data directory if none exists.
 
     $ pgenv start
     PostgreSQL started
+    
+It is possible to specify flags to pass to `pg_ctl(1)` when performing the
+`START` action, setting the `PGENV_START_OPTS` in the [configuration](#pgenv-config).
+Such options must not include the data directory, nor the log file.
 
 ### pgenv stop
 
@@ -237,32 +257,8 @@ Stops the currently active version of PostgreSQL.
     $ pgenv stop
     PostgreSQL 10.5 stopped
 
-Optionally pass a `pg_ctl` stop mode:
-
-    $ pgenv stop immediate
-    PostgreSQL 10.5 stopped
-
-Or specify it in the `PGENV_STOP_MODE` environment or [config](#pgenv-config))
-variable:
-
-    $ PGENV_STOP_MODE="immediate" pgenv stop
-    PostgreSQL 10.5 stopped
-
-The supported modes are:
-
-- `smart`
-- `fast`
-- `immediate`
-
-With no stop mode specified, the server's default stop mode will be used, and
-varies by PostgreSQL release. See the `pg_ctl(1)` documentation for more
-information about stop modes.
-
-It is worth noting that the command-line argument stop mode takes precedence
-over the `PGENV_STOP_MODE` variable; for example, the following will stop the
-server in `immediate` mode:
-
-    PGENV_STOP_MODE="fast" pgenv stop immediate
+It is possible to specify flags to pass to `pg_ctl(1)` when performing the
+`stop` action, setting the `PGENV_STOP_OPTS` in the [configuration](#pgenv-config).
 
 ### pgenv restart
 
@@ -273,11 +269,9 @@ already running.
     PostgreSQL 10.1 restarted
     Logging to pgsql/data/server.log
 
-As with the `stop` command, `restart` takes an optional `pg_ctl` stop mode
-argument and respects the `PGENV_STOP_MODE` variable:
+It is possible to specify flags to pass to `pg_ctl(1)` when performing the
+`restart` action, setting the `PGENV_RESTART_OPTS` in the [configuration](#pgenv-config).
 
-    $ pgenv restart immediate
-    $ PGENV_STOP_MODE="immediate" pgenv restart
 
 ### pgenv available
 
@@ -407,11 +401,6 @@ PGENV_MAKE_OPTS='-j3'
 # Configure flags
 # PGENV_CONFIGURE_OPTS=''
 
-# Perl 5 executable to build PL/Perl
-# PGENV_PLPERL=''
-
-# Python executable to build PL/Perl
-# PGENV_PLPYTHON=''
 
 # ...
 
