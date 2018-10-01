@@ -227,6 +227,21 @@ pass it on the command line at the time of build:
    $ PERL=/usr/local/my-fancy-perl pgenv build 10.5
    
   
+It is possible to build multiple instances at one time, specifying all version
+numbers on the command line. The program will proceed building every version failing
+on the first one that contains build errors. As an example, the following will build
+three instances on a single phase:
+
+    $ pgenv build 10.3 10.4 10.5
+    
+as if the user manually invoked:
+  
+  
+   $ pgenv build 10.3
+   $ pgenv build 10.4
+   $ pgenv build 10.5
+   
+  
 
 ### pgenv remove
 

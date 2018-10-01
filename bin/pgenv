@@ -335,11 +335,27 @@ pgenv_configuration_load(){
 # Utility function to remove the configuration file.
 # It does remove the default file only if there are no more installed instances
 # on this system.
+#
+# Arguments:
+# - the version to delete configuration for (nothing for deleting the default)
+# - a non-empty string to force the function to terminate the script
 pgenv_configuration_delete(){
     local v=$1
+    local do_exit=$2
     local PGENV_DEFAULT_CONFIG_FILE=$( pgenv_configuration_file_name )
     local PGENV_CONFIG_FILE=$( pgenv_configuration_file_name $v )
 
+
+    # first of all, check if the file exists
+    if [ ! -f "$PGENV_CONFIG_FILE" ]; then
+        if [ ! -z "$do_exit" ]; then
+            echo "No configuration to delete"
+            exit 1
+        fi
+
+        # nothing to do
+        return
+    fi
 
     # if the file is the default one, delete only if there are
     # no installed instances
@@ -351,14 +367,15 @@ pgenv_configuration_delete(){
         done
 
         if [ $installed_versions -gt 0 ]; then
-            echo "Cannot delete default configuration while version configurations exist"
-            echo "To remove it anyway, delete $PGENV_CONFIG_FILE"
-            exit 1
+            if [ ! -z "$do_exit" ]; then
+                echo "Cannot delete default configuration while version configurations exist"
+                echo "To remove it anyway, delete $PGENV_CONFIG_FILE"
+                exit 1
+            fi
+
+            # nothing to do
+            return
         fi
-        # if the file is not here, nothing to do!
-      elif [ ! -f "$PGENV_CONFIG_FILE" ]; then
-            echo "No configuration to delete"
-            exit 1
     fi
 
     # remove the file
@@ -581,64 +598,66 @@ case $1 in
         ;;
 
     build)
-        v=$2
-        # sanity checks before building
-        pgenv_input_version_or_exit "$v"
-        pgenv_configuration_load $v
-        pgenv_check_dependencies
+        shift # remove `build` from command line
+
+        for v in $*
+        do
+            # sanity checks before building
+            pgenv_input_version_or_exit "$v"
+            pgenv_configuration_load $v
+            pgenv_check_dependencies
 
 
-        # Skip it if we already have it.
-        if [ -e "pgsql-$v" ]; then
-            echo "PostgreSQL $v already built"
-            exit
-        fi
+            # Skip it if we already have it.
+            if [ -e "pgsql-$v" ]; then
+                echo "PostgreSQL $v already built"
+                exit
+            fi
 
-        # Switch to the src directory.
-        if [ ! -e "src" ]; then
-            mkdir src
-        fi
-        cd src
+            # Switch to the src directory.
+            if [ ! -e "src" ]; then
+                mkdir src
+            fi
+            cd src
 
-        # Download the source if wee don't already have it.
-        # WARNING: older PostgreSQL used .tar.gz instead of .tar.bz2,
-        # so if the version is behind 8 use the first format, otherwise
-        # try to get the most compressed archive
-        if [[ $v =~ ^[1-7]\. ]]; then
-            PG_TARBALL="postgresql-$v.tar.gz"
-            TAR_OPTS="zxf"
-        else
-            PG_TARBALL="postgresql-$v.tar.bz2"
-            TAR_OPTS="jxf"
-        fi
+            # Download the source if wee don't already have it.
+            # WARNING: older PostgreSQL used .tar.gz instead of .tar.bz2,
+            # so if the version is behind 8 use the first format, otherwise
+            # try to get the most compressed archive
+            if [[ $v =~ ^[1-7]\. ]]; then
+                PG_TARBALL="postgresql-$v.tar.gz"
+                TAR_OPTS="zxf"
+            else
+                PG_TARBALL="postgresql-$v.tar.bz2"
+                TAR_OPTS="jxf"
+            fi
 
-        if [ ! -f $PG_TARBALL ]; then
-            $PGENV_CURL -fLO ${PGENV_DOWNLOAD_ROOT}/v$v/${PG_TARBALL}
-        fi
-
-
-        # warn if no configuration was loaded
-        if [ -z "$PGENV_CONFIGURATION_FILE" ]; then
-            echo "WARNING: no configuration file found for version $v"
-            echo "HINT: if you wish to customize the build process please"
-            echo "stop the execution within 5 seconds (CTRL-c) and run "
-            echo "    pgenv config write $v && pgenv config edit $v"
-            echo "adjust 'configure' and 'make' options and flags and run again"
-            echo "    pgenv build $v"
-            echo
-            sleep 5
-        fi
+            if [ ! -f $PG_TARBALL ]; then
+                $PGENV_CURL -fLO ${PGENV_DOWNLOAD_ROOT}/v$v/${PG_TARBALL}
+            fi
 
 
-        # Unpack the source.
-        rm -rf "postgresql-$v"
-        $PGENV_TAR $TAR_OPTS $PG_TARBALL
-        cd postgresql-$v
+            # warn if no configuration was loaded
+            if [ -z "$PGENV_CONFIGURATION_FILE" ]; then
+                echo "WARNING: no configuration file found for version $v"
+                echo "HINT: if you wish to customize the build process please"
+                echo "stop the execution within 5 seconds (CTRL-c) and run "
+                echo "    pgenv config write $v && pgenv config edit $v"
+                echo "adjust 'configure' and 'make' options and flags and run again"
+                echo "    pgenv build $v"
+                echo
+                sleep 5
+            fi
 
-        # Patch 8.1.
-        # XXXX Consider moving to a file, adding patches for older versions.
-        if [[ $v =~ ^8\.[01]\. ]]; then
-            $PGENV_PATCH -p1 <<EOF
+            # Unpack the source.
+            rm -rf "postgresql-$v"
+            $PGENV_TAR $TAR_OPTS $PG_TARBALL
+            cd postgresql-$v
+
+            # Patch 8.1.
+            # XXXX Consider moving to a file, adding patches for older versions.
+            if [[ $v =~ ^8\.[01]\. ]]; then
+                $PGENV_PATCH -p1 <<EOF
 --- a/src/pl/plperl/plperl.c
 +++ b/src/pl/plperl/plperl.c
 @@ -694,7 +694,7 @@
@@ -651,33 +670,34 @@ case $1 in
  
  	hv_clear(stash);
 EOF
-        fi
+            fi
 
 
-        pgenv_debug "configure command line [--prefix=$PGENV_ROOT/pgsql-$v] + [$PGENV_CONFIGURE_OPTS]"
-        # need to keep a single string to pass to configure or
-        # will get an 'invalid package'
-        ./configure --prefix=$PGENV_ROOT/pgsql-$v $PGENV_CONFIGURE_OPTS
+            pgenv_debug "configure command line [--prefix=$PGENV_ROOT/pgsql-$v] + [$PGENV_CONFIGURE_OPTS]"
+            # need to keep a single string to pass to configure or
+            # will get an 'invalid package'
+            ./configure --prefix=$PGENV_ROOT/pgsql-$v $PGENV_CONFIGURE_OPTS
 
-        # make and make install
-        if [[ $v =~ ^[1-8]\. ]]; then
-            # 8.x (and prior versions?) doesn't have `make world`.
-            $PGENV_MAKE $PGENV_MAKE_OPTS
-            $PGENV_MAKE install
-            cd contrib
-            $PGENV_MAKE $PGENV_MAKE_OPTS
-            $PGENV_MAKE install
-        else
-            # Yay, make world!
-            $PGENV_MAKE world $PGENV_MAKE_OPTS
-            $PGENV_MAKE install-world
-        fi
+            # make and make install
+            if [[ $v =~ ^[1-8]\. ]]; then
+                # 8.x (and prior versions?) doesn't have `make world`.
+                $PGENV_MAKE $PGENV_MAKE_OPTS
+                $PGENV_MAKE install
+                cd contrib
+                $PGENV_MAKE $PGENV_MAKE_OPTS
+                $PGENV_MAKE install
+            else
+                # Yay, make world!
+                $PGENV_MAKE world $PGENV_MAKE_OPTS
+                $PGENV_MAKE install-world
+            fi
 
 
-        # write the configuration
-        pgenv_configuration_write "$v"
+            # write the configuration
+            pgenv_configuration_write "$v"
 
-        echo "PostgreSQL $v built"
+            echo "PostgreSQL $v built"
+        done
         exit
         ;;
 
@@ -696,22 +716,28 @@ EOF
         ;;
 
     remove)
-        v=$2
-        pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
+        shift # delte `remove` from command line
 
-        if [ "`readlink pgsql`" = "pgsql-$v" ]; then
-            echo "PostgreSQL $v currently in use"
-            echo "Run \`pgenv clear\` to clear it"
-            echo "or \`pgenv use\` to switch to another version"
-            exit 1
-        fi
+        for v in $*
+        do
 
-        rm -fr "pgsql-$v"
-        rm -fr src/postgresql-$v.tar.* # could be .tar.bz2 or .tar.gz
-        rm -fr src/postgresql-$v
-        pgenv_configuration_delete $v  # remove this particular configuration
-        pgenv_configuration_delete     # remove default configuration if no instances are left
-        echo "PostgreSQL $v removed"
+            pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
+
+            if [ "`readlink pgsql`" = "pgsql-$v" ]; then
+                echo "PostgreSQL $v currently in use"
+                echo "Run \`pgenv clear\` to clear it"
+                echo "or \`pgenv use\` to switch to another version"
+                exit 1
+            fi
+
+            rm -fr "pgsql-$v"
+            rm -fr src/postgresql-$v.tar.* # could be .tar.bz2 or .tar.gz
+            rm -fr src/postgresql-$v
+            pgenv_configuration_delete $v  # remove this particular configuration
+            echo "PostgreSQL $v removed"
+        done
+
+        pgenv_configuration_delete '' 'exit'    # remove default configuration if no instances are left
         exit
         ;;
 
@@ -896,7 +922,7 @@ EOF
                 fi
                 ;;
             delete)
-                pgenv_configuration_delete "$v" ;;
+                pgenv_configuration_delete "$v" 'exit';;
             *)
                 if [ -z "$action" ]; then
                     echo "You need to specify a \`config\` action to perform"
