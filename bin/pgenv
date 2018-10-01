@@ -335,11 +335,27 @@ pgenv_configuration_load(){
 # Utility function to remove the configuration file.
 # It does remove the default file only if there are no more installed instances
 # on this system.
+#
+# Arguments:
+# - the version to delete configuration for (nothing for deleting the default)
+# - a non-empty string to force the function to terminate the script
 pgenv_configuration_delete(){
     local v=$1
+    local do_exit=$2
     local PGENV_DEFAULT_CONFIG_FILE=$( pgenv_configuration_file_name )
     local PGENV_CONFIG_FILE=$( pgenv_configuration_file_name $v )
 
+
+    # first of all, check if the file exists
+    if [ ! -f "$PGENV_CONFIG_FILE" ]; then
+        if [ ! -z "$do_exit" ]; then
+            echo "No configuration to delete"
+            exit 1
+        fi
+
+        # nothing to do
+        return
+    fi
 
     # if the file is the default one, delete only if there are
     # no installed instances
@@ -351,14 +367,15 @@ pgenv_configuration_delete(){
         done
 
         if [ $installed_versions -gt 0 ]; then
-            echo "Cannot delete default configuration while version configurations exist"
-            echo "To remove it anyway, delete $PGENV_CONFIG_FILE"
-            exit 1
+            if [ ! -z "$do_exit" ]; then
+                echo "Cannot delete default configuration while version configurations exist"
+                echo "To remove it anyway, delete $PGENV_CONFIG_FILE"
+                exit 1
+            fi
+
+            # nothing to do
+            return
         fi
-        # if the file is not here, nothing to do!
-      elif [ ! -f "$PGENV_CONFIG_FILE" ]; then
-            echo "No configuration to delete"
-            exit 1
     fi
 
     # remove the file
@@ -699,22 +716,28 @@ EOF
         ;;
 
     remove)
-        v=$2
-        pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
+        shift # delte `remove` from command line
 
-        if [ "`readlink pgsql`" = "pgsql-$v" ]; then
-            echo "PostgreSQL $v currently in use"
-            echo "Run \`pgenv clear\` to clear it"
-            echo "or \`pgenv use\` to switch to another version"
-            exit 1
-        fi
+        for v in $*
+        do
 
-        rm -fr "pgsql-$v"
-        rm -fr src/postgresql-$v.tar.* # could be .tar.bz2 or .tar.gz
-        rm -fr src/postgresql-$v
-        pgenv_configuration_delete $v  # remove this particular configuration
-        pgenv_configuration_delete     # remove default configuration if no instances are left
-        echo "PostgreSQL $v removed"
+            pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
+
+            if [ "`readlink pgsql`" = "pgsql-$v" ]; then
+                echo "PostgreSQL $v currently in use"
+                echo "Run \`pgenv clear\` to clear it"
+                echo "or \`pgenv use\` to switch to another version"
+                exit 1
+            fi
+
+            rm -fr "pgsql-$v"
+            rm -fr src/postgresql-$v.tar.* # could be .tar.bz2 or .tar.gz
+            rm -fr src/postgresql-$v
+            pgenv_configuration_delete $v  # remove this particular configuration
+            echo "PostgreSQL $v removed"
+        done
+
+        pgenv_configuration_delete '' 'exit'    # remove default configuration if no instances are left
         exit
         ;;
 
@@ -899,7 +922,7 @@ EOF
                 fi
                 ;;
             delete)
-                pgenv_configuration_delete "$v" ;;
+                pgenv_configuration_delete "$v" 'exit';;
             *)
                 if [ -z "$action" ]; then
                     echo "You need to specify a \`config\` action to perform"
