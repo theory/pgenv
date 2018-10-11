@@ -66,7 +66,7 @@ pgenv_versions() {
 }
 
 pgenv_help() {
-        cat <<EOF
+    cat <<EOF
 Usage: pgenv <command> [<args>]
 
 The pgenv commands are:
@@ -212,7 +212,7 @@ pgenv_input_version_or_exit() {
 
     if [[ $version =~ ^[1-9][0-9]?\.[0-9]+(\.[0-9]+)?$ ]]; then
         return # versions 9.5.4 or 10.1 and alike
-    elif [[ $version =~ ^[1-9][1-9]beta[1-9]?$ ]]; then
+    elif [[ $version =~ ^[1-9][1-9](beta|rc)[1-9]?$ ]]; then
         return # versions 11beta1 and alike
     else
         echo "Value \"$version\" does not appear to be a PostgreSQL valid version number"
