@@ -435,6 +435,8 @@ pgenv_configuration_write() {
     pgenv_configuration_write_variable "$CONF" "PGENV_MAKE_OPTS" "$PGENV_MAKE_OPTS" 'Make flags'
     pgenv_configuration_write_variable "$CONF" "PGENV_CONFIGURE_OPTS" "$PGENV_CONFIGURE_OPTS" 'Configure flags, including PL languages but without --prefix'
 
+    pgenv_configuration_write_variable "$CONF" "PGENV_PATCH_INDEX" "$PGENV_PATCH_INDEX" 'A file that lists ordered patches to apply before building starts'
+
     pgenv_configuration_write_variable "$CONF" "PGENV_CURL" "$PGENV_CURL" 'Curl command to download source code'
     pgenv_configuration_write_variable "$CONF" "PGENV_PATCH" "$PGENV_PATCH" 'Patch command for specific versions'
     pgenv_configuration_write_variable "$CONF" "PGENV_SED" "$PGENV_SED" 'Sed used to manipulate strings'
@@ -522,6 +524,109 @@ pgenv_stop_or_restart_instance(){
         esac
     fi
 }
+
+
+# A function to provide the list, in the right order, of
+# patch index files to try for patching the source tree.
+# The idea is that the priority goes to an index that matches
+# the exact version and the OS-type, then the exact PostgreSQL version,
+# and iterates reducing the version to major/minor and finally to
+# major only. For example, for the version 8.1.4:
+#
+#
+#  patch/index/patch.8.1.4.Linux
+#  patch/index/patch.8.1.4
+#  patch/index/patch.8.1.Linux
+#  patch/index/patch.8.1
+#  patch/index/patch.8.Linux
+#  patch/index/patch.8
+#
+# The first file found must win.
+pgenv_patch_get_index_file_names(){
+    local version=$1
+
+    local brand=$( echo $version | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
+    local year=$(  echo $version | $PGENV_SED 's/[[:digit:]]\{1,2\}\.\([[:digit:]]\{1,2\}\).*/\1/' )
+
+    # show all the files in the correct order
+    cat <<EOF
+$PGENV_ROOT/patch/index/patch.$version.$(uname -s)
+$PGENV_ROOT/patch/index/patch.$version
+$PGENV_ROOT/patch/index/patch.$brand.$year.$(uname -s)
+$PGENV_ROOT/patch/index/patch.$brand.$year
+$PGENV_ROOT/patch/index/patch.$brand.$(uname -s)
+$PGENV_ROOT/patch/index/patch.$brand
+EOF
+
+}
+
+
+# Utility function to patch a source tree.
+# The function accepts a version number, that is the version number of PostgreSQL
+# that is going to be built. The function gets the list of available patch index files
+# and reads the first one that exists.
+# The patch index, in turn, contains a list of patches to be applied in an
+# ordered manner.
+#
+# The second, optional, argument for the function is the "verbose" argument,
+# that if not empty, makes the function to print out a message for
+# every patch.
+pgenv_patch_source_tree() {
+    local version=$1
+    local verbose=$2
+    local current_patch
+
+    # skip all on an empty version
+    if [ -z "$version" ]; then
+        return
+    fi
+
+    # see what index to apply
+    if [ -z "$PGENV_PATCH_INDEX" ]; then
+        for current_patch in  $( pgenv_patch_get_index_file_names $version )
+        do
+            if [ -r "$current_patch" ]; then
+                PGENV_PATCH_INDEX=$current_patch
+                break
+            fi
+        done
+    fi
+
+
+    pgenv_debug "Patch index file [$PGENV_PATCH_INDEX]"
+    if [ ! -r "$PGENV_PATCH_INDEX" ]; then
+        # no patch to apply
+        pgenv_debug "Skipping patch: no index file found!"
+        return
+    fi
+
+    # if here, apply all the patches listed in the index file
+    for current_patch in $( cat "$PGENV_PATCH_INDEX" )
+    do
+        # is the current patch file name relative or absolute?
+        case "$current_patch" in
+            /*) ;;
+            *) current_patch="$PGENV_ROOT/patch/$current_patch" ;;
+        esac
+
+        if [ -r "$current_patch" ]; then
+            pgenv_debug "Applying patch [$current_patch] into source tree $( pwd )"
+            $PGENV_PATCH -s -p1 < "$current_patch"
+
+            # if in verbose mode, print out
+            # a status message about this patch
+            if [ ! -z "$verbose" ]; then
+                if [ $? -eq 0 ]; then
+                    echo -n "Applied"
+                else
+                    echo -n "NOT applied"
+                fi
+                echo " patch $current_patch"
+            fi
+        fi
+    done
+}
+
 
 case $1 in
     use)
@@ -635,23 +740,9 @@ case $1 in
         $PGENV_TAR $TAR_OPTS $PG_TARBALL
         cd postgresql-$v
 
-        # Patch 8.1.
-        # XXXX Consider moving to a file, adding patches for older versions.
-        if [[ $v =~ ^8\.[01]\. ]]; then
-            $PGENV_PATCH -p1 <<EOF
---- a/src/pl/plperl/plperl.c
-+++ b/src/pl/plperl/plperl.c
-@@ -694,7 +694,7 @@
- 		if (!isGV_with_GP(sv) || !GvCV(sv))
- 			continue;
- 		SvREFCNT_dec(GvCV(sv)); /* free the CV */
--		GvCV(sv) = NULL;		/* prevent call via GV */
-+		GvCV_set(sv, NULL);		/* prevent call via GV */
- 	}
- 
- 	hv_clear(stash);
-EOF
-        fi
+        # patch the source tree if required
+        pgenv_debug "Patching version $v"
+        pgenv_patch_source_tree "$v" 'verbose'
 
 
         pgenv_debug "configure command line [--prefix=$PGENV_ROOT/pgsql-$v] + [$PGENV_CONFIGURE_OPTS]"
