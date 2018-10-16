@@ -108,7 +108,7 @@ $ git pull
 *   env - Sets environment for execution
 *   bash - Command shell interpreter
 *   curl - Used to download files
-*   sed, grep, cat, tar, sort, tr - General Unix command line utilities
+*   sed, grep, cat, tar, sort, tr, uname - General Unix command line utilities
 *   patch - For patching versions that need patching
 *   make -  Builds PostgreSQL
 
@@ -183,8 +183,10 @@ running, `clear` will stop it before clearing it.
 ### pgenv build
 
 Downloads and builds the specified version of PostgreSQL and its contrib
-modules, as far back as 8.0. PostgreSQL versions 8.0 and 8.1 will be patched
-before building. If the version is already built, it will not be rebuilt; use
+modules, as far back as 8.0. 
+It is possible to instrument the build process to patch the source tree, see
+the section on patching later on.
+If the version is already built, it will not be rebuilt; use
 `clear` to remove an existing version before building it again.
 
     $ pgenv build 10.3
@@ -226,7 +228,40 @@ pass it on the command line at the time of build:
 
    $ PERL=/usr/local/my-fancy-perl pgenv build 10.5
    
-  
+#### Patching
+
+`pgenv` can patch the source tree before the build process starts.
+In particular, the `patch/` folder can contain a set of index files
+and patch to apply. The process searches for an index file corresponding
+to the PostgreSQL version to build, and if found applies all the patches
+contained into the index.
+
+Index files are searched using the PostgreSQL version, or parts of it, and
+the operating system type. For example, in the case of the PostgreSQL version
+8.1.4 the index files is searched among one of the following:
+
+      $PGENV_ROOT/patch/index/patch.8.1.4.Linux
+      $PGENV_ROOT/patch/index/patch.8.1.4
+      $PGENV_ROOT/patch/index/patch.8.1.Linux
+      $PGENV_ROOT/patch/index/patch.8.1
+      $PGENV_ROOT/patch/index/patch.8.Linux
+      $PGENV_ROOT/patch/index/patch.8
+
+
+This allows you to specify an index for pretty much any combination or grouping desired.
+The first index file that matches wins and is used for the build process. 
+If no index file is found within the list, no patching is applied at all.
+
+The index file must contain a list of patches to apply, that is file names (either absolute
+or relative to the `patch/` subfolder). Each individual file is applied thru `patch(1)`.
+
+It is possible to specify a particular index file, that means avoid the automatic index selection,
+by either setting the `PGENV_PATCH_INDEX` variable on the command line or in the configuration
+file. As an example
+
+    $ PGENV_PATCH_INDEX=/src/my-patch-list.txt pgenv build 10.5
+
+
 
 ### pgenv remove
 
