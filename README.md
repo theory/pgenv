@@ -236,8 +236,15 @@ and patch to apply. The process searches for an index file corresponding
 to the PostgreSQL version to build, and if found applies all the patches
 contained into the index.
 
-Index files are searched using the PostgreSQL version, or parts of it, and
-the operating system type. For example, in the case of the PostgreSQL version
+Index files are named after the PostgreSQL version and the Operating System;
+in particular the name of an index file is composed as `patch.<version>.<os>`
+where `version` is the PostgreSQL version number (or a part of it) and
+`os` is the Operating System. As an example, `patch.8.1.4.Linux` represents
+the index used when building PostgreSQL 8.1.4 on a Linux machine.
+To provide more flexibility, the system searches for an index that is named
+after the exact PostgreSQL version and Operating System or a mix of
+possible combinations of those.
+As an example, in the case of the PostgreSQL version
 8.1.4 the index files is searched among one of the following:
 
       $PGENV_ROOT/patch/index/patch.8.1.4.Linux
@@ -249,8 +256,8 @@ the operating system type. For example, in the case of the PostgreSQL version
 
 
 This allows you to specify an index for pretty much any combination or grouping desired.
-The first index file that matches wins and is used for the build process. 
-If no index file is found within the list, no patching is applied at all.
+The first index file that matches wins and it is the only one used for the build process. 
+If no index file is found at all, no patching is applied on the source tree.
 
 The index file must contain a list of patches to apply, that is file names (either absolute
 or relative to the `patch/` subfolder). Each individual file is applied thru `patch(1)`.
