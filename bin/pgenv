@@ -8,7 +8,7 @@ set -E
 if [ -z "$PGENV_ROOT" ]; then
     PGENV_ROOT=$(dirname $(dirname $0))
 else
-    echo "Using PGENV_ROOT $PGENV_ROOT"
+    echo "Using PGENV_ROOT $PGENV_ROOT" >&2
 fi
 
 cd $PGENV_ROOT
