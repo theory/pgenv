@@ -462,7 +462,7 @@ pgenv_configuration_write() {
     # ok, write the configuration
     echo "# pgenv configuration created on $(date)" > "$CONF"
     echo "" >> "$CONF"
-    pgenv_configuration_write_variable "$CONF" "PGENV_VERBOSITY" "" "Enables verbose output, set to \'info', 'debug' or none"
+    pgenv_configuration_write_variable "$CONF" "PGENV_VERBOSITY" "" "Enables verbose output, set to 'info', 'debug' or none"
 
     echo "###### Build settings #####" >> "$CONF"
     pgenv_configuration_write_variable "$CONF" "PGENV_MAKE" "$PGENV_MAKE" 'Make command to use for build'
