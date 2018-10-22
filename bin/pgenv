@@ -10,17 +10,16 @@ msg_levels[debug]=5
 msg_levels[info]=10
 msg_levels[warn]=20
 msg_levels[error]=25
-msg_levels[always]=999
 
 
 
 # Prints a message of text to STDERR.
 # The function accepts two arguments:
 # 1) the message to print
-# 2) an optional level (by default 'always' that is show always the message)
+# 2) an optional level (by default 'info')
 #
 # The message is printed only if the value of the variable
-# PGENV_VERBOSITY is the same of the level.
+# PGENV_VERBOSITY is lesser or equal to the level of the message.
 pgenv_message(){
     local level=$2
     local current_level=0
@@ -28,7 +27,7 @@ pgenv_message(){
 
     # default to info
     if [ -z "$level" ]; then
-        level='always' # always display!
+        level='info'
     fi
 
     if [ -z "$PGENV_VERBOSITY" ]; then
