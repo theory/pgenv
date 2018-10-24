@@ -5,12 +5,10 @@ trap 'exit' ERR
 set -E
 
 # message levels, used by pgenv_message
-declare -A msg_levels
-msg_levels[debug]=5
-msg_levels[info]=10
-msg_levels[warn]=20
-msg_levels[error]=25
-
+PGENV_MSG_LEVEL_DEBUG=0
+PGENV_MSG_LEVEL_INFO=10
+PGENV_MSG_LEVEL_WARN=20
+PGENV_MSG_LEVEL_ERROR=25
 
 
 # Prints a message of text to STDERR.
@@ -22,22 +20,28 @@ msg_levels[error]=25
 # PGENV_VERBOSITY is lesser or equal to the level of the message.
 pgenv_message(){
     local level=$2
-    local current_level=0
+    local current_level=$PGENV_MSG_LEVEL_INFO # default to info
     local defined_level=0
 
-    # default to info
-    if [ -z "$level" ]; then
-        level='info'
-    fi
+    case "$level" in
+        debug)  current_level=$PGENV_MSG_LEVEL_DEBUG ;;
+        info)   current_level=$PGENV_MSG_LEVEL_INFO  ;;
+        warn)   current_level=$PGENV_MSG_LEVEL_WARN  ;;
+        error)  current_level=$PGENV_MSG_LEVEL_ERROR ;;
+        *)      current_level=$PGENV_MSG_LEVEL_INFO  ;;
+    esac
 
-    if [ -z "$PGENV_VERBOSITY" ]; then
-        PGENV_VERBOSITY='info'
-    fi
+    case "$PGENV_VERBOSITY" in
+        debug)  defined_level=$PGENV_MSG_LEVEL_DEBUG ;;
+        info)   defined_level=$PGENV_MSG_LEVEL_INFO  ;;
+        warn)   defined_level=$PGENV_MSG_LEVEL_WARN  ;;
+        error)  defined_level=$PGENV_MSG_LEVEL_ERROR ;;
+        *)      defined_level=$PGENV_MSG_LEVEL_INFO  ;;
+    esac
 
-    # get the message priority as a numeric value
-    current_level=${msg_levels[$level]}
-    defined_level=${msg_levels[$PGENV_VERBOSITY]}
-
+    # print the message only if the 'current' level of
+    # verbosity is greater than the one defined
+    # in 'PGENV_VERBOSITY'
     if [ $current_level -ge $defined_level ]; then
         echo "$1" >&2
     fi
