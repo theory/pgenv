@@ -53,7 +53,7 @@ pgenv_message(){
 if [ -z "$PGENV_ROOT" ]; then
     PGENV_ROOT=$(dirname $(dirname $0))
 else
-    pgenv_message "Using PGENV_ROOT $PGENV_ROOT" 'warn'
+    pgenv_message "Using PGENV_ROOT $PGENV_ROOT" $PGENV_MSG_LEVEL_WARN
 fi
 
 cd $PGENV_ROOT
@@ -234,8 +234,8 @@ pgenv_input_version_or_exit() {
 
         # if no version is installed, suggest the user to build one
         if [ $installed_versions -eq 0 ]; then
-            pgenv_message "No PostgreSQL version is installed!"
-            pgenv_message "Are you looking for command \`$hint\` instead?"
+            pgenv_message "No PostgreSQL version is installed!"            $PGENV_MSG_LEVEL_ERROR
+            pgenv_message "Are you looking for command \`$hint\` instead?" $PGENV_MSG_LEVEL_ERROR
             exit 1
         else
             # at least one version is available,
@@ -253,7 +253,7 @@ pgenv_input_version_or_exit() {
     elif [[ $version =~ ^[1-9][1-9](beta|rc)[1-9]?$ ]]; then
         return # versions 11beta1 and alike
     else
-        pgenv_message "Value \"$version\" does not appear to be a PostgreSQL valid version number"
+        pgenv_message "Value \"$version\" does not appear to be a PostgreSQL valid version number" $PGENV_MSG_LEVEL_ERROR
         exit 1
     fi
 }
@@ -275,9 +275,9 @@ pgenv_installed_version_or_exit(){
 # and aborts the script.
 pgenv_current_postgresql_or_exit(){
     if [ ! -e "pgsql" ]; then
-        pgenv_message "No version of PostgreSQL currently in use"
-        pgenv_message "Run \`pgenv use \$version\` to link and start a specific version"
-        pgenv_message "Run \`pgenv versions\` to list all installed versions"
+        pgenv_message "No version of PostgreSQL currently in use"                         $PGENV_MSG_LEVEL_ERROR
+        pgenv_message "Run \`pgenv use \$version\` to link and start a specific version"  $PGENV_MSG_LEVEL_ERROR
+        pgenv_message "Run \`pgenv versions\` to list all installed versions"             $PGENV_MSG_LEVEL_ERROR
         exit 1
     fi
 }
@@ -357,17 +357,17 @@ pgenv_configuration_load(){
 
     for conf in $( echo "$PGENV_CONFIG_FILE" "$PGENV_DEFAULT_CONFIG_FILE" )
     do
-        pgenv_message "Looking for configuration in $conf" 'debug'
+        pgenv_message "Looking for configuration in $conf" $PGENV_MSG_LEVEL_DEBUG
 
         if [ -r "$conf" ]; then
-            pgenv_message "Load configuration from [$conf]" 'debug'
+            pgenv_message "Load configuration from [$conf]" $PGENV_MSG_LEVEL_DEBUG
             source "$conf"
             PGENV_CONFIGURATION_FILE="$conf"
             return
         fi
     done
 
-    pgenv_message "No configuration loaded" 'info'
+    pgenv_message "No configuration loaded" $PGENV_MSG_LEVEL_WARN
 }
 
 # Utility function to remove the configuration file.
@@ -389,18 +389,18 @@ pgenv_configuration_delete(){
         done
 
         if [ $installed_versions -gt 0 ]; then
-            pgenv_message "Cannot delete default configuration while version configurations exist"
-            pgenv_message "To remove it anyway, delete $PGENV_CONFIG_FILE"
+            pgenv_message "Cannot delete default configuration while version configurations exist" $PGENV_MSG_LEVEL_ERROR
+            pgenv_message "To remove it anyway, delete $PGENV_CONFIG_FILE" $PGENV_MSG_LEVEL_ERROR
             exit 1
         fi
         # if the file is not here, nothing to do!
       elif [ ! -f "$PGENV_CONFIG_FILE" ]; then
-            pgenv_message "No configuration to delete"
-            exit 1
+        pgenv_message "No configuration to delete" $PGENV_MSG_LEVEL_ERROR
+        exit 1
     fi
 
     # remove the file
-    pgenv_message "Deleting configuration file [$PGENV_CONFIG_FILE]" 'debug'
+    pgenv_message "Deleting configuration file [$PGENV_CONFIG_FILE]" $PGENV_MSG_LEVEL_DEBUG
     rm -f "$PGENV_CONFIG_FILE"           # remove config file
     rm -f "${PGENV_CONFIG_FILE}.backup"  # remove also backup file
     pgenv_message "Configuration file $PGENV_CONFIG_FILE (and backup) deleted"
@@ -452,14 +452,14 @@ pgenv_configuration_write() {
 
     # sanity check
     if [ -z "$CONF" ]; then
-        pgenv_message "Cannot determine which configuration file to use!"
+        pgenv_message "Cannot determine which configuration file to use!" $PGENV_MSG_LEVEL_ERROR
         exit 1
     fi
 
     # make a backup copy
     if [ -f "$CONF" ]; then
         CONF_BACKUP="${CONF}.backup"
-        pgenv_message "Making backup copy of [$CONF] into [$CONF_BACKUP]" 'debug'
+        pgenv_message "Making backup copy of [$CONF] into [$CONF_BACKUP]" $PGENV_MSG_LEVEL_DEBUG
         mv "$CONF" "$CONF_BACKUP"
     fi
 
@@ -505,13 +505,13 @@ pgenv_start_instance(){
     # Init the database if needed.
     pgenv_initdb
 
-    pgenv_message "pg_ctl starting instance with flags [$PGENV_START_OPTS] log [$PGENV_LOG]" 'debug'
+    pgenv_message "pg_ctl starting instance with flags [$PGENV_START_OPTS] log [$PGENV_LOG]" $PGENV_MSG_LEVEL_DEBUG
     $PG_CTL start -D "$PG_DATA"  -l "$PGENV_LOG" $PGENV_START_OPTS
     if [ $? -eq 0 ]; then
         pgenv_message "PostgreSQL $v started"
         pgenv_message "Logging to $PGENV_LOG"
     else
-        pgenv_message "PostgreSQL $v NOT started, examine logs in $PGENV_LOG"
+        pgenv_message "PostgreSQL $v NOT started, examine logs in $PGENV_LOG" $PGENV_MSG_LEVEL_ERROR
     fi
     trap 'exit' ERR
 }
@@ -521,10 +521,10 @@ pgenv_start_instance(){
 # It is safe to call multiple times.
 pgenv_initdb(){
     if [ ! -d $PG_DATA ]; then
-        pgenv_message "initdb running with flags [$PGENV_INITDB_OPTS]" 'debug'
+        pgenv_message "initdb running with flags [$PGENV_INITDB_OPTS]" $PGENV_MSG_LEVEL_DEBUG
         $INITDB -D "$PG_DATA" $PGENV_INITDB_OPTS
     else
-        pgenv_message "Directory $PG_DATA exists, not initdb-ing!" 'debug'
+        pgenv_message "Directory $PG_DATA exists, not initdb-ing!" $PGENV_MSG_LEVEL_DEBUG
     fi
 }
 
@@ -537,12 +537,12 @@ pgenv_stop_or_restart_instance(){
         # ok, server running, apply the command
         case $command in
             stop)
-                pgenv_message "pg_ctl stopping with  flags [$PGENV_STOP_OPTS]" 'debug'
+                pgenv_message "pg_ctl stopping with  flags [$PGENV_STOP_OPTS]" $PGENV_MSG_LEVEL_DEBUG
                 $PG_CTL stop -D "$PG_DATA" $PGENV_STOP_OPTS
                 pgenv_message "PostgreSQL $v stopped"
                 ;;
             restart)
-                pgenv_message "pg_ctl restarting with flags [$PGENV_RESTART_OPTS]" 'debug'
+                pgenv_message "pg_ctl restarting with flags [$PGENV_RESTART_OPTS]" $PGENV_MSG_LEVEL_DEBUG
                 $PG_CTL restart -D "$PG_DATA" -l "$PGENV_LOG"  $PGENV_RESTART_OPTS
                 pgenv_message "PostgreSQL $v restarted"
                 pgenv_message "Logging to $PGENV_LOG"
@@ -595,7 +595,7 @@ case $1 in
         # check a version is currently in use
         pgenv_current_postgresql_or_exit
         v=$( pgenv_current_version_number )
-        pgenv_message "Current version $v" 'debug'
+        pgenv_message "Current version $v" $PGENV_MSG_LEVEL_DEBUG
         pgenv_configuration_load $v
 
         # Start er up!
@@ -607,7 +607,7 @@ case $1 in
         # check a version is currently in use
         pgenv_current_postgresql_or_exit
         v=$( pgenv_current_version_number )
-        pgenv_message "Current version $v" 'debug'
+        pgenv_message "Current version $v" $PGENV_MSG_LEVEL_DEBUG
         pgenv_configuration_load $v
 
         # either stop or restart
@@ -657,12 +657,12 @@ case $1 in
 
         # warn if no configuration was loaded
         if [ -z "$PGENV_CONFIGURATION_FILE" ]; then
-            pgenv_message "WARNING: no configuration file found for version $v"
-            pgenv_message "HINT: if you wish to customize the build process please"
-            pgenv_message "stop the execution within 5 seconds (CTRL-c) and run "
-            pgenv_message "    pgenv config write $v && pgenv config edit $v"
-            pgenv_message "adjust 'configure' and 'make' options and flags and run again"
-            pgenv_message "    pgenv build $v"
+            pgenv_message "WARNING: no configuration file found for version $v"            $PGENV_MSG_LEVEL_WARN
+            pgenv_message "HINT: if you wish to customize the build process please"        $PGENV_MSG_LEVEL_WARN
+            pgenv_message "stop the execution within 5 seconds (CTRL-c) and run "          $PGENV_MSG_LEVEL_WARN
+            pgenv_message "    pgenv config write $v && pgenv config edit $v"              $PGENV_MSG_LEVEL_WARN
+            pgenv_message "adjust 'configure' and 'make' options and flags and run again"  $PGENV_MSG_LEVEL_WARN
+            pgenv_message "    pgenv build $v"                                             $PGENV_MSG_LEVEL_WARN
             pgenv_message
             sleep 5
         fi
@@ -692,7 +692,7 @@ EOF
         fi
 
 
-        pgenv_message "configure command line [--prefix=$PGENV_ROOT/pgsql-$v] + [$PGENV_CONFIGURE_OPTS]" 'debug'
+        pgenv_message "configure command line [--prefix=$PGENV_ROOT/pgsql-$v] + [$PGENV_CONFIGURE_OPTS]" $PGENV_MSG_LEVEL_DEBUG
         # need to keep a single string to pass to configure or
         # will get an 'invalid package'
         ./configure --prefix=$PGENV_ROOT/pgsql-$v $PGENV_CONFIGURE_OPTS
@@ -738,9 +738,9 @@ EOF
         pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
 
         if [ "`readlink pgsql`" = "pgsql-$v" ]; then
-            pgenv_message "PostgreSQL $v currently in use"
-            pgenv_message "Run \`pgenv clear\` to clear it"
-            pgenv_message "or \`pgenv use\` to switch to another version"
+            pgenv_message "PostgreSQL $v currently in use"                $PGENV_MSG_LEVEL_ERROR
+            pgenv_message "Run \`pgenv clear\` to clear it"               $PGENV_MSG_LEVEL_ERROR
+            pgenv_message "or \`pgenv use\` to switch to another version" $PGENV_MSG_LEVEL_ERROR
             exit 1
         fi
 
@@ -790,7 +790,7 @@ EOF
                               | sed 's/\/$//')
         do
             major=$( echo $version | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
-            pgenv_message "Extracted major version [$major]" 'debug'
+            pgenv_message "Extracted major version [$major]" $PGENV_MSG_LEVEL_DEBUG
 
             # check the version is a number!
             if [[ $major =~ ^[0-9]+$ ]] ; then
@@ -806,7 +806,7 @@ EOF
                     minor=$( echo $version | $PGENV_SED 's/[[:digit:]]\.\([[:digit:]]\{1,2\}\).*/\1/' )
                 fi
                 major=$(( major * 10 + minor ))
-                pgenv_message "Normalized major version [$major]" 'debug'
+                pgenv_message "Normalized major version [$major]" $PGENV_MSG_LEVEL_DEBUG
                 # append the current version to the hash
                 # indexed by the major version
                 versions_hash[ "$major" ]+="${version}-"
@@ -817,8 +817,8 @@ EOF
         # the download did go wrong
         keys=$( echo ${!versions_hash[@]} )
         if [ -z "$keys" ]; then
-            pgenv_message "No versions found at URL <$PGENV_DOWNLOAD_ROOT>"
-            pgenv_message "Hash content: ${!versions_hash[@]}" 'debug'
+            pgenv_message "No versions found at URL <$PGENV_DOWNLOAD_ROOT>" $PGENV_MSG_LEVEL_ERROR
+            pgenv_message "Hash content: ${!versions_hash[@]}" 'debug'      $PGENV_MSG_LEVEL_ERROR
             exit 1
         fi
 
@@ -850,7 +850,7 @@ EOF
                 done
 
                 if [ $must_print -ne 1 ]; then
-                    pgenv_message "Skip major version $current_version (required $*)" 'debug'
+                    pgenv_message "Skip major version $current_version (required $*)" $PGENV_MSG_LEVEL_DEBUG
                     continue
                 fi
             fi
@@ -929,7 +929,7 @@ EOF
                 if [ ! -z "$EDITOR" ]; then
                     $EDITOR $configuration_file
                 else
-                    pgenv_message "No EDITOR variable set, manually start your editor to edit $configuration_file"
+                    pgenv_message "No EDITOR variable set, manually start your editor to edit $configuration_file" $PGENV_MSG_LEVEL_ERROR
                     exit 1
                 fi
                 ;;
@@ -937,9 +937,9 @@ EOF
                 pgenv_configuration_delete "$v" ;;
             *)
                 if [ -z "$action" ]; then
-                    pgenv_message "You need to specify a \`config\` action to perform"
+                    pgenv_message "You need to specify a \`config\` action to perform" $PGENV_MSG_LEVEL_WARN
                 else
-                    pgenv_message "Configuration action \`$action\` not supported"
+                    pgenv_message "Configuration action \`$action\` not supported"     $PGENV_MSG_LEVEL_WARN
                 fi
                 exit 1
                 ;;
@@ -949,7 +949,7 @@ EOF
 
     *)
         if [ $# -gt 0 ]; then
-            pgenv_message "Unknown command \`$1\`"
+            pgenv_message "Unknown command \`$1\`" $PGENV_MSG_LEVEL_ERROR
         fi
 
         pgenv_help
