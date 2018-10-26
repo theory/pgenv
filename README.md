@@ -430,8 +430,8 @@ $ pgenv config show default
 # ---------------------------------------------------
 # pgenv configuration created on mer 12 set 2018, 08.35.52, CEST
 
-# Enables debug output
-# PGENV_DEBUG=''
+# Enables verbose output, set to 'info', 'debug' or none
+# PGENV_VERBOSITY=''
 
 ###### Build settings #####
 # Make command to use for build
@@ -492,6 +492,19 @@ loss of configuration:
 The `delete` subcommand deletes both the configuration file and its backup
 copy. The `pgenv remove` command also deletes any configuration for the
 removed version.
+
+#### Configuration of message verbosity
+
+The special variable `PGENV_VERBOSITY` can be used to increase or limit the verbosity
+of the application. It is possible to set it to `info`, `debug`, `error` or `warn`
+to show only message of the level greater or equal to the one selected.
+By default, the application runs with `info` level messages.
+More in details, the levels grow from:
+
+- `debug`
+- `info`
+- `warn`
+- `error`
 
 # Bug Reporting
 
