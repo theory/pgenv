@@ -213,7 +213,7 @@ Within the configuration file it is possible to instrument
 the build phase from the configuration to the actual build. For instance,
 in order to build with PL/Perl, it is possible to configure
 the variable `PGENV_CONFIGURE_OPTS` adding `--with-perl`. Please note that
-it is possiblwe to pass argument variables within the command line to
+it is possible to pass argument variables within the command line to
 instrument the build phase. As an example, the following is a possible
 work-flow to configure and build a customized 10.5 instance:
 
