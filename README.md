@@ -15,6 +15,9 @@ Synopsis
     # Build PostgreSQL server
     pgenv build 10.4
     
+    # Build from git
+    pgenv build-git
+    
     # Use PostgreSQL version
     pgenv use 10.4
     
@@ -110,7 +113,8 @@ $ git pull
 *   curl - Used to download files
 *   sed, grep, cat, tar, sort, tr, uname - General Unix command line utilities
 *   patch - For patching versions that need patching
-*   make -  Builds PostgreSQL
+*   make - Builds PostgreSQL
+*   git - Used to download the current source tree
 
 Optional dependencies:
 
@@ -268,6 +272,38 @@ file. As an example
 
     $ PGENV_PATCH_INDEX=/src/my-patch-list.txt pgenv build 10.5
 
+
+
+### pgenv build-git
+
+This command fetches the current source tree from the official PostgreSQL git repository
+and builds it as special version `dev`. This is an option aimed to help developers
+to keep a version up-to-date with the current PostgreSQL source tree.
+
+Actually, the command is an *alias* for `build dev`, meaning that the following
+two commands are identical:
+    
+    $ pgenv build-git
+    $ pgenv build dev
+    
+The first time the command is called a source directory `dev` is created and the
+default branch is checked out. On a further execution, the command
+will fetch updates from the repository.
+
+It is possible to configure both the repository and the branch to fetch
+using the variables:
+- `PGENV_GIT_REPO` which defaults to `https://git.postgresql.org/git/postgresql.git`;
+- `PGENV_GIT_CHECKOUT_BRANCH` which if not set defaults to fetching the `master` branch, while
+  if set creates a tracking branch.
+
+The above variable have not been included in the configuration mechanism because they
+represent advanced tweaks. It is however possible to include them in the configuration file
+for this particular version (`.pgenv.dev.conf`) or in the global configuration file
+to drive the checkout and fetch process.
+
+Patching of the special `dev` version happens as for regular versions, but using the special
+`dev` version identifier, and therefore the patch index is searched with such string
+in place of a regular version number.
 
 
 ### pgenv remove
