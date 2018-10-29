@@ -780,10 +780,18 @@ case $1 in
                 # directory already existing, fetch new sources
                 cd dev
                 git fetch $PGENV_GIT_REPO
+
+                if [ ! -z "$PGENV_GIT_CHECKOUT_BRANCH" ]; then
+                    git checkout $PGENV_GIT_CHECKOUT_BRANCH
+                fi
             else
                 # first checkout
                 git clone $PGENV_GIT_REPO $PGENV_GIT_CHECKOUT dev
                 cd dev
+
+                if [ ! -z "$PGENV_GIT_CHECKOUT_BRANCH" ]; then
+                    git checkout $PGENV_GIT_CHECKOUT_BRANCH
+                fi
             fi
         fi
 
