@@ -982,7 +982,7 @@ case $1 in
                 if [ ! -z "$EDITOR" ]; then
                     $EDITOR $configuration_file
                 else
-                    echo "No EDITOR variable set, manually start your editor to edit $configuration_file"
+                    echo "No EDITOR variable set, manually start your editor to edit $configuration_file (e.g: export EDITOR=/usr/bin/vim)"
                     exit 1
                 fi
                 ;;
