@@ -402,7 +402,7 @@ The `config` command accepts the following subcommands:
 
 - `show` prints the current or specified version configuration
 - `write` store the current or specified version configuration
-- `edit` opens the current or specified version configuration in an editor (using `$EDITOR`)
+- `edit` opens the current or specified version configuration in an editor (Using $EDITOR, e.g: export EDITOR=/usr/bin/vim)
 - `delete` removes the specified configuration
 
 Each sub-command accepts a PostgreSQL version number (e.g., `10.5`) or a
