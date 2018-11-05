@@ -758,6 +758,7 @@ case $1 in
 
         else
             # here there is the build from git for 'dev'
+            BUILD_DIR=postgresql-dev
 
             # initialize variables if not explicitly set
             if [ -z "$PGENV_GIT_REPO" ]; then
@@ -776,9 +777,9 @@ case $1 in
             pgenv_debug "Checking out [$PGENV_GIT_REPO] @ [$PGENV_GIT_CHECKOUT]"
 
             # download the sources
-            if [ -d 'dev' ]; then
+            if [ -d "$BUILD_DIR" ]; then
                 # directory already existing, fetch new sources
-                cd dev
+                cd "$BUILD_DIR"
                 git fetch $PGENV_GIT_REPO
 
                 if [ ! -z "$PGENV_GIT_CHECKOUT_BRANCH" ]; then
@@ -786,8 +787,8 @@ case $1 in
                 fi
             else
                 # first checkout
-                git clone $PGENV_GIT_REPO $PGENV_GIT_CHECKOUT dev
-                cd dev
+                git clone $PGENV_GIT_REPO $PGENV_GIT_CHECKOUT "$BUILD_DIR"
+                cd "$BUILD_DIR"
 
                 if [ ! -z "$PGENV_GIT_CHECKOUT_BRANCH" ]; then
                     git checkout $PGENV_GIT_CHECKOUT_BRANCH
@@ -815,8 +816,6 @@ case $1 in
             cd contrib
             $PGENV_MAKE $PGENV_MAKE_OPTS
             $PGENV_MAKE install
-        elif [ "$v" = 'dev' ]; then
-            $PGENV_MAKE world $PGENV_MAKE_OPTS
         else
             # Yay, make world!
             $PGENV_MAKE world $PGENV_MAKE_OPTS
