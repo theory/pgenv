@@ -982,7 +982,15 @@ case $1 in
                 if [ ! -z "$EDITOR" ]; then
                     $EDITOR $configuration_file
                 else
-                    echo "No EDITOR variable set, manually start your editor to edit $configuration_file"
+                    cat <<EOF
+No EDITOR variable set!
+You can either start manually your favourite
+editor to edit the configuration file
+     $configuration_file
+or export the EDITOR variable, such as
+     export EDITOR=/path/to/your/editor
+and run the command again.
+EOF
                     exit 1
                 fi
                 ;;

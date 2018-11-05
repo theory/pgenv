@@ -476,6 +476,9 @@ editor:
    $ pgenv config edit 10.5
    <output omitted>
 
+The `edit` command will start your favourite editor, that is whatever
+it is set within the `EDITOR` variable. If such variable is not set
+you will be warned.
 Use the `delete` subcommand To delete a configuration:
 
    $ pgenv config delete 10.5
