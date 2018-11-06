@@ -150,6 +150,9 @@ pgenv_check_dependencies(){
     pgenv_detail_command "sort" $(which sort)
     pgenv_detail_command "tr" $(which tr)
 
+    # check for git (required by build-git)
+    pgenv_detail_command 'git' $(which git)
+
     # Go back to exiting on error.
     trap 'exit' ERR
     if [ ! -z "$verbose" ]; then
