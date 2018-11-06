@@ -414,6 +414,7 @@ the following:
         stop       Stop the current PostgreSQL server
         restart    Restart the current PostgreSQL server
         build      Build a specific version of PostgreSQL
+        build-git  Build the development version ouf of git repository
         remove     Remove a specific version of PostgreSQL
         version    Show the current PostgreSQL version
         current    Same as 'version'
