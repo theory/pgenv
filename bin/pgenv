@@ -810,7 +810,7 @@ case $1 in
         pgenv_debug "configure command line [--prefix=$PGENV_ROOT/pgsql-$v] + [$PGENV_CONFIGURE_OPTS]"
         # need to keep a single string to pass to configure or
         # will get an 'invalid package'
-        ./configure --prefix=$PGENV_ROOT/pgsql-$v $PGENV_CONFIGURE_OPTS --without-readline
+        ./configure --prefix=$PGENV_ROOT/pgsql-$v $PGENV_CONFIGURE_OPTS 
 
         # make and make install
         if [[ $v =~ ^[1-8]\. ]]; then
