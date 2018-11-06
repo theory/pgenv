@@ -693,16 +693,16 @@ case $1 in
         exit
         ;;
 
-    build|build-git)
+    build|build-dev)
 
-        # in the case of 'build-git'
+        # in the case of 'build-dev'
         # the version defaults to 'dev'
         case $1 in
             build)     v=$2    ;;
-            build-git) v='dev'
-                       shift # remove the command
-                       ;;
+            build-dev) v='dev' ;;
         esac
+
+        shift # remove the command
 
         # sanity checks before building
         pgenv_input_version_or_exit "$v"
@@ -762,45 +762,23 @@ case $1 in
 
         else
             # here there is the build from git for 'dev'
-            BUILD_DIR=postgresql-dev
+            BUILD_DIR=postgresql-$v
 
             # initialize variables if not explicitly set
-            if [ -z "$PGENV_GIT_REPO" ]; then
-                PGENV_GIT_REPO="https://git.postgresql.org/git/postgresql.git"
+            if [ -z "$PGENV_POSTGRESQL_REPOSITORY" ]; then
+                PGENV_POSTGRESQL_REPOSITORY="https://git.postgresql.org/git/postgresql.git"
             fi
 
-            # if the user wants a specific branch, build the
-            # command line options
-            if [ ! -z "$PGENV_GIT_CHECKOUT_BRANCH" ]; then
-                PGENV_GIT_CHECKOUT="-b $PGENV_GIT_CHECKOUT_BRANCH --track origin/$PGENV_GIT_CHECKOUT_BRANCH"
-            else
-                # avoid tainting
-                PGENV_GIT_CHECKOUT=""
+            # do we need to do the initial repository clone?
+            if [ ! -d "$BUILD_DIR" ]; then
+                git clone $PGENV_POSTGRESQL_REPOSITORY  "$BUILD_DIR"
             fi
 
-            pgenv_debug "Checking out [$PGENV_GIT_REPO] @ [$PGENV_GIT_CHECKOUT]"
+            cd $BUILD_DIR
+            # do an update (not needed after the first checkout)
+            git pull $PGENV_POSTGRESQL_REPOSITORY $PGENV_POSTGRESQL_REPOSITORY_CHECKOUT
 
-            # download the sources
-            if [ -d "$BUILD_DIR" ]; then
-                # directory already existing, fetch new sources
-                cd "$BUILD_DIR"
-                git fetch $PGENV_GIT_REPO
-
-                if [ ! -z "$PGENV_GIT_CHECKOUT_BRANCH" ]; then
-                    git checkout $PGENV_GIT_CHECKOUT_BRANCH
-                fi
-            else
-                # first checkout
-                git clone $PGENV_GIT_REPO $PGENV_GIT_CHECKOUT "$BUILD_DIR"
-                cd "$BUILD_DIR"
-
-                if [ ! -z "$PGENV_GIT_CHECKOUT_BRANCH" ]; then
-                    git checkout $PGENV_GIT_CHECKOUT_BRANCH
-                fi
-            fi
         fi
-
-
 
         # patch the source tree if required
         pgenv_debug "Patching version $v"
