@@ -151,8 +151,6 @@ pgenv_check_dependencies(){
     pgenv_detail_command "sort" $(which sort)
     pgenv_detail_command "tr" $(which tr)
 
-    # check for git (required by build-git)
-    pgenv_detail_command 'git' $(which git)
 
     # Go back to exiting on error.
     trap 'exit' ERR
@@ -769,14 +767,21 @@ case $1 in
                 PGENV_POSTGRESQL_REPOSITORY="https://git.postgresql.org/git/postgresql.git"
             fi
 
-            # do we need to do the initial repository clone?
-            if [ ! -d "$BUILD_DIR" ]; then
-                git clone $PGENV_POSTGRESQL_REPOSITORY  "$BUILD_DIR"
+            PGENV_GIT=$(which git)
+            if [ -z "$PGENV_GIT" ]; then
+                echo "Cannot found an usable version of git!"
+                exit 1
             fi
 
-            cd $BUILD_DIR
-            # do an update (not needed after the first checkout)
-            git pull $PGENV_POSTGRESQL_REPOSITORY $PGENV_POSTGRESQL_REPOSITORY_CHECKOUT
+            if [ ! -d "$BUILD_DIR" ]; then
+                pgenv_debug "Cloning repository $PGENV_POSTGRESQL_REPOSITORY into $BUILD_DIR"
+                $PGENV_GIT clone $PGENV_POSTGRESQL_REPOSITORY  "$BUILD_DIR"
+                cd $BUILD_DIR
+            else
+                cd $BUILD_DIR
+                pgenv_debug "Pulling $PGENV_POSTGRESQL_REPOSITORY $PGENV_POSTGRESQL_REPOSITORY_CHECKOUT"
+                $PGENV_GIT pull $PGENV_POSTGRESQL_REPOSITORY $PGENV_POSTGRESQL_REPOSITORY_CHECKOUT
+            fi
 
         fi
 
