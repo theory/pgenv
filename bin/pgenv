@@ -76,7 +76,7 @@ The pgenv commands are:
     stop       Stop the current PostgreSQL server
     restart    Restart the current PostgreSQL server
     build      Build a specific version of PostgreSQL
-    build-git  Build the development version ouf of git repository
+    build-dev  Build the development source tree pulled from the PostgreSQL repository
     remove     Remove a specific version of PostgreSQL
     version    Show the current PostgreSQL version
     current    Same as 'version'
@@ -182,8 +182,6 @@ pgenv_input_version_or_exit() {
     local version=$1
     local verbose=$2
     local hint=$3
-
-    echo "version $version"
 
     if [ -z "$version" ]; then
         if [ ! -z "$hint" ]; then
@@ -779,8 +777,8 @@ case $1 in
                 cd $BUILD_DIR
             else
                 cd $BUILD_DIR
-                pgenv_debug "Pulling $PGENV_POSTGRESQL_REPOSITORY $PGENV_POSTGRESQL_REPOSITORY_CHECKOUT"
-                $PGENV_GIT pull $PGENV_POSTGRESQL_REPOSITORY $PGENV_POSTGRESQL_REPOSITORY_CHECKOUT
+                pgenv_debug "Pulling $PGENV_POSTGRESQL_REPOSITORY $PGENV_POSTGRESQL_REPOSITORY_BRANCH"
+                $PGENV_GIT pull $PGENV_POSTGRESQL_REPOSITORY $PGENV_POSTGRESQL_REPOSITORY_BRANCH
             fi
 
         fi

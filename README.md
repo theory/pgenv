@@ -114,7 +114,7 @@ $ git pull
 *   sed, grep, cat, tar, sort, tr, uname - General Unix command line utilities
 *   patch - For patching versions that need patching
 *   make - Builds PostgreSQL
-*   git - Used to download the current source tree
+*   git - Used to fetch the current development source tree
 
 Optional dependencies:
 
@@ -293,7 +293,7 @@ will fetch updates from the repository.
 It is possible to configure both the repository and the branch or checkout to fetch
 using the variables:
 - `PGENV_POSTGRESQL_REPOSITORY` which defaults to `https://git.postgresql.org/git/postgresql.git`;
-- `PGENV_POSTGRESQL_REPOSITORY_CHECKOUT` which if not set defaults to fetching the `master` branch, while if set creates a tracking branch.
+- `PGENV_POSTGRESQL_REPOSITORY_BRANCH` defines a specific branch other than the repository default one to checkout or pull.
 
 The above variable have not been included in the configuration mechanism because they
 represent advanced tweaks. It is however possible to include them in the configuration file
@@ -412,7 +412,7 @@ the following:
         stop       Stop the current PostgreSQL server
         restart    Restart the current PostgreSQL server
         build      Build a specific version of PostgreSQL
-        build-git  Build the development version ouf of git repository
+        build-dev  Build the development source tree pulled from the PostgreSQL repository
         remove     Remove a specific version of PostgreSQL
         version    Show the current PostgreSQL version
         current    Same as 'version'
