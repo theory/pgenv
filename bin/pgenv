@@ -1014,7 +1014,7 @@ EOF
 
     *)
         if [ $# -gt 0 ]; then
-            echo "Unknown command \`$1\`"
+            echo "Unknown command \`$@\`"
         fi
 
         pgenv_help
