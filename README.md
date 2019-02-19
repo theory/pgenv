@@ -318,7 +318,7 @@ It is possible to specify flags to pass to `pg_ctl(1)` when performing the
 ### pgenv available
 
 Shows all the versions of PostgreSQL available to download and build. Handy to
-find a version you to pass to the `build` command. Note that the `available`
+help you finding a version to pass to the `build` command. Note that the `available`
 command produces copious output.
 
     $ pgenv available
