@@ -413,7 +413,7 @@ special keyword:
 - `default` tells pgenv to use the default configuration.
 
 If no version is explicitly passed to any of the `config` subcommands, the
-program will work against the currently activce version of PostgreSQL.
+program will work against the currently active version of PostgreSQL.
 
 In order to start with a default configuration, use the `write` subcommand:
 
@@ -479,7 +479,7 @@ editor:
 The `edit` command will start your favourite editor, that is whatever
 it is set within the `EDITOR` variable. If such variable is not set
 you will be warned.
-Use the `delete` subcommand To delete a configuration:
+Use the `delete` subcommand to delete a configuration:
 
    $ pgenv config delete 10.5
    Configuration file ~/.pgenv/.pgenv.10.5.conf (and backup) deleted
