@@ -964,6 +964,7 @@ case $1 in
             *)
                 # get the currently in use if none specified
                 if [ -z "$v" ]; then
+                    pgenv_current_postgresql_or_exit
                     v=$( pgenv_current_version_number )
                 fi
 
