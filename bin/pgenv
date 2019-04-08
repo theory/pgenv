@@ -79,6 +79,7 @@ The pgenv commands are:
     stop       Stop the current PostgreSQL server
     restart    Restart the current PostgreSQL server
     build      Build a specific version of PostgreSQL
+    build-dev  Build the development source tree pulled from the PostgreSQL repository
     remove     Remove a specific version of PostgreSQL
     version    Show the current PostgreSQL version
     current    Same as 'version'
@@ -153,6 +154,7 @@ pgenv_check_dependencies(){
     pgenv_detail_command "sort" $(which sort)
     pgenv_detail_command "tr" $(which tr)
 
+
     # Go back to exiting on error.
     trap 'exit' ERR
     if [ ! -z "$verbose" ]; then
@@ -217,6 +219,8 @@ pgenv_input_version_or_exit() {
         return # versions 9.5.4 or 10.1 and alike
     elif [[ $version =~ ^[1-9][1-9](beta|rc)[1-9]?$ ]]; then
         return # versions 11beta1 and alike
+    elif [ $version = 'dev' ]; then
+         return # building from git or alike
     else
         echo "Value \"$version\" does not appear to be a PostgreSQL valid version number"
         exit 1
@@ -688,8 +692,17 @@ case $1 in
         exit
         ;;
 
-    build)
-        v=$2
+    build|build-dev)
+
+        # in the case of 'build-dev'
+        # the version defaults to 'dev'
+        case $1 in
+            build)     v=$2    ;;
+            build-dev) v='dev' ;;
+        esac
+
+        shift # remove the command
+
         # sanity checks before building
         pgenv_input_version_or_exit "$v"
         pgenv_configuration_load $v
@@ -708,40 +721,70 @@ case $1 in
         fi
         cd src
 
-        # Download the source if wee don't already have it.
-        # WARNING: older PostgreSQL used .tar.gz instead of .tar.bz2,
-        # so if the version is behind 8 use the first format, otherwise
-        # try to get the most compressed archive
-        if [[ $v =~ ^[1-7]\. ]]; then
-            PG_TARBALL="postgresql-$v.tar.gz"
-            TAR_OPTS="zxf"
+
+        if [ "$v" != 'dev' ]; then
+            # Download the source if wee don't already have it.
+            # WARNING: older PostgreSQL used .tar.gz instead of .tar.bz2,
+            # so if the version is behind 8 use the first format, otherwise
+            # try to get the most compressed archive
+            if [[ $v =~ ^[1-7]\. ]]; then
+                PG_TARBALL="postgresql-$v.tar.gz"
+                TAR_OPTS="zxf"
+            else
+                PG_TARBALL="postgresql-$v.tar.bz2"
+                TAR_OPTS="jxf"
+            fi
+
+            if [ ! -f $PG_TARBALL ]; then
+                $PGENV_CURL -fLO ${PGENV_DOWNLOAD_ROOT}/v$v/${PG_TARBALL}
+            fi
+
+
+            # warn if no configuration was loaded
+            if [ -z "$PGENV_CONFIGURATION_FILE" ]; then
+                echo "WARNING: no configuration file found for version $v"
+                echo "HINT: if you wish to customize the build process please"
+                echo "stop the execution within 5 seconds (CTRL-c) and run "
+                echo "    pgenv config write $v && pgenv config edit $v"
+                echo "adjust 'configure' and 'make' options and flags and run again"
+                echo "    pgenv build $v"
+                echo
+                sleep 5
+            fi
+
+
+            # Unpack the source.
+            rm -rf "postgresql-$v"
+            $PGENV_TAR $TAR_OPTS $PG_TARBALL
+            cd postgresql-$v
+
+
         else
-            PG_TARBALL="postgresql-$v.tar.bz2"
-            TAR_OPTS="jxf"
+            # here there is the build from git for 'dev'
+            BUILD_DIR=postgresql-$v
+
+            # initialize variables if not explicitly set
+            if [ -z "$PGENV_POSTGRESQL_REPOSITORY" ]; then
+                PGENV_POSTGRESQL_REPOSITORY="https://git.postgresql.org/git/postgresql.git"
+            fi
+
+            PGENV_GIT=$(which git)
+            if [ -z "$PGENV_GIT" ]; then
+                echo "Cannot found an usable version of git!"
+                exit 1
+            fi
+
+            if [ ! -d "$BUILD_DIR" ]; then
+                pgenv_debug "Cloning repository $PGENV_POSTGRESQL_REPOSITORY into $BUILD_DIR"
+                $PGENV_GIT clone $PGENV_POSTGRESQL_REPOSITORY  "$BUILD_DIR"
+                cd $BUILD_DIR
+            else
+                cd $BUILD_DIR
+                pgenv_debug "Pulling $PGENV_POSTGRESQL_REPOSITORY $PGENV_POSTGRESQL_REPOSITORY_BRANCH"
+                $PGENV_GIT pull $PGENV_POSTGRESQL_REPOSITORY $PGENV_POSTGRESQL_REPOSITORY_BRANCH
+            fi
+
         fi
-
-        if [ ! -f $PG_TARBALL ]; then
-            $PGENV_CURL -fLO ${PGENV_DOWNLOAD_ROOT}/v$v/${PG_TARBALL}
-        fi
-
-
-        # warn if no configuration was loaded
-        if [ -z "$PGENV_CONFIGURATION_FILE" ]; then
-            echo "WARNING: no configuration file found for version $v"
-            echo "HINT: if you wish to customize the build process please"
-            echo "stop the execution within 5 seconds (CTRL-c) and run "
-            echo "    pgenv config write $v && pgenv config edit $v"
-            echo "adjust 'configure' and 'make' options and flags and run again"
-            echo "    pgenv build $v"
-            echo
-            sleep 5
-        fi
-
-
-        # Unpack the source.
-        rm -rf "postgresql-$v"
-        $PGENV_TAR $TAR_OPTS $PG_TARBALL
-        cd postgresql-$v
 
         # patch the source tree if required
         pgenv_debug "Patching version $v"
@@ -751,7 +794,7 @@ case $1 in
         pgenv_debug "configure command line [--prefix=$PGENV_ROOT/pgsql-$v] + [$PGENV_CONFIGURE_OPTS]"
         # need to keep a single string to pass to configure or
         # will get an 'invalid package'
-        ./configure --prefix=$PGENV_ROOT/pgsql-$v $PGENV_CONFIGURE_OPTS
+        ./configure --prefix=$PGENV_ROOT/pgsql-$v $PGENV_CONFIGURE_OPTS 
 
         # make and make install
         if [[ $v =~ ^[1-8]\. ]]; then

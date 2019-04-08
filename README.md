@@ -15,6 +15,9 @@ Synopsis
     # Build PostgreSQL server
     pgenv build 10.4
     
+    # Build from official PostgreSQL repository (git)
+    pgenv build-dev
+    
     # Use PostgreSQL version
     pgenv use 10.4
     
@@ -110,7 +113,8 @@ $ git pull
 *   curl - Used to download files
 *   sed, grep, cat, tar, sort, tr, uname - General Unix command line utilities
 *   patch - For patching versions that need patching
-*   make -  Builds PostgreSQL
+*   make - Builds PostgreSQL
+*   git - Used to fetch the current development source tree
 
 Optional dependencies:
 
@@ -270,6 +274,36 @@ file. As an example
 
 
 
+### pgenv build-dev
+
+This command fetches the current source tree from the official PostgreSQL git repository
+and builds it as special version `dev`. This is an option aimed to help developers
+to keep a version up-to-date with the current PostgreSQL source tree.
+
+Actually, the command works as an *alias* for `build dev`, 
+meaning that the following two commands behave identically:
+    
+    $ pgenv build-dev
+    $ pgenv build dev
+    
+The first time the command is called a source directory `dev` is created and the
+repository is cloned. On a further execution, the command
+will fetch updates from the repository.
+
+It is possible to configure both the repository and the branch or checkout to fetch
+using the variables:
+- `PGENV_POSTGRESQL_REPOSITORY` which defaults to `https://git.postgresql.org/git/postgresql.git`;
+- `PGENV_POSTGRESQL_REPOSITORY_BRANCH` defines a specific branch other than the repository default one to checkout or pull.
+
+The above variable have not been included in the configuration mechanism because they
+represent advanced tweaks. It is however possible to include them in the configuration file
+for this particular version (`.pgenv.dev.conf`) or in the global configuration file
+to drive the checkout and fetch process.
+
+The whole `pgenv` workflow of a *regular* PostgreSQL 
+version appliees to the `dev` version as well.
+
+
 ### pgenv remove
 
 Removes the specified version of PostgreSQL unless it is the currently-active
@@ -378,6 +412,7 @@ the following:
         stop       Stop the current PostgreSQL server
         restart    Restart the current PostgreSQL server
         build      Build a specific version of PostgreSQL
+        build-dev  Build the development source tree pulled from the PostgreSQL repository
         remove     Remove a specific version of PostgreSQL
         version    Show the current PostgreSQL version
         current    Same as 'version'
