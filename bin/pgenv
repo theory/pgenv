@@ -87,6 +87,20 @@ The pgenv commands are:
     available  Show which versions can be downloaded
     check      Check all program dependencies
     config     View, edit, delete the program configuration
+    extensions Install extension
+
+For full documentation, see: https://github.com/theory/pgenv#readme
+EOF
+}
+
+pgenv_extensions_help() {
+    cat <<EOF
+Usage: pgenv extensions <command> [<args>]
+
+The extensions commands are:
+    available  Show which versions can be downloaded
+    build      Build a specific version of an extension
+    help       Show this usage statement and command summary
 
 For full documentation, see: https://github.com/theory/pgenv#readme
 EOF
@@ -824,6 +838,79 @@ case $1 in
 
     help)
         pgenv_help
+        exit
+        ;;
+
+    extensions)
+        v=$( pgenv_current_postgresql_or_exit )
+        action=$2
+        case "$action" in
+            # TODO: Add clean action
+            available)
+                for version in $( curl -s http://download.osgeo.org/postgis/source/ \
+                              | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' \
+                              | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' \
+                              | sed 's/\.tar\.gz//g' \
+                              | grep 'postgis' \
+                              | sed 's/\/$//')
+                do
+                    #TODO: Add nice format
+                    echo $version
+                done
+                ;;
+            build)
+                # $extension must be in format name-version
+                extension=$3
+                # Only postgis installation is supported
+                if [[ $extension != "postgis"* ]]; then
+                    echo "$extension is not available"
+                    exit
+                fi
+
+                # Extension is build for the current postgres version
+                v=$( pgenv_current_version_number )
+
+                # sanity checks before building
+                pgenv_check_dependencies
+
+                # Switch to the src directory.
+                if [ ! -e "src" ]; then
+                    mkdir src
+                fi
+                cd src
+
+                # Download the source if wee don't already have it.
+                POSGIS_TARBALL="$extension.tar.gz"
+                POSTIS_TAR_OPTS="zxf"
+                if [ ! -f $POSGIS_TARBALL ]; then
+                    curl -fLO "http://download.osgeo.org/postgis/source/$POSGIS_TARBALL"
+                fi
+                # Unpack the source.
+                rm -rf "$extension"
+                $PGENV_TAR $POSTIS_TAR_OPTS $POSGIS_TARBALL
+                cd $extension
+
+                # configure make and make install
+                pgenv_debug "configure command line [--prefix=$PGENV_ROOT/pgsql-$v] + [$PGENV_CONFIGURE_OPTS]"
+                ./configure --prefix=$PGENV_ROOT/pgsql-$v $PGENV_CONFIGURE_OPTS
+                $PGENV_MAKE $PGENV_MAKE_OPTS
+                $PGENV_MAKE install
+
+                echo "PostgreSQL extension $extension for $v built"
+                exit
+                ;;
+        help)
+            pgenv_extensions_help
+            exit
+            ;;
+        *)
+            if [ $# -gt 0 ]; then
+                echo "Unknown command \`$@\`"
+            fi
+            pgenv_extensions_help
+            exit 1
+            ;;
+        esac
         exit
         ;;
 
