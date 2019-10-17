@@ -14,6 +14,8 @@ fi
 cd $PGENV_ROOT
 # Always use an absolute path or configure could complain.
 PGENV_ROOT=$(pwd)
+PGENV_ALIASES_DIR=$PGENV_ROOT/aliases
+
 
 PGSQL=$PGENV_ROOT/pgsql
 PG_DATA=$PGSQL/data
@@ -46,9 +48,13 @@ pgenv_versions() {
     if [ -e "pgsql" ]; then
         local curr=$(readlink pgsql)
     fi
+
     local installed=0
     local flags=""
+    local aliases=""
+
     for dir in $( ls -d pgsql-* 2>/dev/null); do
+        aliases=""
         if [ "$dir" = "$curr" ]; then
             flags="  *"
         else
@@ -59,7 +65,18 @@ pgenv_versions() {
             PGENV_SED=$(which sed)
         fi
         local version=$( echo $dir | $PGENV_SED 's/^pgsql-//' )
-        printf "%s   %-6s    %s\n" "$flags" "$version" "$dir"
+
+        # search into all aliases to see if there is
+        # an alias that links to this current version
+        for current_alias in $PGENV_ALIASES_DIR/*; do
+            alias_for=$(readlink $current_alias)
+            if [ "$alias_for" = "$dir" ]; then
+                current_alias=$(basename $current_alias)
+                aliases+=" $current_alias"
+            fi
+        done
+
+        printf "%s   %-6s    [%s]   %s\n" "$flags" "$version" "$dir" "$aliases"
         installed=$(( installed + 1 ))
     done
 
@@ -87,6 +104,7 @@ The pgenv commands are:
     available  Show which versions can be downloaded
     check      Check all program dependencies
     config     View, edit, delete the program configuration
+    alias      Add, remove alias for installed PostgreSQL versions
 
 For full documentation, see: https://github.com/theory/pgenv#readme
 EOF
@@ -1010,6 +1028,70 @@ EOF
                 ;;
         esac
         exit
+        ;;
+
+    alias)
+        shift
+        # the command alias always wants at least one subcommand
+        ALIAS_ACTION=$1
+        shift
+
+        case $ALIAS_ACTION in
+            add)
+                # the very first argument to add is the version to alias
+                # and such version must be installed
+                v=$1
+                shift
+                pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
+                pgenv_installed_version_or_exit $v
+
+                # check there are aliases to create
+                if [ $# -eq 0 ]; then
+                    echo "You must specify which aliases to create for version $v"
+                    exit 1
+                fi
+
+                for alias_to_add in $*
+                do
+                    if [ ! -d $PGENV_ALIASES_DIR ]; then
+                        pgenv_debug "Creating directory for aliases [$PGENV_ALIASES_DIR]"
+                        mkdir -p $PGENV_ALIASES_DIR
+                    fi
+
+                    # do the alias
+                    alias_to_create=$PGENV_ALIASES_DIR/$alias_to_add
+                    if [ ! -h $alias_to_create ]; then
+                        ln -nsf pgsql-$v $alias_to_create
+                        pgenv_debug "Created alias $PGENV_ALIASES_DIR/$alias_to_add -> pgsql-$v"
+                    else
+                        echo "Alias $alias_to_add already exists, skipping"
+                    fi
+
+                done
+            ;;
+            remove)
+                if [ $# -eq 0 ]; then
+                    echo "Specify at least one alias to remove!"
+                    exit 1
+                fi
+
+                for alias_to_remove in $*
+                do
+                    pgenv_debug "Removing alias $alias_to_remove"
+                    to_remove=$PGENV_ALIASES_DIR/$alias_to_remove
+                    if [ -h $to_remove ]; then
+                        rm $to_remove
+                    else
+                        echo "Alias $alias_to_remove not found, skipping removal!"
+
+                    fi
+                done
+
+            ;;
+            *) echo "Please specify which action on command `alias` to perform"
+               exit 1
+               ;;
+        esac
         ;;
 
     *)
