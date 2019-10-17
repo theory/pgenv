@@ -688,7 +688,7 @@ case $1 in
         exit
         ;;
 
-    build)
+    build|rebuild)
         v=$2
         # sanity checks before building
         pgenv_input_version_or_exit "$v"
@@ -696,10 +696,12 @@ case $1 in
         pgenv_check_dependencies
 
 
-        # Skip it if we already have it.
-        if [ -e "pgsql-$v" ]; then
-            echo "PostgreSQL $v already built"
-            exit
+        # Skip it if we already have it, and are not rebuilding
+        if [ "$1" != "rebuild" ]; then
+            if [ -e "pgsql-$v" ]; then
+                echo "PostgreSQL $v already built (did you mean `rebuild` instead?)"
+                exit 1
+            fi
         fi
 
         # Switch to the src directory.
