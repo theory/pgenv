@@ -188,6 +188,31 @@ pgenv_check_dependencies(){
     fi
 }
 
+# A function to normalize the input for a specific PostgreSQL version.
+# This is a placeholder, so far it checks for an alias and returns the version
+# of the PostgreSQL to which the vesion corresponds, or the same version otherwise.
+#
+# In the future this can be used to perform some other
+# sanitize of the version number input.
+pgenv_input_version_normalize(){
+    local version=$1
+
+    # check if this is an alias
+    supposed_alias=$PGENV_ALIASES_DIR/$version
+    if [ -h $supposed_alias ]; then
+        version=$(readlink $supposed_alias)
+        version=$(basename $version)
+
+        if [ -z "$PGENV_SED" ]; then
+            PGENV_SED=$(which sed)
+        fi
+        version=$( echo $version | $PGENV_SED 's/^pgsql-//' )
+    fi
+
+    echo $version
+}
+
+
 # This function checks if its first argument is a valid PostgreSQL version
 # number, like "10.5" or "9.5.4". In case no version number is specified, or the
 # version number is invalid (e.g., "10", "0.9") the function aborts the script.
@@ -274,6 +299,20 @@ pgenv_current_version_number(){
     fi
     local v=$( readlink pgsql | $PGENV_SED 's/^pgsql-//' )
     echo $v
+}
+
+# Deletes all the aliases pointing to
+# a specific PostgreSQL version
+pgenv_aliases_delete(){
+    local v=$1
+
+    for current_alias in $PGENV_ALIASES_DIR/*; do
+        local alias_for=$( readlink $current_alias )
+        alias_for=$( basename $alias_for )
+        if [ "$alias_for" = "pgsql-$v" ]; then
+            rm $current_alias
+        fi
+    done
 }
 
 # Provides the configuration file name
@@ -651,7 +690,7 @@ pgenv_patch_source_tree() {
 
 case $1 in
     use)
-        v=$2
+        v=$( pgenv_input_version_normalize $2 )
         pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
         pgenv_installed_version_or_exit $v
         pgenv_configuration_load $v
@@ -668,7 +707,7 @@ case $1 in
             fi
 
             # Link the new instance.
-            ln -nsf pgsql-$2 pgsql
+            ln -nsf pgsql-$v pgsql
         fi
 
         # Init if needed.
@@ -809,6 +848,7 @@ case $1 in
 
     remove)
         v=$2
+        v=$( pgenv_input_version_normalize $v )
         pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
 
         if [ "`readlink pgsql`" = "pgsql-$v" ]; then
@@ -823,6 +863,7 @@ case $1 in
         rm -fr src/postgresql-$v
         pgenv_configuration_delete $v  # remove this particular configuration
         pgenv_configuration_delete     # remove default configuration if no instances are left
+        pgenv_aliases_delete $v
         echo "PostgreSQL $v removed"
         exit
         ;;
@@ -1061,7 +1102,7 @@ EOF
                     # do the alias
                     alias_to_create=$PGENV_ALIASES_DIR/$alias_to_add
                     if [ ! -h $alias_to_create ]; then
-                        ln -nsf pgsql-$v $alias_to_create
+                        ln -nsf ../pgsql-$v $alias_to_create
                         pgenv_debug "Created alias $PGENV_ALIASES_DIR/$alias_to_add -> pgsql-$v"
                     else
                         echo "Alias $alias_to_add already exists, skipping"
