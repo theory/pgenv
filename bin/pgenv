@@ -87,6 +87,7 @@ The pgenv commands are:
     available  Show which versions can be downloaded
     check      Check all program dependencies
     config     View, edit, delete the program configuration
+    psql       Runs the currently used psql executable
 
 For full documentation, see: https://github.com/theory/pgenv#readme
 EOF
@@ -1010,6 +1011,22 @@ EOF
                 ;;
         esac
         exit
+        ;;
+
+    psql)
+        pgenv_current_postgresql_or_exit
+
+        # execute the psql command for the currently used system
+        shift
+        psql_exe=$PGENV_ROOT/pgsql/bin/psql
+        if [ ! -x $psql_exe ]; then
+            echo "Cannot find executable for `psql` (looking for [$psql_exe])"
+            echo "Please ensure you have `use`d a PostgreSQL version"
+            exit 1
+        fi
+
+        pgenv_debug "Running [$psql_exe $@]"
+        $psql_exe $@
         ;;
 
     *)

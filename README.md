@@ -315,6 +315,22 @@ It is possible to specify flags to pass to `pg_ctl(1)` when performing the
 `restart` action, setting the `PGENV_RESTART_OPTS` in the [configuration](#pgenv-config).
 
 
+### pgenv psql
+
+The `psql` command runs the `psql` client interface for the currently selected (i.e., `use`)
+version of PostgreSQL.
+This helps avoiding running system-wide `psql` of another version against PostgreSQL
+instances installed by `pgenv`.
+For instance:
+
+     $ pgenv psql -U luca template1
+    
+is equivalent to manually run
+
+    $ pgenv $PGENV_ROOT/pgsql/bin/psql -U luca template1
+
+All options and arguments will be passed untouched to the installed `psql` executable.
+
 ### pgenv available
 
 Shows all the versions of PostgreSQL available to download and build. Handy to
