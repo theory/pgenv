@@ -101,14 +101,28 @@ she want, for instance installing extension or pre-loading data.
 Custom scripts are driven by a set of configuration variables as follows:
 - `PGENV_SCRIPT_POSTINSTALL` is an executable script run as soon as the `build`
 finishes. The return value of the script does not affect the `pgenv` workflow.
+The script gets the version of PostgreSQL being installed as first argument.
+
 - `PGENV_SCRIPT_POSTINITDB` is an executable script run as soon as the `use`
 command ends the `initdb` phase, that happens only the `PGDATA` has not been
-initialized (i.e., on *very first `use`*).
+initialized (i.e., on *very first `use`*). 
 The return value of the script does not affect the `pgenv` workflow.
+The script gets the current `PGDATA` path as first argument.
+
 - `PGENV_SCRIPT_POSTSTART` is an executable script executed each time 
 an instances is started, that is `start` is executed.
 The return value of the script does not affect the `pgenv` workflow.
+The script gets the current `PGDATA` path as first argument.
 
+
+The above configuration variables can be set in the configuration file
+or on the fly, for instance:
+
+    $ export PGENV_SCRIPT_POSTSTART=/usr/local/bin/load_data.sh
+    $ pgenv start 12.0
+    
+**Please note that running external scripts can result in damages and crashes in the `pgenv` workflow.**    
+In the future, more hooks to run scripts could be added.
 
 ### Upgrading
 
