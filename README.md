@@ -139,23 +139,71 @@ it if it's not already running.
     server started
     PostgreSQL 10.4 started
 
+If an alias has been defined for a specific PostgreSQL version, it is possible
+to specify the alias instead of the version number.
+
+
 ### pgenv versions
 
 Lists all PostgreSQL versions known to `pgenv`, and shows an asterisk next to
 the currently active version (if any). The first column reports versions
 available for use by `pgenv` and the second lists the subdirectory of
-`$PGENV_ROOT` in which the each version is installed:
+`$PGENV_ROOT` in which the each version is installed (in square backets).
+The third column lists aliases, if any are defined, for a particular
+version of PostgreSQL.
 
     $ pgenv versions
-          10.4      pgsql-10.4
-          11beta3   pgsql-11beta3
-          9.5.13    pgsql-9.5.13
-      *   9.6.9     pgsql-9.6.9
+          10.4      [pgsql-10.4]      stable java
+          11beta3   [pgsql-11beta3]   beta
+          9.5.13    [pgsql-9.5.13]    foo bar
+      *   9.6.9     [pgsql-9.6.9]
 
 In this example, versions `9.5.13`, `9.6.9`, `10.4`, and `11beta3` are
 available for use, and the `*` indicates that `9.6.10` is the currently active
-version. Each version is installed in a `pgsql-` subdirectory of
+version. Version `10.4` has two aliases, namely `stable` and `java`, while
+version `9.5.13` has aliases `foo` and `bar` and version `11beta3` has a single
+alias named `beta`. Aliases are *user defined* names that can be used
+to reference a PostgreSQL version, therefore naming `stable` or `10.4` is 
+the same.
+Each version is installed in a `pgsql-` subdirectory relative to
 `$PGENV_ROOT`.
+
+### pgenv alias
+
+The `alias` command allows users to define their own mnemonic names to 
+label a specific PostgreSQL version. Each command that requires a PostgreSQL
+version (e.g., `use`, `remove`) can accept an alias, that in turn
+is *translated** to the appropriate PostgreSQL version.
+
+Aliases can be defined only for currently installed PostgreSQL versions, and
+**must be unique**: it is not possible to define the same label for different
+PostgreSQL versions.
+
+Aliases are stored as symbolic links into the `alias` subdirectory of `PGENV_ROOT`.
+
+The `alias` command requires subcommands:
+- `add` adds one or more aliases to a PostgreSQL version. The PostgreSQL version
+must be already installed, and each alias label must be unique. If an alias already
+exists, the `add` command will skip such label and proceed to the next one (if any).
+As an example:
+
+     $ pgenv alias add 10.7 ten-stable my-favourite-version
+
+defines two different alias, `ten-stale` and `my-favourite-version` that are
+both aliases to version `10.7`. This means that it is possible to issue
+a command that accepts a PostgreSQL version specifying the alias:
+    
+    $ pgenv use 10.7
+    $ pgenv use ten-stable  # same as above
+
+
+- `remove` removes one or more aliases if defined. It is required to specify the
+alias (or aliases) to remove.
+
+   $ pgenv alias remove ten-stable
+   $ pgenv alias remove foo bar
+   
+   
 
 ### pgenv current
 
@@ -278,7 +326,11 @@ version. Use the `clear` command to clear the active version before removing it.
     $ pgenv remove 10.3
     PostgreSQL 10.3 removed
 
-The command removes the version, data directory, source code and configuration.
+The command removes the version, data directory, source code and configuration, 
+as well as all the aliases pointing to such version (if any).
+
+The command accepts an alias, if defined, to indicate the PostgreSQL installation
+to remove.
 
 ### pgenv start
 
@@ -386,6 +438,7 @@ the following:
         available  Show which versions can be downloaded
         check      Check all program dependencies
         config     View, edit, delete the program configuration
+        alias      Add, remove alias for installed PostgreSQL versions
 
     For full documentation, see: https://github.com/theory/pgenv#readme
 
