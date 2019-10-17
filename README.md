@@ -183,7 +183,7 @@ running, `clear` will stop it before clearing it.
 ### pgenv build
 
 Downloads and builds the specified version of PostgreSQL and its contrib
-modules, as far back as 8.0. 
+modules, as far back as versin `8.0`. 
 It is possible to instrument the build process to patch the source tree, see
 the section on patching later on.
 If the version is already built, it will not be rebuilt; use
@@ -269,6 +269,18 @@ file. As an example
     $ PGENV_PATCH_INDEX=/src/my-patch-list.txt pgenv build 10.5
 
 
+#### pgenv rebuild
+
+The `rebuild` command allows the rebuilding from sources of a specific 
+PostgreSQL version. *The `PGDATA` directory will not be deleted if already
+initialized via `initdb`*.
+
+The configuration will follow the same rules adopted in `build`, that means
+if a configuration file will be present it will be readed and loaded, otherwise
+the system will claim about such file proposing to create one.
+
+In the case a specific version has never been built, `rebuild` acts exactly
+as `build`.
 
 ### pgenv remove
 
