@@ -550,15 +550,16 @@ pgenv_patch_get_index_file_names(){
 
     local brand=$( echo $version | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
     local year=$(  echo $version | $PGENV_SED 's/[[:digit:]]\{1,2\}\.\([[:digit:]]\{1,2\}\).*/\1/' )
+    local patch_dir=$PGENV_ROOT/patch/index
 
     # show all the files in the correct order
     cat <<EOF
-$PGENV_ROOT/patch/index/patch.$version.$(uname -s)
-$PGENV_ROOT/patch/index/patch.$version
-$PGENV_ROOT/patch/index/patch.$brand.$year.$(uname -s)
-$PGENV_ROOT/patch/index/patch.$brand.$year
-$PGENV_ROOT/patch/index/patch.$brand.$(uname -s)
-$PGENV_ROOT/patch/index/patch.$brand
+$patch_dir/patch.$version.$(uname -s)
+$patch_dir/patch.$version
+$patch_dir/patch.$brand.$year.$(uname -s)
+$patch_dir/patch.$brand.$year
+$patch_dir/patch.$brand.$(uname -s)
+$patch_dir/patch.$brand
 EOF
 
 }
