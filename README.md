@@ -92,6 +92,24 @@ using a configuration file before the program launches the build.
 For a more detailed configuration, see the [`pgenv config`](#pgenv-config)
 command below.
 
+### Running scripts
+
+It is possible to run custom script when particular events happen. 
+The purpose is to let the user to configure the cluster as much as
+she want, for instance installing extension or pre-loading data.
+
+Custom scripts are driven by a set of configuration variables as follows:
+- `PGENV_SCRIPT_POSTINSTALL` is an executable script run as soon as the `build`
+finishes. The return value of the script does not affect the `pgenv` workflow.
+- `PGENV_SCRIPT_POSTINITDB` is an executable script run as soon as the `use`
+command ends the `initdb` phase, that happens only the `PGDATA` has not been
+initialized (i.e., on *very first `use`*).
+The return value of the script does not affect the `pgenv` workflow.
+- `PGENV_SCRIPT_POSTSTART` is an executable script executed each time 
+an instances is started, that is `start` is executed.
+The return value of the script does not affect the `pgenv` workflow.
+
+
 ### Upgrading
 
 You can upgrade your installation to the cutting-edge version at any time

@@ -451,6 +451,10 @@ pgenv_configuration_write() {
     pgenv_configuration_write_variable "$CONF" "PGENV_START_OPTS" "$PGENV_START_OPTS" 'Start configuration flags'
     pgenv_configuration_write_variable "$CONF" "PGENV_RESTART_OPTS" "$PGENV_RESTART_OPTS" 'Restart configuration flags'
 
+    pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTINSTALL" "" 'Script to execute when the build process finishes'
+    pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTSTART" "" 'Script to execute when the cluster has been started'
+    pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTINITDB" "" 'Script to execute when initdb finishes'
+
 
     echo "pgenv configuration written to file $CONF"
 }
@@ -477,6 +481,13 @@ pgenv_start_instance(){
     if [ $? -eq 0 ]; then
         echo "PostgreSQL $v started"
         echo "Logging to $PGENV_LOG"
+
+        # if there is a post-start script to run, run it
+        if [ -x "$PGENV_SCRIPT_POSTSTART" ]; then
+            echo "Running post-start script [$PGENV_SCRIPT_POSTSTART]"
+            $PGENV_SCRIPT_POSTSTART "$PG_DATA"
+        fi
+
     else
         echo "PostgreSQL $v NOT started, examine logs in $PGENV_LOG"
     fi
@@ -490,6 +501,13 @@ pgenv_initdb(){
     if [ ! -d $PG_DATA ]; then
         pgenv_debug "initdb running with flags [$PGENV_INITDB_OPTS]"
         $INITDB -D "$PG_DATA" $PGENV_INITDB_OPTS
+
+        # if there is a post-initdb script to run, run it
+        if [ -x "$PGENV_SCRIPT_INITDB" ]; then
+            echo "Running post-initdb script [$PGENV_SCRIPT_INITDB]"
+            $PGENV_SCRIPT_INITDB "$PG_DATA"
+        fi
+
     else
         pgenv_debug "Directory $PG_DATA exists, not initdb-ing!"
     fi
@@ -563,6 +581,8 @@ $patch_dir/patch.$brand
 EOF
 
 }
+
+
 
 
 # Utility function to patch a source tree.
@@ -768,6 +788,11 @@ case $1 in
             $PGENV_MAKE install-world
         fi
 
+        # if there is a post-install script to run, run it
+        if [ -x "$PGENV_SCRIPT_POSTINSTALL" ]; then
+            echo "Running post-install script [$PGENV_SCRIPT_POSTINSTALL]"
+            $PGENV_SCRIPT_POSTINSTALL "$v"
+        fi
 
         # write the configuration
         pgenv_configuration_write "$v"
