@@ -183,7 +183,7 @@ running, `clear` will stop it before clearing it.
 ### pgenv build
 
 Downloads and builds the specified version of PostgreSQL and its contrib
-modules, as far back as versin `8.0`. 
+modules, as far back as version `8.0`. 
 It is possible to instrument the build process to patch the source tree, see
 the section on patching later on.
 If the version is already built, it will not be rebuilt; use
