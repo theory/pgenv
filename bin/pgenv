@@ -390,6 +390,7 @@ pgenv_configuration_load(){
     done
 
     pgenv_debug "No configuration loaded"
+    PGENV_WARNINGS=true  # for backward compatibility
 }
 
 # Utility function to remove the configuration file.
@@ -489,6 +490,7 @@ pgenv_configuration_write() {
     echo "# pgenv configuration created on $(date)" > "$CONF"
     echo "" >> "$CONF"
     pgenv_configuration_write_variable "$CONF" "PGENV_DEBUG" "" 'Enables debug output'
+    pgenv_configuration_write_variable "$CONF" "PGENV_WARNINGS" "true" 'Enables warning messages'
 
     echo "###### Build settings #####" >> "$CONF"
     pgenv_configuration_write_variable "$CONF" "PGENV_MAKE" "$PGENV_MAKE" 'Make command to use for build'
@@ -508,8 +510,97 @@ pgenv_configuration_write() {
     pgenv_configuration_write_variable "$CONF" "PGENV_START_OPTS" "$PGENV_START_OPTS" 'Start configuration flags'
     pgenv_configuration_write_variable "$CONF" "PGENV_RESTART_OPTS" "$PGENV_RESTART_OPTS" 'Restart configuration flags'
 
+    pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTINSTALL" "" 'Script to execute when the build process finishes'
+    pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTSTART" "" 'Script to execute when the cluster has been started'
+    pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTINITDB" "" 'Script to execute when initdb finishes'
+
 
     echo "pgenv configuration written to file $CONF"
+}
+
+# Tests and warn the PATH environment variable.
+# Prints out on STDERR a warning message, with an hint about
+# how to fix it.
+#
+# If the configuration option PGENV_WARNINGS is not set, the function
+# does not perform any check.
+pgenv_warning_path(){
+    if [ -z "$PGENV_WARNINGS" ]; then
+        return
+    fi
+
+    local old_ifs=$IFS
+    local path_ok=0
+    local path_prepended=0
+    local executables_wanted=0
+    local executables="$PGENV_ROOT/pgsql/bin"
+
+    IFS=':'
+
+    # Thest if PATH contains at least one entry
+    # with the executables dir
+    for p in $PATH
+    do
+        if [ "$p" -ef "$executables" ]; then
+            path_ok=1
+            break
+        fi
+    done
+
+    IFS=$old_ifs
+
+    if [ $path_ok != 1 ]; then
+        cat <<EOF >&2
+WARNING:
+  your PATH enrvironemnt variable does not seem to include
+
+       $executables
+
+  as an entry. You will not be able to use the currently
+  selected PostgreSQL binaries.
+
+HINT:
+  adjust your PATH variable to include
+
+  $executables
+
+  for instance
+
+  export PATH=$executables:\$PATH
+EOF
+        return
+    fi
+
+
+    # check that the PGENV path is ahead of other PostgreSQL binaries
+    # in order to do so count a few common executables and see
+    # if they are the same path as what is expected to be
+    for cmd in psql pg_ctl pg_config
+    do
+        executables_wanted=$(( executables_wanted + 1))
+        executable_searched_for=$( which $cmd )
+        if [ "$executable_searched_for" -ef "$executables/$cmd" ]; then
+            path_prepend=$(( path_prepend + 1 ))
+        fi
+    done
+
+    if [ $executables_wanted -ne $path_prepend ]; then
+        cat <<EOF >&2
+WARNING:
+   your PATH environment variable has some PostgreSQL executable
+   preprended to the currently in-use instance, so you may
+   end up using the wrong executables against the selected cluster.
+
+HINT:
+   prepend the following PATH entry in your environment setting
+
+   $executables
+
+   like for instance
+    export PATH=$executables:\$PATH
+EOF
+    fi
+
 }
 
 
@@ -534,6 +625,13 @@ pgenv_start_instance(){
     if [ $? -eq 0 ]; then
         echo "PostgreSQL $v started"
         echo "Logging to $PGENV_LOG"
+
+        # if there is a post-start script to run, run it
+        if [ -x "$PGENV_SCRIPT_POSTSTART" ]; then
+            echo "Running post-start script [$PGENV_SCRIPT_POSTSTART]"
+            $PGENV_SCRIPT_POSTSTART "$PG_DATA"
+        fi
+
     else
         echo "PostgreSQL $v NOT started, examine logs in $PGENV_LOG"
     fi
@@ -547,6 +645,13 @@ pgenv_initdb(){
     if [ ! -d $PG_DATA ]; then
         pgenv_debug "initdb running with flags [$PGENV_INITDB_OPTS]"
         $INITDB -D "$PG_DATA" $PGENV_INITDB_OPTS
+
+        # if there is a post-initdb script to run, run it
+        if [ -x "$PGENV_SCRIPT_INITDB" ]; then
+            echo "Running post-initdb script [$PGENV_SCRIPT_INITDB]"
+            $PGENV_SCRIPT_INITDB "$PG_DATA"
+        fi
+
     else
         pgenv_debug "Directory $PG_DATA exists, not initdb-ing!"
     fi
@@ -607,18 +712,21 @@ pgenv_patch_get_index_file_names(){
 
     local brand=$( echo $version | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
     local year=$(  echo $version | $PGENV_SED 's/[[:digit:]]\{1,2\}\.\([[:digit:]]\{1,2\}\).*/\1/' )
+    local patch_dir=$PGENV_ROOT/patch/index
 
     # show all the files in the correct order
     cat <<EOF
-$PGENV_ROOT/patch/index/patch.$version.$(uname -s)
-$PGENV_ROOT/patch/index/patch.$version
-$PGENV_ROOT/patch/index/patch.$brand.$year.$(uname -s)
-$PGENV_ROOT/patch/index/patch.$brand.$year
-$PGENV_ROOT/patch/index/patch.$brand.$(uname -s)
-$PGENV_ROOT/patch/index/patch.$brand
+$patch_dir/patch.$version.$(uname -s)
+$patch_dir/patch.$version
+$patch_dir/patch.$brand.$year.$(uname -s)
+$patch_dir/patch.$brand.$year
+$patch_dir/patch.$brand.$(uname -s)
+$patch_dir/patch.$brand
 EOF
 
 }
+
+
 
 
 # Utility function to patch a source tree.
@@ -695,6 +803,9 @@ case $1 in
         pgenv_installed_version_or_exit $v
         pgenv_configuration_load $v
 
+        # check PATH settings
+        pgenv_warning_path
+
         # Check if current version?
         if [ "`readlink pgsql`" = "pgsql-$v" ]; then
             echo "Already using PostgreSQL $v"
@@ -724,6 +835,9 @@ case $1 in
         v=$( pgenv_current_version_number )
         pgenv_debug "Current version $v"
         pgenv_configuration_load $v
+
+        # check PATH settings
+        pgenv_warning_path
 
         # Start er up!
         pgenv_start_instance
@@ -783,15 +897,17 @@ case $1 in
 
 
         # warn if no configuration was loaded
-        if [ -z "$PGENV_CONFIGURATION_FILE" ]; then
-            echo "WARNING: no configuration file found for version $v"
-            echo "HINT: if you wish to customize the build process please"
-            echo "stop the execution within 5 seconds (CTRL-c) and run "
-            echo "    pgenv config write $v && pgenv config edit $v"
-            echo "adjust 'configure' and 'make' options and flags and run again"
-            echo "    pgenv build $v"
-            echo
-            sleep 5
+        if [ ! -z "PGENV_WARNINGS" ]; then
+            if [ -z "$PGENV_CONFIGURATION_FILE" ]; then
+                echo "WARNING: no configuration file found for version $v"
+                echo "HINT: if you wish to customize the build process please"
+                echo "stop the execution within 5 seconds (CTRL-c) and run "
+                echo "    pgenv config write $v && pgenv config edit $v"
+                echo "adjust 'configure' and 'make' options and flags and run again"
+                echo "    pgenv build $v"
+                echo
+                sleep 5
+            fi
         fi
 
 
@@ -824,6 +940,11 @@ case $1 in
             $PGENV_MAKE install-world
         fi
 
+        # if there is a post-install script to run, run it
+        if [ -x "$PGENV_SCRIPT_POSTINSTALL" ]; then
+            echo "Running post-install script [$PGENV_SCRIPT_POSTINSTALL]"
+            $PGENV_SCRIPT_POSTINSTALL "$v"
+        fi
 
         # write the configuration
         pgenv_configuration_write "$v"
@@ -1003,6 +1124,9 @@ case $1 in
         pgenv_configuration_load
         # check for all required dependencies
         pgenv_check_dependencies "verbose"
+
+        # check PATH settings
+        pgenv_warning_path
         exit
         ;;
 
