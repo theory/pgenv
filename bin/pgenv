@@ -432,6 +432,7 @@ pgenv_configuration_write() {
     echo "# pgenv configuration created on $(date)" > "$CONF"
     echo "" >> "$CONF"
     pgenv_configuration_write_variable "$CONF" "PGENV_DEBUG" "" 'Enables debug output'
+    pgenv_configuration_write_variable "$CONF" "PGENV_WARNINGS" "true" 'Enables warning messages'
 
     echo "###### Build settings #####" >> "$CONF"
     pgenv_configuration_write_variable "$CONF" "PGENV_MAKE" "$PGENV_MAKE" 'Make command to use for build'
@@ -457,6 +458,91 @@ pgenv_configuration_write() {
 
 
     echo "pgenv configuration written to file $CONF"
+}
+
+# Tests and warn the PATH environment variable.
+# Prints out on STDERR a warning message, with an hint about
+# how to fix it.
+#
+# If the configuration option PGENV_WARNINGS is not set, the function
+# does not perform any check.
+pgenv_warning_path(){
+    if [ -z "$PGENV_WARNINGS" ]; then
+        return
+    fi
+
+    local old_ifs=$IFS
+    local path_ok=0
+    local path_prepended=0
+    local executables_wanted=0
+    local executables="$PGENV_ROOT/pgsql/bin"
+
+    IFS=':'
+
+    # Thest if PATH contains at least one entry
+    # with the executables dir
+    for p in $PATH
+    do
+        if [ "$p" -ef "$executables" ]; then
+            path_ok=1
+            break
+        fi
+    done
+
+    IFS=$old_ifs
+
+    if [ $path_ok != 1 ]; then
+        cat <<EOF >&2
+WARNING:
+  your PATH enrvironemnt variable does not seem to include
+
+       $executables
+
+  as an entry. You will not be able to use the currently
+  selected PostgreSQL binaries.
+
+HINT:
+  adjust your PATH variable to include
+
+  $executables
+
+  for instance
+
+  export PATH=$executables:\$PATH
+EOF
+        return
+    fi
+
+
+    # check that the PGENV path is ahead of other PostgreSQL binaries
+    # in order to do so count a few common executables and see
+    # if they are the same path as what is expected to be
+    for cmd in psql pg_ctl pg_config
+    do
+        executables_wanted=$(( executables_wanted + 1))
+        executable_searched_for=$( which $cmd )
+        if [ "$executable_searched_for" -ef "$executables/$cmd" ]; then
+            path_prepend=$(( path_prepend + 1 ))
+        fi
+    done
+
+    if [ $executables_wanted -ne $path_prepend ]; then
+        cat <<EOF >&2
+WARNING:
+   your PATH environment variable has some PostgreSQL executable
+   preprended to the currently in-use instance, so you may
+   end up using the wrong executables against the selected cluster.
+
+HINT:
+   prepend the following PATH entry in your environment setting
+
+   $executables
+
+   like for instance
+    export PATH=$executables:\$PATH
+EOF
+    fi
+
 }
 
 
@@ -659,6 +745,9 @@ case $1 in
         pgenv_installed_version_or_exit $v
         pgenv_configuration_load $v
 
+        # check PATH settings
+        pgenv_warning_path
+
         # Check if current version?
         if [ "`readlink pgsql`" = "pgsql-$v" ]; then
             echo "Already using PostgreSQL $v"
@@ -688,6 +777,9 @@ case $1 in
         v=$( pgenv_current_version_number )
         pgenv_debug "Current version $v"
         pgenv_configuration_load $v
+
+        # check PATH settings
+        pgenv_warning_path
 
         # Start er up!
         pgenv_start_instance
@@ -970,6 +1062,9 @@ case $1 in
         pgenv_configuration_load
         # check for all required dependencies
         pgenv_check_dependencies "verbose"
+
+        # check PATH settings
+        pgenv_warning_path
         exit
         ;;
 
