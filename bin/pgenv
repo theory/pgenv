@@ -47,39 +47,52 @@ pgenv_debug(){
 pgenv_versions() {
     if [ -e "pgsql" ]; then
         local curr=$(readlink pgsql)
+        curr=${curr/$PGENV_ROOT\//}
     fi
 
     local installed=0
     local flags=""
     local aliases=""
 
-    for dir in $( ls -d pgsql-* 2>/dev/null); do
-        aliases=""
-        if [ "$dir" = "$curr" ]; then
-            flags="  *"
-        else
-            flags="   "
-        fi
+    # there is a two level of indirection:
+    # pgsql-12/
+    #       pgsql-12-2019-10-21-08-39-47
+    #       pgsql-12-2019-10-20-18-29-47
+    for instance in $( ls -d pgsql-*); do
+        cd $instance # within pgsql-<version>
 
-        if [ -z "$PGENV_SED" ]; then
-            PGENV_SED=$(which sed)
-        fi
-        local version=$( echo $dir | $PGENV_SED 's/^pgsql-//' )
+        for dir in $( ls -d pgsql-* 2>/dev/null); do
+            instance_path="$instance/$dir"
+            aliases=""
 
-        # search into all aliases to see if there is
-        # an alias that links to this current version
-        for current_alias in $PGENV_ALIASES_DIR/*; do
-            alias_for=$(readlink $current_alias)
-            if [ "$alias_for" = "$dir" ]; then
-                current_alias=$(basename $current_alias)
-                aliases+=" $current_alias"
+            if [ "$instance_path" = "$curr" ]; then
+                flags="  *"
+            else
+                flags="   "
             fi
+
+            # drop initial pgsql- part
+            local version=${instance#*pgsql-}
+            # drop final timestamp information
+            version=${version%-*}
+
+            # search into all aliases to see if there is
+            # an alias that links to this current version
+            for current_alias in $PGENV_ALIASES_DIR/*; do
+                alias_for=$(readlink $current_alias )
+                alias_for=${alias_for/$PGENV_ROOT\//}
+                if [ "$alias_for" = "$instance_path" ]; then
+                    current_alias=$(basename $current_alias)
+                    aliases+=" $current_alias"
+            fi
+            done
+
+            printf "%s   %-6s    [%s]   %s\n" "$flags" "$version" "$instance_path" "{$aliases }"
+            installed=$(( installed + 1 ))
         done
 
-        printf "%s   %-6s    [%s]   %s\n" "$flags" "$version" "$dir" "$aliases"
-        installed=$(( installed + 1 ))
+        cd $PGENV_ROOT
     done
-
     if [ $installed -eq 0 ]; then
         echo "No PostgreSQL version is installed!"
     fi
@@ -189,27 +202,33 @@ pgenv_check_dependencies(){
 }
 
 # A function to normalize the input for a specific PostgreSQL version.
-# This is a placeholder, so far it checks for an alias and returns the version
-# of the PostgreSQL to which the vesion corresponds, or the same version otherwise.
+# This is a placeholder, so far it checks for an alias and returns
+# the real name of the PostgreSQL instance to use.
 #
 # In the future this can be used to perform some other
 # sanitize of the version number input.
-pgenv_input_version_normalize(){
+pgenv_instance_path_normalize(){
     local version=$1
 
     # check if this is an alias
     supposed_alias=$PGENV_ALIASES_DIR/$version
     if [ -h $supposed_alias ]; then
         version=$(readlink $supposed_alias)
-        version=$(basename $version)
-
-        if [ -z "$PGENV_SED" ]; then
-            PGENV_SED=$(which sed)
-        fi
-        version=$( echo $version | $PGENV_SED 's/^pgsql-//' )
+        echo $version
     fi
 
-    echo $version
+    echo ""
+}
+
+# Given an instance path of the form 'pgsql-12.0/pgsql-12.0-2019-10-21-13-49-58'
+# returns the version number, such as 12.0
+pgenv_input_version_normalize(){
+    local instance_path=$1
+    instance_path=${instance_path#*pgsql-}
+    # drop final timestamp information
+    instance_path=${instance_path%/*}
+    instance_path=${instance_path%-*}
+    echo $instance_path
 }
 
 
@@ -293,23 +312,62 @@ pgenv_current_postgresql_or_exit(){
 # Prints the currently active version number. To capture the value instead of
 # printing it, make a call like `v=&( pgenv_current_version_number )`
 pgenv_current_version_number(){
-    # find sed even without the configuration/dependencies
-    if [ -z "$PGENV_SED" ]; then
-        PGENV_SED=$(which sed)
-    fi
-    local v=$( readlink pgsql | $PGENV_SED 's/^pgsql-//' )
+    local v=$( readlink pgsql )
+    v=${v#*pgsql-}
+    # drop final timestamp information
+    v=${v%/*}
     echo $v
 }
 
-# Deletes all the aliases pointing to
-# a specific PostgreSQL version
-pgenv_aliases_delete(){
+# Provides a name for a new instance to build.
+# In order to capture the value do
+# name=$( pgenv_building_instance_name $v )
+#
+# The name is made by the PostgreSQL version and
+# the current timestamp.
+pgenv_building_instance_name(){
     local v=$1
+    local timestamp=$( date +'%Y-%m-%d-%H-%M-%S' )
+    echo "pgsql-$v-$timestamp"
+}
+
+# Provides the full path for a given instance name and
+# version.
+pgenv_building_instance_path(){
+    local v=$1
+    local instance_name=$2
+    echo "$PGENV_ROOT/pgsql-$v/$instance_name"
+}
+
+
+pgenv_add_alias(){
+    local instance_path=$1
+    shift
+    if [ ! -d $PGENV_ALIASES_DIR ]; then
+        pgenv_debug "Creating directory for aliases [$PGENV_ALIASES_DIR]"
+        mkdir -p $PGENV_ALIASES_DIR
+    fi
+
+    # do the alias
+    for alias_to_add in $*; do
+        alias_to_create=$PGENV_ALIASES_DIR/$alias_to_add
+        if [ ! -h $alias_to_create ]; then
+            ln -nsf $instance_path $alias_to_create
+            pgenv_debug "Created alias $PGENV_ALIASES_DIR/$alias_to_add -> $instance_path"
+        else
+            pgenv_debug "Alias $alias_to_add already exists, skipping"
+        fi
+    done
+}
+
+# Deletes all the aliases pointing to
+# a specific PostgreSQL instance
+pgenv_aliases_delete(){
+    local instance_path=$1
 
     for current_alias in $PGENV_ALIASES_DIR/*; do
         local alias_for=$( readlink $current_alias )
-        alias_for=$( basename $alias_for )
-        if [ "$alias_for" = "pgsql-$v" ]; then
+        if [ "$alias_for" = "$instance_path" ]; then
             rm $current_alias
         fi
     done
@@ -798,7 +856,13 @@ pgenv_patch_source_tree() {
 
 case $1 in
     use)
-        v=$( pgenv_input_version_normalize $2 )
+        instance_path=$( pgenv_instance_path_normalize $2 )
+        v=$( pgenv_input_version_normalize $instance_path )
+
+        if [ -z "$instance_path" ]; then
+            echo "Cannot find an installation with name [$instance_path]"
+            exit 1
+        fi
         pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
         pgenv_installed_version_or_exit $v
         pgenv_configuration_load $v
@@ -807,7 +871,7 @@ case $1 in
         pgenv_warning_path
 
         # Check if current version?
-        if [ "`readlink pgsql`" = "pgsql-$v" ]; then
+        if [ "`readlink pgsql`" = "$instance_path" ]; then
             echo "Already using PostgreSQL $v"
         else
             # Shut down existing running instance.
@@ -818,7 +882,7 @@ case $1 in
             fi
 
             # Link the new instance.
-            ln -nsf pgsql-$v pgsql
+            ln -nsf $instance_path pgsql
         fi
 
         # Init if needed.
@@ -865,11 +929,12 @@ case $1 in
         pgenv_input_version_or_exit "$v"
         pgenv_configuration_load $v
         pgenv_check_dependencies
-
+        instance_name=$( pgenv_building_instance_name "$v" )
+        instance_path=$( pgenv_building_instance_path "$v" "$instance_name" )
 
         # Skip it if we already have it.
-        if [ -e "pgsql-$v" ]; then
-            echo "PostgreSQL $v already built"
+        if [ -e "$instance_path" ]; then
+            echo "PostgreSQL $v already built into [$instance_path]"
             exit
         fi
 
@@ -921,10 +986,10 @@ case $1 in
         pgenv_patch_source_tree "$v" 'verbose'
 
 
-        pgenv_debug "configure command line [--prefix=$PGENV_ROOT/pgsql-$v] + [$PGENV_CONFIGURE_OPTS]"
+        pgenv_debug "configure command line [--prefix=$instance_path] + [$PGENV_CONFIGURE_OPTS]"
         # need to keep a single string to pass to configure or
         # will get an 'invalid package'
-        ./configure --prefix=$PGENV_ROOT/pgsql-$v $PGENV_CONFIGURE_OPTS
+        ./configure --prefix=$instance_path $PGENV_CONFIGURE_OPTS
 
         # make and make install
         if [[ $v =~ ^[1-8]\. ]]; then
@@ -949,6 +1014,12 @@ case $1 in
         # write the configuration
         pgenv_configuration_write "$v"
 
+        # create an alias to this version if none already
+        # present (it is safe to call this function multiple
+        # times, the alias will be skipped if already there)
+        pgenv_add_alias $instance_path $v # adds for instance alias '12.0'
+        pgenv_add_alias $instance_path $instance_name # adds always alias '12.0-2019-10-21-13-45-58'
+
         echo "PostgreSQL $v built"
         exit
         ;;
@@ -968,23 +1039,33 @@ case $1 in
         ;;
 
     remove)
-        v=$2
-        v=$( pgenv_input_version_normalize $v )
+        instance_path=$( pgenv_instance_path_normalize $2 )
+        v=$( pgenv_input_version_normalize $instance_path )
+
+
+        if [ -z "$instance_path" ]; then
+            echo "Cannot find an installation with name [$instance_path]"
+            exit 1
+        fi
+
         pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
 
-        if [ "`readlink pgsql`" = "pgsql-$v" ]; then
+        if [ "`readlink pgsql`" = "$instance_path" ]; then
             echo "PostgreSQL $v currently in use"
             echo "Run \`pgenv clear\` to clear it"
             echo "or \`pgenv use\` to switch to another version"
             exit 1
         fi
 
-        rm -fr "pgsql-$v"
+        rm -fr "$instance_path"
+        echo "$instance_path"
+        pgenv_aliases_delete $instance_path
+
+        # remove always sources
         rm -fr src/postgresql-$v.tar.* # could be .tar.bz2 or .tar.gz
         rm -fr src/postgresql-$v
         pgenv_configuration_delete $v  # remove this particular configuration
         pgenv_configuration_delete     # remove default configuration if no instances are left
-        pgenv_aliases_delete $v
         echo "PostgreSQL $v removed"
         exit
         ;;
@@ -1218,20 +1299,7 @@ EOF
 
                 for alias_to_add in $*
                 do
-                    if [ ! -d $PGENV_ALIASES_DIR ]; then
-                        pgenv_debug "Creating directory for aliases [$PGENV_ALIASES_DIR]"
-                        mkdir -p $PGENV_ALIASES_DIR
-                    fi
-
-                    # do the alias
-                    alias_to_create=$PGENV_ALIASES_DIR/$alias_to_add
-                    if [ ! -h $alias_to_create ]; then
-                        ln -nsf ../pgsql-$v $alias_to_create
-                        pgenv_debug "Created alias $PGENV_ALIASES_DIR/$alias_to_add -> pgsql-$v"
-                    else
-                        echo "Alias $alias_to_add already exists, skipping"
-                    fi
-
+                    pgenv_add_alias $instance_name $alias_to_add
                 done
             ;;
             remove)
