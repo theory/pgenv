@@ -185,10 +185,10 @@ The third column lists aliases, if any are defined, for a particular
 version of PostgreSQL.
 
     $ pgenv versions
-          10.4      [pgsql-10.4]      stable java
-          11beta3   [pgsql-11beta3]   beta
-          9.5.13    [pgsql-9.5.13]    foo bar
-      *   9.6.9     [pgsql-9.6.9]
+          10.4      [pgsql-10.4/pgsql-10.4-2019-10-21-15-15-33]       { 10.4 stable java }
+          11beta3   [pgsql-11beta3/pgsql-11beta3-2019-10-20-12-23-45] { 11beta3 beta }
+          9.5.13    [pgsql-9.5.13/pgsql-9.5.13-2019-10-21-11-22-33]   { 9.5.13 foo bar }
+      *   9.6.9     [pgsql-9.6.9/pgsql-9.6.9-2019-10-21-05-23-55]     { 9.6.9 }
 
 In this example, versions `9.5.13`, `9.6.9`, `10.4`, and `11beta3` are
 available for use, and the `*` indicates that `9.6.10` is the currently active
@@ -197,8 +197,16 @@ version `9.5.13` has aliases `foo` and `bar` and version `11beta3` has a single
 alias named `beta`. Aliases are *user defined* names that can be used
 to reference a PostgreSQL version, therefore naming `stable` or `10.4` is 
 the same.
-Each version is installed in a `pgsql-` subdirectory relative to
-`$PGENV_ROOT`.
+Each version is installed in a `pgsql-<version>/pgsql-<version>-<timestamp>` 
+subdirectory relative to `$PGENV_ROOT`; the `<version>` is the PostgreSQL 
+version (e.g., `9.6.9`) and `timestamp` is the timestamp of when the 
+`build** command has been run.
+**This allows for building multiple instances of the same PostgreSQL
+version at different timestamps**.
+
+Each time a version is built, a new default alias is built with the
+PostgreSQL version, so that it is possible to use the version
+as a name of PostgreSQL to use in other commands.
 
 ### pgenv alias
 
@@ -236,6 +244,8 @@ alias (or aliases) to remove.
    $ pgenv alias remove foo bar
    
    
+Please note that it is not possible to remove all aliases: at least one alias
+per instance must be available for `pgenv` to use each instance.
 
 ### pgenv current
 
