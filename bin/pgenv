@@ -360,6 +360,22 @@ pgenv_add_alias(){
     done
 }
 
+# Counts how many aliases are there for a specific
+# instance path.
+pgenv_alias_count(){
+    local instance_path=$1
+    local counter=0
+
+    for current_alias in $PGENV_ALIASES_DIR/*; do
+        alias_path=$( readlink $current_alias )
+        if [ "$alias_path" = "$instance_path" ]; then
+           counter=$(( counter + 1))
+        fi
+    done
+
+    echo $counter
+}
+
 # Deletes all the aliases pointing to
 # a specific PostgreSQL instance
 pgenv_aliases_delete(){
@@ -1282,12 +1298,23 @@ EOF
         ALIAS_ACTION=$1
         shift
 
+
+
         case $ALIAS_ACTION in
             add)
-                # the very first argument to add is the version to alias
-                # and such version must be installed
-                v=$1
+                # the very first argument is the already existing alias
+                # (i.e., installed instance) to add an alias to
+                instance_name=$1
                 shift
+                instance_path=$( pgenv_instance_path_normalize $instance_name )
+
+                if [ -z "$instance_path" ]; then
+                    echo "Cannot find installation named $instance_name"
+                    exit 1
+                fi
+
+                v=$( pgenv_input_version_normalize $instance_path )
+
                 pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
                 pgenv_installed_version_or_exit $v
 
@@ -1297,9 +1324,8 @@ EOF
                     exit 1
                 fi
 
-                for alias_to_add in $*
-                do
-                    pgenv_add_alias $instance_name $alias_to_add
+                for alias_to_add in $*; do
+                    pgenv_add_alias $instance_path $alias_to_add
                 done
             ;;
             remove)
@@ -1308,15 +1334,22 @@ EOF
                     exit 1
                 fi
 
-                for alias_to_remove in $*
-                do
+                for alias_to_remove in $*; do
                     pgenv_debug "Removing alias $alias_to_remove"
+
                     to_remove=$PGENV_ALIASES_DIR/$alias_to_remove
+
                     if [ -h $to_remove ]; then
-                        rm $to_remove
+                        instance_path=$( readlink $to_remove )
+                        aliases_count=$( pgenv_alias_count $instance_path )
+                        if [ $aliases_count -le 1 ]; then
+                            echo "Cannot remove alias $alias_to_remove because it is the last one for $instance_path"
+                        else
+                            rm $to_remove
+                        fi
+
                     else
                         echo "Alias $alias_to_remove not found, skipping removal!"
-
                     fi
                 done
 
