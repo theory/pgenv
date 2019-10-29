@@ -240,9 +240,16 @@ pgenv_installed_version_or_exit(){
 # and aborts the script.
 pgenv_current_postgresql_or_exit(){
     if [ ! -e "pgsql" ]; then
-        echo "No version of PostgreSQL currently in use"
-        echo "Run \`pgenv use \$version\` to link and start a specific version"
-        echo "Run \`pgenv versions\` to list all installed versions"
+        cat <<EOF >&2
+No version of PostgreSQL currently in use!
+To use a specific version run
+    pgenv use <version>
+To start immediatly a specific version run
+    pgenv start <version>
+To see all locally installed clusters run
+    pgenv versions
+
+EOF
         exit 1
     fi
 }
