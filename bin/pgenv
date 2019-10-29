@@ -605,6 +605,7 @@ pgenv_initdb(){
 # if 'stop' or 'restart' action need to be performed.
 pgenv_stop_or_restart_instance(){
     local command=$1
+
     if $PG_CTL status -D "$PG_DATA"  &> /dev/null; then
         # ok, server running, apply the command
         case $command in
@@ -755,9 +756,7 @@ case $1 in
         else
             # Shut down existing running instance.
             if [ -e "pgsql" ]; then
-                if $PG_CTL status -D "$PG_DATA" &> /dev/null; then
-                    $PG_CTL stop -D "$PG_DATA"
-                fi
+                pgenv_stop_or_restart_instance 'stop'
             fi
 
             # Link the new instance.
@@ -793,6 +792,10 @@ case $1 in
         v=$( pgenv_current_version_number )
         pgenv_debug "Current version $v"
         pgenv_configuration_load $v
+
+        # check PATH settings
+        pgenv_warning_path
+
 
         # either stop or restart
         command="$1"
