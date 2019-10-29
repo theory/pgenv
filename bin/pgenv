@@ -494,6 +494,7 @@ pgenv_warning_path(){
 
     if [ $path_ok != 1 ]; then
         cat <<EOF >&2
+
 WARNING:
   your PATH enrvironemnt variable does not seem to include
 
@@ -510,6 +511,7 @@ HINT:
   for instance
 
   export PATH=$executables:\$PATH
+
 EOF
         return
     fi
@@ -529,6 +531,7 @@ EOF
 
     if [ $executables_wanted -ne $path_prepend ]; then
         cat <<EOF >&2
+
 WARNING:
    your PATH environment variable has some PostgreSQL executable
    preprended to the currently in-use instance, so you may
@@ -540,7 +543,9 @@ HINT:
    $executables
 
    like for instance
-    export PATH=$executables:\$PATH
+
+   export PATH=$executables:\$PATH
+
 EOF
     fi
 
