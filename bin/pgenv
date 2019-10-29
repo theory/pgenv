@@ -857,14 +857,22 @@ case $1 in
         # warn if no configuration was loaded
         if [ ! -z "PGENV_WARNINGS" ]; then
             if [ -z "$PGENV_CONFIGURATION_FILE" ]; then
-                echo "WARNING: no configuration file found for version $v"
-                echo "HINT: if you wish to customize the build process please"
-                echo "stop the execution within 5 seconds (CTRL-c) and run "
-                echo "    pgenv config write $v && pgenv config edit $v"
-                echo "adjust 'configure' and 'make' options and flags and run again"
-                echo "    pgenv build $v"
-                echo
-                sleep 5
+                seconds=5
+                cat <<EOF
+
+WARNING: no configuration file found for version $v
+HINT: if you wish to customize the build process please
+stop the execution within $seconds seconds (CTRL-c) and run
+
+       pgenv config write $v && pgenv config edit $v
+
+adjust 'configure' and 'make' options and flags and run again
+
+      pgenv build $v
+
+EOF
+
+                sleep $seconds
             fi
         fi
 
