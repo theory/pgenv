@@ -819,6 +819,9 @@ case $1 in
         ;;
 
     build|rebuild)
+        # save the 'command' so to display it later if the user needs help
+        command=$1
+        # save the PostgreSQL version to build
         v=$2
         # sanity checks before building
         pgenv_input_version_or_exit "$v"
@@ -827,9 +830,15 @@ case $1 in
 
 
         # Skip it if we already have it, and are not rebuilding
-        if [ "$1" != "rebuild" ]; then
+        if [ "$command" != 'rebuild' ]; then
             if [ -e "pgsql-$v" ]; then
-                echo "PostgreSQL $v already built (did you mean `rebuild` instead?)"
+                echo "PostgreSQL $v already built (did you mean \`rebuild\` instead?)"
+                exit 1
+            fi
+        else
+            # rebuild, ensure this is not in use
+            if [ "`readlink pgsql`" = "pgsql-$v" ]; then
+                echo "PostgreSQL $v in use, prevent rebuilding while in use!"
                 exit 1
             fi
         fi
@@ -871,7 +880,7 @@ stop the execution within $seconds seconds (CTRL-c) and run
 
 adjust 'configure' and 'make' options and flags and run again
 
-      pgenv build $v
+      pgenv $command $v
 
 EOF
 

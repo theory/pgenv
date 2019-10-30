@@ -305,7 +305,10 @@ file. As an example
 
 The `rebuild` command allows the rebuilding from sources of a specific 
 PostgreSQL version. *The `PGDATA` directory will not be deleted if already
-initialized via `initdb`*.
+initialized via `initdb`*. However, in the case the PostgreSQL instance
+to rebuild is currently in use, the `rebuild` command will not proceed.
+This is meant to prevent the user to change the binaries of a in-use
+PostgreSQL cluster.
 
 The configuration will follow the same rules adopted in `build`, that means
 if a configuration file will be present it will be readed and loaded, otherwise
