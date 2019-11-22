@@ -119,13 +119,22 @@ an instance is stopped, that is the `stop` command is executed.
 The return value of the script does not affect the `pgenv` workflow.
 The script gets the current `PGDATA` path as first argument.
 
+- `PGENV_SCRIPT_POSTRESTART` is an executable script executed each time
+an instance is restarted, that is the `restart` command is executed.
+The return value of the script does not affect the `pgenv` workflow.
+The script gets the current `PGDATA` path as first argument.
+
+
 
 The above configuration variables can be set in the configuration file
 or on the fly, for instance:
 
     $ export PGENV_SCRIPT_POSTSTART=/usr/local/bin/load_data.sh
     $ pgenv start 12.0
-    
+
+
+It is worth noting that the start, restart and post script are not shared between similar events: for instance the `PGENV_SCRIPT_POSTSTOP` is not executed if the user issues a `restart` command (even if that implies somehow a cluster stop).
+
 **Please note that running external scripts can result in damages and crashes in the `pgenv` workflow.**    
 In the future, more hooks to run scripts could be added.
 

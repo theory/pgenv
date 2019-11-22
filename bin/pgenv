@@ -475,6 +475,7 @@ pgenv_configuration_write() {
     pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTINITDB" "" 'Script to execute when initdb finishes'
     pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTSTOP" "" 'Script to execute when the cluster has been stopped'
     pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTSTART" "" 'Script to execute when the cluster has been started'
+    pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTRESTART" "" 'Script to execute when the cluster has been restarted'
 
 
     echo "pgenv configuration written to file $CONF"
@@ -649,6 +650,12 @@ pgenv_stop_or_restart_instance(){
                 $PG_CTL restart -D "$PG_DATA" -l "$PGENV_LOG"  $PGENV_RESTART_OPTS
                 echo "PostgreSQL $v restarted"
                 echo "Logging to $PGENV_LOG"
+
+                # if there is a post-restart script to run, run it
+                if [ -x "$PGENV_SCRIPT_POSTRESTART" ]; then
+                    echo "Running post-restart script [$PGENV_SCRIPT_POSTRESTART]"
+                    $PGENV_SCRIPT_POSTRESTART "$PG_DATA"
+                fi
                 ;;
         esac
     else
