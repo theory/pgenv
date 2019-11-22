@@ -472,8 +472,9 @@ pgenv_configuration_write() {
     pgenv_configuration_write_variable "$CONF" "PGENV_RESTART_OPTS" "$PGENV_RESTART_OPTS" 'Restart configuration flags'
 
     pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTINSTALL" "" 'Script to execute when the build process finishes'
-    pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTSTART" "" 'Script to execute when the cluster has been started'
     pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTINITDB" "" 'Script to execute when initdb finishes'
+    pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTSTOP" "" 'Script to execute when the cluster has been stopped'
+    pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTSTART" "" 'Script to execute when the cluster has been started'
 
 
     echo "pgenv configuration written to file $CONF"
@@ -636,6 +637,12 @@ pgenv_stop_or_restart_instance(){
                 pgenv_debug "pg_ctl stopping with  flags [$PGENV_STOP_OPTS]"
                 $PG_CTL stop -D "$PG_DATA" $PGENV_STOP_OPTS
                 echo "PostgreSQL $v stopped"
+
+                # if there is a post-stop script to run, run it
+                if [ -x "$PGENV_SCRIPT_POSTSTOP" ]; then
+                    echo "Running post-stop script [$PGENV_SCRIPT_POSTSTOP]"
+                    $PGENV_SCRIPT_POSTSTOP "$PG_DATA"
+                fi
                 ;;
             restart)
                 pgenv_debug "pg_ctl restarting with flags [$PGENV_RESTART_OPTS]"

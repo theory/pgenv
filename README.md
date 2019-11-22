@@ -114,6 +114,11 @@ an instances is started, that is `start` is executed.
 The return value of the script does not affect the `pgenv` workflow.
 The script gets the current `PGDATA` path as first argument.
 
+- `PGENV_SCRIPT_POSTSTOP` is an executable script executed each time
+an instance is stopped, that is the `stop` command is executed.
+The return value of the script does not affect the `pgenv` workflow.
+The script gets the current `PGDATA` path as first argument.
+
 
 The above configuration variables can be set in the configuration file
 or on the fly, for instance:
