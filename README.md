@@ -436,6 +436,15 @@ the following:
 
     For full documentation, see: https://github.com/theory/pgenv#readme
 
+    This is 'pgenv' version [99313c4]
+    
+If possible, the `help` command will display on the last line of output
+also the git `HEAD` short hash. This is useful when reporting
+bugs and/or issues.
+Please note that, in order to print out the git `HEAD` information,
+the `pgenv` must be able to find a `git` executable (i.e., it must be
+in your `PATH`) and the `PGENV_ROOT` must be a git *checkout* directory.
+
 ### pgenv config
 
 View, set, and delete configuration variables, both globally or for specific
