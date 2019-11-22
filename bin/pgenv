@@ -91,6 +91,16 @@ The pgenv commands are:
 
 For full documentation, see: https://github.com/theory/pgenv#readme
 EOF
+
+
+    # display current git version if possible
+    if [ ! -z "$( which git )" -a -d "${PGENV_ROOT}/.git" ]; then
+
+        cat <<EOF
+
+This is 'pgenv' version [$( git log -n 1 --format='%h' )]
+EOF
+    fi
 }
 
 # Searches for all dependencies and prints a report. If the argument is null,
