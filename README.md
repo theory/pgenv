@@ -255,14 +255,17 @@ adjust 'configure' and 'make' options and flags and run again
     pgenv build 10.3
 ```
 
-Within the configuration file it is possible to instrument
-the build phase from the configuration to the actual build. For instance,
-in order to build with PL/Perl, it is possible to configure
-the variable `PGENV_CONFIGURE_OPTS` adding `--with-perl`. Please note that
-it is possible to pass argument variables within the command line to
-instrument the build phase. As an example, the following is a possible
-work-flow to configure and build a customized 10.5 instance:
+Within the configuration file it is possible to instrument the build phase from
+the configuration to the actual build. For instance, in order to build with
+PL/Perl, it is possible to configure the variable `PGENV_CONFIGURE_OPTS` adding
+`--with-perl`. Or say you need SSL support and to tell teh compiler to use
+Homebrew-installed OpenSSL. Edit it something like:
 
+    PGENV_CONFIGURE_OPTS="--with-perl --with-openssl  CFLAGS=-I/usr/local/opt/openssl/include LDFLAGS=-L/usr/local/opt/openssl/lib"
+
+Please note that it is possible to pass argument variables within the command
+line to instrument the build phase. As an example, the following is a possible
+work-flow to configure and build a customized 10.5 instance:
 
     $ pgenv config write 10.5
     $ pgenv config edit 10.5
