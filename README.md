@@ -569,6 +569,50 @@ The `delete` subcommand deletes both the configuration file and its backup
 copy. The `pgenv remove` command also deletes any configuration for the
 removed version.
 
+
+### pgenv log
+
+The `log` command provides a dump of the cluster log, if it exists, so that you don't have to worry about the exact log location.
+The log is dumped using the `tail` command, and every option passed to
+the command line is passed thru `tail`. As an example:
+
+    $ pgenv log     
+    Dumping the content of /home/luca/git/misc/PostgreSQL/pgenv/pgsql/data/server.log 
+
+    2020-08-28 19:04:44.199 CEST [10702] LOG:  could not bind IPv4 address "127.0.0.1": Address already in use
+    2020-08-28 19:04:44.199 CEST [10702] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+    2020-08-28 19:04:44.199 CEST [10702] WARNING:  could not create listen socket for "localhost"
+    2020-08-28 19:04:44.199 CEST [10702] FATAL:  could not create any TCP/IP sockets
+    2020-08-28 19:04:44.199 CEST [10702] LOG:  database system is shut down
+    2020-08-28 19:09:09.024 CEST [11867] LOG:  starting PostgreSQL 12.1 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 8.3.0-6ubuntu1) 8.3.0, 64-bit
+    2020-08-28 19:09:09.024 CEST [11867] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+    2020-08-28 19:09:09.028 CEST [11867] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+    2020-08-28 19:09:09.045 CEST [11868] LOG:  database system was shut down at 2020-08-28 12:57:33 CEST
+    2020-08-28 19:09:09.048 CEST [11867] LOG:  database system is ready to accept connections
+   
+The above is equivalent to manually executing
+
+    $ tail /home/luca/git/misc/PostgreSQL/pgenv/pgsql/data/server.log 
+
+It is possible to pass arguments to `tail` as command line flags:
+
+    $ pgenv log -n 2
+    Dumping the content of /home/luca/git/misc/PostgreSQL/pgenv/pgsql/data/server.log 
+
+    2020-08-28 19:09:09.045 CEST [11868] LOG:  database system was shut down at 2020-08-28 12:57:33 CEST
+    2020-08-28 19:09:09.048 CEST [11867] LOG:  database system is ready to accept connections
+
+which results in executing
+
+    $ tail -n 2 /home/luca/git/misc/PostgreSQL/pgenv/pgsql/data/server.log 
+   
+and of course, you can inspect the log of live system continuosly:
+
+
+    $ pgenv log -f
+    
+    
+
 # Bug Reporting
 
 Please use [GitHub issues].
