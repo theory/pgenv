@@ -88,6 +88,7 @@ The pgenv commands are:
     available  Show which versions can be downloaded
     check      Check all program dependencies
     config     View, edit, delete the program configuration
+    log        Inspects the log of the cluster, if exist.
 
 For full documentation, see: https://github.com/theory/pgenv#readme
 EOF
@@ -1199,6 +1200,21 @@ EOF
                 ;;
         esac
         exit
+        ;;
+
+    log)
+        # get a dump of the logs...
+
+        shift # remove the command line 'log' argument
+        # pass to tail every argument
+        if [ -f "$PGENV_LOG" ]; then
+            echo -e "Dumping the content of $PGENV_LOG \n"
+            tail $* "$PGENV_LOG"
+            exit 0
+        else
+            echo "No log to display"
+            exit 1
+        fi
         ;;
 
     *)
