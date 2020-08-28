@@ -159,10 +159,11 @@ pgenv_check_dependencies(){
     pgenv_detail_command "sed" $PGENV_SED
 
 
-    # check for sort and tr, but not place into
+    # check for sort and tr and tail, but not place into
     # variables (do we need to push to that extent?)
     pgenv_detail_command "sort" $(which sort)
     pgenv_detail_command "tr" $(which tr)
+    pgenv_detail_command "tail" $(which tail)
 
     # Go back to exiting on error.
     trap 'exit' ERR
@@ -601,7 +602,12 @@ pgenv_start_instance(){
         fi
 
     else
-        echo "PostgreSQL $v NOT started, examine logs in $PGENV_LOG"
+
+        echo -e "\nPostgreSQL $v NOT started, examine logs in $PGENV_LOG\n"
+        local LOG_LINES=5
+        echo "Following are the last $LOG_LINES lines of the log, as a quick hint:"
+        tail -n $LOG_LINES "$PGENV_LOG"
+
     fi
     trap 'exit' ERR
 }
