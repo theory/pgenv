@@ -590,7 +590,7 @@ pgenv_start_instance(){
     pgenv_initdb
 
     pgenv_debug "pg_ctl starting instance with flags [$PGENV_START_OPTS] log [$PGENV_LOG]"
-    $PG_CTL start -D "$PG_DATA"  -l "$PGENV_LOG" $PGENV_START_OPTS
+    $PG_CTL start -D "$PG_DATA"  -l "$PGENV_LOG" $PGENV_START_OPTS &> /dev/null
     if [ $? -eq 0 ]; then
         echo "PostgreSQL $v started"
         echo "Logging to $PGENV_LOG"
@@ -642,7 +642,7 @@ pgenv_stop_or_restart_instance(){
         case $command in
             stop)
                 pgenv_debug "pg_ctl stopping with  flags [$PGENV_STOP_OPTS]"
-                $PG_CTL stop -D "$PG_DATA" $PGENV_STOP_OPTS
+                $PG_CTL stop -D "$PG_DATA" $PGENV_STOP_OPTS &> /dev/null
                 echo "PostgreSQL $v stopped"
 
                 # if there is a post-stop script to run, run it
@@ -653,7 +653,7 @@ pgenv_stop_or_restart_instance(){
                 ;;
             restart)
                 pgenv_debug "pg_ctl restarting with flags [$PGENV_RESTART_OPTS]"
-                $PG_CTL restart -D "$PG_DATA" -l "$PGENV_LOG"  $PGENV_RESTART_OPTS
+                $PG_CTL restart -D "$PG_DATA" -l "$PGENV_LOG"  $PGENV_RESTART_OPTS &> /dev/null
                 echo "PostgreSQL $v restarted"
                 echo "Logging to $PGENV_LOG"
 
