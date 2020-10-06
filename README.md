@@ -92,6 +92,10 @@ using a configuration file before the program launches the build.
 For a more detailed configuration, see the [`pgenv config`](#pgenv-config)
 command below.
 
+You can use a local PostgreSQL git repo instead of downloading tarballs
+for the build step by setting the external `$PGENV_LOCAL_POSTGRESQL_REPO`
+environment variable to the appropriate absolute path.
+
 ### Running scripts
 
 It is possible to run custom script when particular events happen. 

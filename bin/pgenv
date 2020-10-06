@@ -880,22 +880,27 @@ case $1 in
         fi
         cd src
 
-        # Download the source if wee don't already have it.
-        # WARNING: older PostgreSQL used .tar.gz instead of .tar.bz2,
-        # so if the version is behind 8 use the first format, otherwise
-        # try to get the most compressed archive
-        if [[ $v =~ ^[1-7]\. ]]; then
-            PG_TARBALL="postgresql-$v.tar.gz"
-            TAR_OPTS="zxf"
+        if [ -d $PGENV_LOCAL_POSTGRESQL_REPO ]; then
+            pgenv_debug "Using local postgresql repo: $PGENV_LOCAL_POSTGRESQL_REPO"
         else
-            PG_TARBALL="postgresql-$v.tar.bz2"
-            TAR_OPTS="jxf"
-        fi
+            pgenv_debug "Downloading tarball"
 
-        if [ ! -f $PG_TARBALL ]; then
-            $PGENV_CURL -fLO ${PGENV_DOWNLOAD_ROOT}/v$v/${PG_TARBALL}
-        fi
+            # Download the source if wee don't already have it.
+            # WARNING: older PostgreSQL used .tar.gz instead of .tar.bz2,
+            # so if the version is behind 8 use the first format, otherwise
+            # try to get the most compressed archive
+            if [[ $v =~ ^[1-7]\. ]]; then
+                PG_TARBALL="postgresql-$v.tar.gz"
+                TAR_OPTS="zxf"
+            else
+                PG_TARBALL="postgresql-$v.tar.bz2"
+                TAR_OPTS="jxf"
+            fi
 
+            if [ ! -f $PG_TARBALL ]; then
+                $PGENV_CURL -fLO ${PGENV_DOWNLOAD_ROOT}/v$v/${PG_TARBALL}
+            fi
+        fi
 
         # warn if no configuration was loaded
         if [ ! -z "PGENV_WARNINGS" ]; then
@@ -919,10 +924,30 @@ EOF
             fi
         fi
 
-
-        # Unpack the source.
         rm -rf "postgresql-$v"
-        $PGENV_TAR $TAR_OPTS $PG_TARBALL
+
+        if [ -d $PGENV_LOCAL_POSTGRESQL_REPO ]; then
+            pgenv_debug "Using local postgresql repo: $PGENV_LOCAL_POSTGRESQL_REPO"
+
+            (cd $PGENV_LOCAL_POSTGRESQL_REPO &&
+                 git fetch)
+            if [[ $v =~ ^[1-9]\. ]]; then
+                # version 1-9
+                tag=REL${v}
+            else
+                tag=REL_${v}
+            fi
+            tag=${tag^^}        # uppercase for rc, beta, etc
+            tag=${tag//./_}     # change dots to underscores
+
+            mkdir postgresql-$v
+            (cd $PGENV_LOCAL_POSTGRESQL_REPO &&
+                 git archive --format=tar $tag) | tar xp -C postgresql-$v
+        else
+            # Unpack the source.
+            $PGENV_TAR $TAR_OPTS $PG_TARBALL
+        fi
+            
         cd postgresql-$v
 
         # patch the source tree if required
