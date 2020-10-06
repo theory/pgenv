@@ -880,7 +880,7 @@ case $1 in
         fi
         cd src
 
-        if [ -d $PGENV_LOCAL_POSTGRESQL_REPO ]; then
+        if [ ! -z "$PGENV_LOCAL_POSTGRESQL_REPO" ] && [ -d $PGENV_LOCAL_POSTGRESQL_REPO ]; then
             pgenv_debug "Using local postgresql repo: $PGENV_LOCAL_POSTGRESQL_REPO"
         else
             pgenv_debug "Downloading tarball"
@@ -926,7 +926,7 @@ EOF
 
         rm -rf "postgresql-$v"
 
-        if [ -d $PGENV_LOCAL_POSTGRESQL_REPO ]; then
+        if [ ! -z "$PGENV_LOCAL_POSTGRESQL_REPO" ] && [ -d $PGENV_LOCAL_POSTGRESQL_REPO ]; then
             pgenv_debug "Using local postgresql repo: $PGENV_LOCAL_POSTGRESQL_REPO"
 
             (cd $PGENV_LOCAL_POSTGRESQL_REPO &&
