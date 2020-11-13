@@ -1251,7 +1251,7 @@ EOF
 
             # tail is not in a PGENV_ variable, but should have been checked
             # via `pgenv check`
-            tail $* "$PGENV_LOG"
+            command tail $* "$PGENV_LOG"
             exit $?
         else
             # uhm.. no log is there, could it be the database
