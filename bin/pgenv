@@ -642,7 +642,7 @@ pgenv_stop_or_restart_instance(){
         # ok, server running, apply the command
         case $command in
             stop)
-                pgenv_debug "pg_ctl stopping with  flags [$PGENV_STOP_OPTS]"
+                pgenv_debug "pg_ctl stopping with flags [$PGENV_STOP_OPTS]"
                 $PG_CTL stop -D "$PG_DATA" $PGENV_STOP_OPTS &> /dev/null
                 echo "PostgreSQL $v stopped"
 
