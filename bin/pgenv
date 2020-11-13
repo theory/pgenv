@@ -1205,11 +1205,12 @@ EOF
                 pgenv_configuration_write "$v" ;;
             edit)
                 configuration_file=$( pgenv_configuration_file_name $v )
-                if [ ! -z "$EDITOR" ]; then
+                if [ ! -z "$EDITOR" ] && [ $(command -v $EDITOR ) ]; then
+                    pgenv_debug "Launching editor $EDITOR"
                     $EDITOR $configuration_file
                 else
                     cat <<EOF
-No EDITOR variable set!
+No EDITOR variable set (or executable)!
 You can either start manually your favourite
 editor to edit the configuration file
      $configuration_file
