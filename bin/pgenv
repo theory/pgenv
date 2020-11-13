@@ -56,7 +56,7 @@ pgenv_versions() {
         fi
 
         if [ -z "$PGENV_SED" ]; then
-            PGENV_SED=$(which sed)
+            PGENV_SED=$(command -v sed)
         fi
         local version=$( echo $dir | $PGENV_SED 's/^pgsql-//' )
         printf "%s   %-6s    %s\n" "$flags" "$version" "$dir"
@@ -131,40 +131,40 @@ pgenv_check_dependencies(){
 
 
     if [ -z "$PGENV_MAKE" ]; then
-        PGENV_MAKE=$(which make)
+        PGENV_MAKE=$(command -v make)
         if [ -z "$PGENV_MAKE" ]; then
-            PGENV_MAKE=$(which gmake)
+            PGENV_MAKE=$(command -v gmake)
         fi
     fi
     pgenv_detail_command "make" $PGENV_MAKE
 
 
     if [ -z "$PGENV_CURL" ]; then
-        PGENV_CURL=$(which curl)
+        PGENV_CURL=$(command -v curl)
     fi
     pgenv_detail_command "curl" $PGENV_CURL
 
     if [ -z "$PGENV_PATCH" ]; then
-        PGENV_PATCH=$(which patch)
+        PGENV_PATCH=$(command -v patch)
     fi
     pgenv_detail_command "patch" $PGENV_PATCH
 
     if [ -z "$PGENV_TAR" ]; then
-        PGENV_TAR=$(which tar)
+        PGENV_TAR=$(command -v tar)
     fi
     pgenv_detail_command "tar" $PGENV_TAR
 
     if [ -z "$PGENV_SED" ]; then
-        PGENV_SED=$(which sed)
+        PGENV_SED=$(command -v sed)
     fi
     pgenv_detail_command "sed" $PGENV_SED
 
 
     # check for sort and tr and tail, but not place into
     # variables (do we need to push to that extent?)
-    pgenv_detail_command "sort" $(which sort)
-    pgenv_detail_command "tr" $(which tr)
-    pgenv_detail_command "tail" $(which tail)
+    pgenv_detail_command "sort" $(command -v sort)
+    pgenv_detail_command "tr" $(command -v tr)
+    pgenv_detail_command "tail" $(command -v tail)
 
     # Go back to exiting on error.
     trap 'exit' ERR
@@ -272,7 +272,7 @@ EOF
 pgenv_current_postgresql_version(){
     # find sed even without the configuration/dependencies
     if [ -z "$PGENV_SED" ]; then
-        PGENV_SED=$(which sed)
+        PGENV_SED=$(command -v sed)
     fi
     local v=$( readlink pgsql | $PGENV_SED 's/^pgsql-//' )
     echo $v
