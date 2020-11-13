@@ -1235,16 +1235,33 @@ EOF
         ;;
 
     log)
-        # get a dump of the logs...
+        # get a dump of the logs...but first ensure there is a currently active PostgreSQL instance
+        pgenv_exit_if_no_postgresql_in_use
+
+        # extract the current version to display in messages
+        v=$( pgenv_current_postgresql_version )
+        echo -e "PostgreSQL in use: $v\n"
 
         shift # remove the command line 'log' argument
         # pass to tail every argument
         if [ -f "$PGENV_LOG" ]; then
+
             echo -e "Dumping the content of $PGENV_LOG \n"
+
+            # tail is not in a PGENV_ variable, but should have been checked
+            # via `pgenv check`
             tail $* "$PGENV_LOG"
-            exit 0
+            exit $?
         else
-            echo "No log to display"
+            # uhm.. no log is there, could it be the database
+            # has not produced a log at all?
+            cat <<EOF
+No log to display, is the database logging information?
+Please check that the database configuration has logging enabled
+and it is logging to
+
+        $PGENV_LOG
+EOF
             exit 1
         fi
         ;;
