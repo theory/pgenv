@@ -251,7 +251,7 @@ pgenv_installed_version_or_exit(){
 
 # Checks if there is a currently activer version and, if not, reports that fact
 # and aborts the script.
-pgenv_current_postgresql_or_exit(){
+pgenv_exit_if_no_postgresql_in_use(){
     if [ ! -e "pgsql" ]; then
         cat <<EOF >&2
 No version of PostgreSQL currently in use!
@@ -268,8 +268,8 @@ EOF
 }
 
 # Prints the currently active version number. To capture the value instead of
-# printing it, make a call like `v=&( pgenv_current_version_number )`
-pgenv_current_version_number(){
+# printing it, make a call like `v=&( pgenv_current_postgresql_version )`
+pgenv_current_postgresql_version(){
     # find sed even without the configuration/dependencies
     if [ -z "$PGENV_SED" ]; then
         PGENV_SED=$(which sed)
@@ -823,8 +823,8 @@ case $1 in
 
     start)
         # check a version is currently in use
-        pgenv_current_postgresql_or_exit
-        v=$( pgenv_current_version_number )
+        pgenv_exit_if_no_postgresql_in_use
+        v=$( pgenv_current_postgresql_version )
         pgenv_debug "Current version $v"
         pgenv_configuration_load $v
 
@@ -838,8 +838,8 @@ case $1 in
 
     stop|restart)
         # check a version is currently in use
-        pgenv_current_postgresql_or_exit
-        v=$( pgenv_current_version_number )
+        pgenv_exit_if_no_postgresql_in_use
+        v=$( pgenv_current_postgresql_version )
         pgenv_debug "Current version $v"
         pgenv_configuration_load $v
 
@@ -994,14 +994,14 @@ EOF
         ;;
 
     clear)
-        pgenv_current_postgresql_or_exit
-        v=$( pgenv_current_version_number )
+        pgenv_exit_if_no_postgresql_in_use
+        v=$( pgenv_current_postgresql_version )
         pgenv_configuration_load $v
 
         # stop the instance
         pgenv_stop_or_restart_instance 'stop' "$v"
 
-        # We know a version is in use, since pgenv_current_postgresql_or_exit
+        # We know a version is in use, since pgenv_exit_if_no_postgresql_in_use
         # otherwise would have killed the script.
         rm -f pgsql
         echo "PostgreSQL $v cleared"
@@ -1029,8 +1029,8 @@ EOF
         ;;
 
     version|current)
-        pgenv_current_postgresql_or_exit
-        pgenv_current_version_number
+        pgenv_exit_if_no_postgresql_in_use
+        pgenv_current_postgresql_version
         exit
         ;;
 
@@ -1176,7 +1176,7 @@ EOF
         # which version does the user wants?
         case "$v" in
             version|current)
-                v=$( pgenv_current_version_number )
+                v=$( pgenv_current_postgresql_version )
                 title='PostgreSQL currently in use'
                 ;;
             default)
@@ -1186,8 +1186,8 @@ EOF
             *)
                 # get the currently in use if none specified
                 if [ -z "$v" ]; then
-                    pgenv_current_postgresql_or_exit
-                    v=$( pgenv_current_version_number )
+                    pgenv_exit_if_no_postgresql_in_use
+                    v=$( pgenv_current_postgresql_version )
                 fi
 
                 title="PostgreSQL $v"
