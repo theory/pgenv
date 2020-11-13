@@ -635,8 +635,14 @@ pgenv_initdb(){
 # Wrapper function to stop or restart the current instance.
 # Accepts an optional argument 'command' that specifies
 # if 'stop' or 'restart' action need to be performed.
+#
+# It is required that the second argument to the function is the version
+# number of the PostgreSQL server to stop. While this has nothing special
+# with the behavior of the command, it is useful for displaying
+# messages and find out the configuration.
 pgenv_stop_or_restart_instance(){
     local command=$1
+    local v=$2
 
     if $PG_CTL status -D "$PG_DATA"  &> /dev/null; then
         # ok, server running, apply the command
@@ -800,7 +806,7 @@ case $1 in
         else
             # Shut down existing running instance.
             if [ -e "pgsql" ]; then
-                pgenv_stop_or_restart_instance 'stop'
+                pgenv_stop_or_restart_instance 'stop' "$v"
             fi
 
             # Link the new instance.
@@ -845,7 +851,7 @@ case $1 in
         command="$1"
 
         # stop the current instance (or restart it)
-        pgenv_stop_or_restart_instance $command
+        pgenv_stop_or_restart_instance $command "$v"
         exit
         ;;
 
@@ -988,11 +994,12 @@ EOF
         ;;
 
     clear)
-        v=$( pgenv_current_postgresql_or_exit )
+        pgenv_current_postgresql_or_exit
+        v=$( pgenv_current_version_number )
         pgenv_configuration_load $v
 
         # stop the instance
-        pgenv_stop_or_restart_instance 'stop'
+        pgenv_stop_or_restart_instance 'stop' "$v"
 
         # We know a version is in use, since pgenv_current_postgresql_or_exit
         # otherwise would have killed the script.
