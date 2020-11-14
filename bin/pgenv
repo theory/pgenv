@@ -423,7 +423,7 @@ pgenv_configuration_write_variable(){
 
     # if no value supplied, put a comment
     if [ -z "$value" ]; then
-        echo -n "# " >> "$file"
+        echo -n "#" >> "$file"
     fi
     echo "${name}='${value}'" >> "$file"
     echo >> "$file"
