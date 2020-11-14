@@ -171,7 +171,15 @@ Command Reference
 -----------------
 
 Like `git`, the `pgenv` command delegates to subcommands based on its
-first argument. The subcommands are:
+first argument. 
+Some commands require you to specify the PostgreSQL version to act against.
+You can specify the version the command applies to by either entering the
+PostgreSQL version number or by specifying any of the special keywords:
+- `current` or `version` to indicate the currently selected PostgreSQL version;
+- `oldest` to indicate the oldest installed version (exluding beta versions);
+- `newest` to indicate the newest installed version (exluding beta versions).
+
+The subcommands are:
 
 ### pgenv use
 
