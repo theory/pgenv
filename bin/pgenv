@@ -881,7 +881,7 @@ case $1 in
             fi
 
             # Link the new instance.
-            ln -nsf pgsql-$2 pgsql
+            ln -nsf pgsql-$v pgsql
         fi
 
         # Init if needed.
