@@ -1242,29 +1242,16 @@ EOF
 
     config|configuration)
         action=$2
-        v=$3
 
-        # which version does the user wants?
-        case "$v" in
-            version|current)
-                v=$( pgenv_current_postgresql_version )
-                title='PostgreSQL currently in use'
-                ;;
-            default)
-                v=''
-                title='Default configuration'
-                ;;
-            *)
-                # get the currently in use if none specified
-                if [ -z "$v" ]; then
-                    pgenv_exit_if_no_postgresql_in_use
-                    v=$( pgenv_current_postgresql_version )
-                fi
+        # understand the version the user wants to configure
+        v=$( pgenv_guess_postgresql_version $3 )
+        # get the currently in use if none specified
+        if [ -z "$v" ]; then
+            pgenv_exit_if_no_postgresql_in_use
+            v=$( pgenv_current_postgresql_version )
+        fi
 
-                title="PostgreSQL $v"
-                ;;
-        esac
-
+        title="PostgreSQL version $v"
 
         case $action in
             show)
