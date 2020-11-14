@@ -806,7 +806,8 @@ case $1 in
         else
             # Shut down existing running instance.
             if [ -e "pgsql" ]; then
-                pgenv_stop_or_restart_instance 'stop' "$v"
+                stopping_version=$( pgenv_current_postgresql_version )
+                pgenv_stop_or_restart_instance 'stop' "$stopping_version"
             fi
 
             # Link the new instance.
