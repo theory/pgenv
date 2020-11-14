@@ -183,6 +183,77 @@ pgenv_check_dependencies(){
     fi
 }
 
+# This function provides the specified version from an alias name.
+# WARNING: this does not include beta versions!!!
+#
+# Accepted parameters are either 'latest' or 'oldest' to select
+# the latest stable version installed or the oldest one.
+pgenv_find_version_on_disk(){
+    local search_for=$1
+    local brand
+    local year
+    local selected
+    local patch
+    local current_version
+    local selected_value
+
+    # find sed even without the configuration/dependencies
+    if [ -z "$PGENV_SED" ]; then
+        PGENV_SED=$(which sed)
+    fi
+
+    for version in $( ls -d pgsql-* 2>/dev/null | $PGENV_SED 's/pgsql-//' ); do
+        pgenv_debug "Version $version"
+        brand=$( echo $version | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
+        year=$(  echo $version | $PGENV_SED 's/[[:digit:]]\{1,2\}\.\([[:digit:]]\{1,2\}\).*/\1/' )
+        patch=$(  echo $version | $PGENV_SED 's/[[:digit:]]\{1,2\}\.[[:digit:]]\{1,2\}\.\{0,1\}\([[:digit:]]\{0,2\}\).*/\1/' )
+
+        current_version="${brand}${year}${patch}"
+        pgenv_debug "Found version [$current_version]"
+
+        case "$search_for" in
+            latest)
+                if [ -z "$selected_value" ] || [ $selected_value -lt $current_version ]; then
+                    selected_value=$current_version
+                    selected=$version
+                fi
+                ;;
+            oldest)
+                if [ -z "$selected_value" ] || [ $selected_value -gt $current_version ]; then
+                    selected_value=$current_version
+                    selected=$version
+                fi
+                ;;
+        esac
+    done
+
+    pgenv_debug "Version selected for [$search_for] = $selected"
+    echo $selected
+}
+
+pgenv_guess_postgresql_version() {
+    local v=$1
+
+    case "$v" in
+        current|version)
+            # current version is the one that has been selected by `use`
+            v=$( pgenv_current_postgresql_version )
+            ;;
+        default)
+            # there is no default version, this is useful only
+            # for specifying the 'default configuration'
+            v=""
+            ;;
+        latest|oldest)
+            # must guess!
+            v=$( pgenv_find_version_on_disk "$v" )
+    esac
+
+    pgenv_debug "Guessed PostgreSQL version is [$v]"
+    echo "$v"
+}
+
+
 # This function checks if its first argument is a valid PostgreSQL version
 # number, like "10.5" or "9.5.4". In case no version number is specified, or the
 # version number is invalid (e.g., "10", "0.9") the function aborts the script.
@@ -792,7 +863,7 @@ pgenv_patch_source_tree() {
 
 case $1 in
     use)
-        v=$2
+        v=$( pgenv_guess_postgresql_version $2 )
         pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
         pgenv_installed_version_or_exit $v
         pgenv_configuration_load $v
@@ -1264,6 +1335,13 @@ and it is logging to
 EOF
             exit 1
         fi
+        ;;
+
+
+    test)
+        pgenv_guess_postgresql_version "latest"
+        pgenv_guess_postgresql_version "oldest"
+        pgenv_guess_postgresql_version "13.5"
         ;;
 
     *)
