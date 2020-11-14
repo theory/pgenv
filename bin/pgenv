@@ -1080,7 +1080,7 @@ EOF
         ;;
 
     remove)
-        v=$2
+        v=$( pgenv_guess_postgresql_version $v )
         pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
 
         if [ "`readlink pgsql`" = "pgsql-$v" ]; then
