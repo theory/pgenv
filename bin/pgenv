@@ -231,6 +231,16 @@ pgenv_find_version_on_disk(){
     echo $selected
 }
 
+
+# Guesses the selected PostgreSQL version to use.
+# The idea is that every time a command needs a PostgreSQL version number
+# this function should be called.
+# As an example:
+# v=$( pgenv_guess_postgresql_version $2 )
+#
+# - with $2 = 13.0 will return it (13.0);
+# - with $2 = "current" will return the current version in use (if any)
+# - with $2 = "oldest" will return the oldest version installed
 pgenv_guess_postgresql_version() {
     local v=$1
 
