@@ -186,10 +186,15 @@ pgenv_check_dependencies(){
 # This function provides the specified version from an alias name.
 # WARNING: this does not include beta versions!!!
 #
-# Accepted parameters are either 'latest' or 'oldest' to select
+# Accepted parameters are either 'latest' or 'earliest' to select
 # the latest stable version installed or the oldest one.
+# If the option second argument is specified, it must be a "filter"
+# to the version to search for, usually the major version number.
+# So for example passing '9.6' as second argument will restrict
+# the search into all the installed '9.6.x' versions.
 pgenv_find_version_on_disk(){
     local search_for=$1
+    local filter=$2
     local brand
     local year
     local selected
@@ -202,7 +207,7 @@ pgenv_find_version_on_disk(){
         PGENV_SED=$(which sed)
     fi
 
-    for version in $( ls -d pgsql-* 2>/dev/null | $PGENV_SED 's/pgsql-//' ); do
+    for version in $( ls -d pgsql-${filter}* 2>/dev/null | $PGENV_SED 's/pgsql-//' ); do
         pgenv_debug "Version $version"
         brand=$( echo $version | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
         year=$(  echo $version | $PGENV_SED 's/[[:digit:]]\{1,2\}\.\([[:digit:]]\{1,2\}\).*/\1/' )
@@ -218,7 +223,7 @@ pgenv_find_version_on_disk(){
                     selected=$version
                 fi
                 ;;
-            oldest)
+            earliest)
                 if [ -z "$selected_value" ] || [ $selected_value -gt $current_version ]; then
                     selected_value=$current_version
                     selected=$version
@@ -227,7 +232,7 @@ pgenv_find_version_on_disk(){
         esac
     done
 
-    pgenv_debug "Version selected for [$search_for] = $selected"
+    pgenv_debug "Version selected for [$search_for $filter] = $selected"
     echo $selected
 }
 
@@ -240,9 +245,14 @@ pgenv_find_version_on_disk(){
 #
 # - with $2 = 13.0 will return it (13.0);
 # - with $2 = "current" will return the current version in use (if any)
-# - with $2 = "oldest" will return the oldest version installed
+# - with $2 = "earliest" will return the oldest version installed
+#
+# In the case an optional second parameter is passed, it will be used
+# as a filter for 'latest' and 'earliest'. For example 'latest' '13'
+# will search for the very latest version available between the '13.x' series.
 pgenv_guess_postgresql_version() {
     local v=$1
+    local filter=$2
 
     case "$v" in
         current|version)
@@ -254,9 +264,9 @@ pgenv_guess_postgresql_version() {
             # for specifying the 'default configuration'
             v=""
             ;;
-        latest|oldest)
+        latest|earliest)
             # must guess!
-            v=$( pgenv_find_version_on_disk "$v" )
+            v=$( pgenv_find_version_on_disk "$v" "$filter" )
     esac
 
     pgenv_debug "Guessed PostgreSQL version is [$v]"
@@ -873,7 +883,7 @@ pgenv_patch_source_tree() {
 
 case $1 in
     use)
-        v=$( pgenv_guess_postgresql_version $2 )
+        v=$( pgenv_guess_postgresql_version $2 $3)
         pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
         pgenv_installed_version_or_exit $v
         pgenv_configuration_load $v
@@ -1091,7 +1101,7 @@ EOF
         ;;
 
     remove)
-        v=$( pgenv_guess_postgresql_version $v )
+        v=$( pgenv_guess_postgresql_version "$2" "$3" )
         pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
 
         if [ "`readlink pgsql`" = "pgsql-$v" ]; then
@@ -1255,7 +1265,7 @@ EOF
         action=$2
 
         # understand the version the user wants to configure
-        v=$( pgenv_guess_postgresql_version $3 )
+        v=$( pgenv_guess_postgresql_version $3 $4 )
         # get the currently in use if none specified
         if [ -z "$v" ]; then
             pgenv_exit_if_no_postgresql_in_use
@@ -1335,12 +1345,6 @@ EOF
         fi
         ;;
 
-
-    test)
-        pgenv_guess_postgresql_version "latest"
-        pgenv_guess_postgresql_version "oldest"
-        pgenv_guess_postgresql_version "13.5"
-        ;;
 
     *)
         if [ $# -gt 0 ]; then
