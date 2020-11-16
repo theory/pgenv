@@ -181,6 +181,24 @@ PostgreSQL version number or by specifying any of the special keywords:
 - `earliest` to indicate the oldest installed version (exluding beta versions);
 - `newest` to indicate the newest installed version (exluding beta versions).
 
+It is important to note that `earliest` and `latest` have nothing to do
+with the time you installed PostgreSQL by means of `pgenv`: they refer only
+to PostgreSQL *stable* versions. 
+To better clearify this, the following 
+snippet shows you which aliases point 
+to which versions in an example installation.
+
+
+     9.6.19                 <-- earliest (also earliest 9.6)
+     9.6.20      <-- latest 9.6
+     12.2        <-- earliest 12
+     12.4        <-- latest 12
+     13beta2
+     13.0                   <-- latest (also latest 13)
+
+
+
+
 The subcommands are:
 
 ### pgenv use
