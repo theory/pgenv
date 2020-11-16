@@ -178,7 +178,35 @@ Command Reference
 -----------------
 
 Like `git`, the `pgenv` command delegates to subcommands based on its
-first argument. The subcommands are:
+first argument. 
+
+Some commands require you to specify the PostgreSQL version to act on.
+You can specify the version the command applies to by either entering the
+PostgreSQL version number or by specifying any of the special keywords:
+
+- `current` or `version` to indicate the currently selected PostgreSQL version;
+- `earliest` to indicate the oldest installed version (exluding beta versions);
+- `newest` to indicate the newest installed version (exluding beta versions).
+
+It is important to note that `earliest` and `latest` have nothing to do
+with the time you installed PostgreSQL by means of `pgenv`: they refer only
+to PostgreSQL *stable* versions. 
+To better clearify this, the following 
+snippet shows you which aliases point 
+to which versions in an example installation.
+
+
+     9.6.19                 <-- earliest (also earliest 9.6)
+     9.6.20      <-- latest 9.6
+     12.2        <-- earliest 12
+     12.4        <-- latest 12
+     13beta2
+     13.0                   <-- latest (also latest 13)
+
+
+
+
+The subcommands are:
 
 ### pgenv use
 
@@ -195,6 +223,16 @@ it if it's not already running.
     waiting for server to start.... done
     server started
     PostgreSQL 10.4 started
+
+
+The `use` command supports the special keywords `earliest` and `latest`
+to respectively indicate the oldest PostgreSQL version installed and 
+the newest one. It is also possible to indicate a major version
+to narrow the scope of the special keywords. As an example:
+
+    $ pgenv use latest 10
+    
+will select the most recent PostgreSQL version of the 10 series installed.    
 
 ### pgenv versions
 
@@ -355,6 +393,16 @@ version. Use the `clear` command to clear the active version before removing it.
 
 The command removes the version, data directory, source code and configuration.
 
+The `remove` command supports the special keywords `earliest` and `latest`
+to respectively indicate the oldest PostgreSQL version installed and 
+the newest one. It is also possible to indicate a major version
+to narrow the scope of the special keywords. As an example:
+
+    $ pgenv remove latest 10
+    
+will remove the most recent PostgreSQL version of the 10 series installed.    
+
+
 ### pgenv start
 
 Starts the currently active version of PostgreSQL if it's not already running.
@@ -479,7 +527,7 @@ View, set, and delete configuration variables, both globally or for specific
 versions of PostgreSQL. Stores the configuration in Bash files, one for each
 version, as well as a default configuration. If pgenv cannot find a
 configuration variable in a version-specific configuration file, it will look
-in the default configuration. If it doesn't find it there, it tires to guess
+in the default configuration. If it doesn't find it there, it tries to guess
 the appropriate values, or falls back on its own defaults.
 
 The `config` command accepts the following subcommands:
@@ -494,7 +542,13 @@ special keyword:
 
 - `current` or `version` tells pgenv to use the currently active version of
   PostgreSQL
-- `default` tells pgenv to use the default configuration.
+- `default` tells pgenv to use the default configuration;
+- `earliest` and `latest` to indicate respectively the oldest or newest
+version of PostgreSQL installed. As in other commands, these two keywords
+can be combined with a PostgreSQL major version number to point to the
+configuration of the earliest/latest version within that major number.
+
+
 
 If no version is explicitly passed to any of the `config` subcommands, the
 program will work against the currently active version of PostgreSQL.

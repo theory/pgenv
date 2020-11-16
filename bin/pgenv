@@ -183,6 +183,104 @@ pgenv_check_dependencies(){
     fi
 }
 
+# This function provides the specified version from an alias name.
+# WARNING: this does not include beta versions!!!
+#
+# Accepted parameters are either 'latest' or 'earliest' to select
+# the latest stable version installed or the oldest one.
+# If the option second argument is specified, it must be a "filter"
+# to the version to search for, usually the major version number.
+# So for example passing '9.6' as second argument will restrict
+# the search into all the installed '9.6.x' versions.
+pgenv_find_version_on_disk(){
+    local search_for=$1
+    local filter=$2
+    local brand
+    local year
+    local selected
+    local patch
+    local current_version
+    local selected_value
+
+    # find sed even without the configuration/dependencies
+    if [ -z "$PGENV_SED" ]; then
+        PGENV_SED=$(which sed)
+    fi
+
+    for version in $( ls -d pgsql-${filter}* 2>/dev/null | $PGENV_SED 's/pgsql-//' ); do
+        # skip beta versions
+        if [[ $version =~ ^[1-9][1-9](beta|rc)[1-9]?$ ]]; then
+            continue
+        fi
+
+        pgenv_debug "Version $version"
+        brand=$( echo $version | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
+        year=$(  echo $version | $PGENV_SED 's/[[:digit:]]\{1,2\}\.\([[:digit:]]\{1,2\}\).*/\1/' )
+        patch=$(  echo $version | $PGENV_SED 's/[[:digit:]]\{1,2\}\.[[:digit:]]\{1,2\}\.\{0,1\}\([[:digit:]]\{0,2\}\).*/\1/' )
+
+        # to avoid that version less than 10 confuses the match, let's
+        # multiply the brand version by 1000
+        current_version=$(( ( brand * 1000 ) + ( year * 100 ) + patch ))
+        pgenv_debug "Found version [$current_version]"
+
+        case "$search_for" in
+            latest)
+                if [ -z "$selected_value" ] || [ $selected_value -lt $current_version ]; then
+                    selected_value=$current_version
+                    selected=$version
+                fi
+                ;;
+            earliest)
+                if [ -z "$selected_value" ] || [ $selected_value -gt $current_version ]; then
+                    selected_value=$current_version
+                    selected=$version
+                fi
+                ;;
+        esac
+    done
+
+    pgenv_debug "Version selected for [$search_for $filter] = $selected"
+    echo $selected
+}
+
+
+# Guesses the selected PostgreSQL version to use.
+# The idea is that every time a command needs a PostgreSQL version number
+# this function should be called.
+# As an example:
+# v=$( pgenv_guess_postgresql_version $2 )
+#
+# - with $2 = 13.0 will return it (13.0);
+# - with $2 = "current" will return the current version in use (if any)
+# - with $2 = "earliest" will return the oldest version installed
+#
+# In the case an optional second parameter is passed, it will be used
+# as a filter for 'latest' and 'earliest'. For example 'latest' '13'
+# will search for the very latest version available between the '13.x' series.
+pgenv_guess_postgresql_version() {
+    local v=$1
+    local filter=$2
+
+    case "$v" in
+        current|version)
+            # current version is the one that has been selected by `use`
+            v=$( pgenv_current_postgresql_version )
+            ;;
+        default)
+            # there is no default version, this is useful only
+            # for specifying the 'default configuration'
+            v=""
+            ;;
+        latest|earliest)
+            # must guess!
+            v=$( pgenv_find_version_on_disk "$v" "$filter" )
+    esac
+
+    pgenv_debug "Guessed PostgreSQL version is [$v]"
+    echo "$v"
+}
+
+
 # This function checks if its first argument is a valid PostgreSQL version
 # number, like "10.5" or "9.5.4". In case no version number is specified, or the
 # version number is invalid (e.g., "10", "0.9") the function aborts the script.
@@ -805,7 +903,7 @@ pgenv_patch_source_tree() {
 
 case $1 in
     use)
-        v=$2
+        v=$( pgenv_guess_postgresql_version $2 $3)
         pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
         pgenv_installed_version_or_exit $v
         pgenv_configuration_load $v
@@ -824,7 +922,7 @@ case $1 in
             fi
 
             # Link the new instance.
-            ln -nsf pgsql-$2 pgsql
+            ln -nsf pgsql-$v pgsql
         fi
 
         # Init if needed.
@@ -1023,7 +1121,7 @@ EOF
         ;;
 
     remove)
-        v=$2
+        v=$( pgenv_guess_postgresql_version "$2" "$3" )
         pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
 
         if [ "`readlink pgsql`" = "pgsql-$v" ]; then
@@ -1185,29 +1283,16 @@ EOF
 
     config|configuration)
         action=$2
-        v=$3
 
-        # which version does the user wants?
-        case "$v" in
-            version|current)
-                v=$( pgenv_current_postgresql_version )
-                title='PostgreSQL currently in use'
-                ;;
-            default)
-                v=''
-                title='Default configuration'
-                ;;
-            *)
-                # get the currently in use if none specified
-                if [ -z "$v" ]; then
-                    pgenv_exit_if_no_postgresql_in_use
-                    v=$( pgenv_current_postgresql_version )
-                fi
+        # understand the version the user wants to configure
+        v=$( pgenv_guess_postgresql_version $3 $4 )
+        # get the currently in use if none specified
+        if [ -z "$v" ]; then
+            pgenv_exit_if_no_postgresql_in_use
+            v=$( pgenv_current_postgresql_version )
+        fi
 
-                title="PostgreSQL $v"
-                ;;
-        esac
-
+        title="PostgreSQL version $v"
 
         case $action in
             show)
@@ -1279,6 +1364,7 @@ EOF
             exit 1
         fi
         ;;
+
 
     *)
         if [ $# -gt 0 ]; then
