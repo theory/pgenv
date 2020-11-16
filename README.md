@@ -118,6 +118,13 @@ an instances is started, that is `start` is executed.
 The return value of the script does not affect the `pgenv` workflow.
 The script gets the current `PGDATA` path as first argument.
 
+- `PGENV_SCRIPT_PRESTOP` is an executable script executed before
+an instance is stopped, that is brefore the `stop` command is executed.
+The return value of the script does not affect the `pgenv` workflow,
+and if the script generates errors they are ignored, so that the
+cluster is going to be stopped anyway.
+The script gets the current `PGDATA` path as first argument.
+
 - `PGENV_SCRIPT_POSTSTOP` is an executable script executed each time
 an instance is stopped, that is the `stop` command is executed.
 The return value of the script does not affect the `pgenv` workflow.
