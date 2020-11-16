@@ -213,7 +213,9 @@ pgenv_find_version_on_disk(){
         year=$(  echo $version | $PGENV_SED 's/[[:digit:]]\{1,2\}\.\([[:digit:]]\{1,2\}\).*/\1/' )
         patch=$(  echo $version | $PGENV_SED 's/[[:digit:]]\{1,2\}\.[[:digit:]]\{1,2\}\.\{0,1\}\([[:digit:]]\{0,2\}\).*/\1/' )
 
-        current_version="${brand}${year}${patch}"
+        # to avoid that version less than 10 confuses the match, let's
+        # multiply the brand version by 1000
+        current_version=$(( ( brand * 1000 ) + ( year * 100 ) + patch ))
         pgenv_debug "Found version [$current_version]"
 
         case "$search_for" in
