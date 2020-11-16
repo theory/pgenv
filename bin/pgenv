@@ -208,6 +208,11 @@ pgenv_find_version_on_disk(){
     fi
 
     for version in $( ls -d pgsql-${filter}* 2>/dev/null | $PGENV_SED 's/pgsql-//' ); do
+        # skip beta versions
+        if [[ $version =~ ^[1-9][1-9](beta|rc)[1-9]?$ ]]; then
+            continue
+        fi
+
         pgenv_debug "Version $version"
         brand=$( echo $version | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
         year=$(  echo $version | $PGENV_SED 's/[[:digit:]]\{1,2\}\.\([[:digit:]]\{1,2\}\).*/\1/' )
