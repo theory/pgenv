@@ -556,7 +556,7 @@ program will work against the currently active version of PostgreSQL.
 In order to start with a default configuration, use the `write` subcommand:
 
     $ pgenv config write default
-    pgenv configuration file ~/.pgenv/.pgenv.conf written
+    pgenv configuration file ~/.pgenv/.pgenv.default.conf written
 
 A subsequent `show` displays the defaults:
 
@@ -564,7 +564,7 @@ A subsequent `show` displays the defaults:
 $ pgenv config show default
 # Default configuration
 # pgenv configuration for PostgreSQL
-# File: /home/luca/git/misc/PostgreSQL/pgenv/.pgenv.conf
+# File: /home/luca/git/misc/PostgreSQL/pgenv/.pgenv.default.conf
 # ---------------------------------------------------
 # pgenv configuration created on mer 12 set 2018, 08.35.52, CEST
 
@@ -628,7 +628,7 @@ loss of configuration:
 
    $ pgenv config delete
    Cannot delete default configuration while version configurations exist
-   To remove it anyway, delete ~/.pgenv/.pgenv.conf.
+   To remove it anyway, delete ~/.pgenv/.pgenv.default.conf.
 
 The `delete` subcommand deletes both the configuration file and its backup
 copy. The `pgenv remove` command also deletes any configuration for the

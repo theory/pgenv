@@ -269,7 +269,7 @@ pgenv_guess_postgresql_version() {
         default)
             # there is no default version, this is useful only
             # for specifying the 'default configuration'
-            v=""
+            v="default"
             ;;
         latest|earliest)
             # must guess!
@@ -383,7 +383,7 @@ pgenv_current_postgresql_version(){
 # file is provided.
 pgenv_configuration_file_name(){
     local v=$1
-    local PGENV_DEFAULT_CONFIG_FILE="${PGENV_ROOT}/.pgenv.conf"
+    local PGENV_DEFAULT_CONFIG_FILE="${PGENV_ROOT}/.pgenv.default.conf"
 
     if [ ! -z "$v" ]; then
         echo "${PGENV_ROOT}/.pgenv.$v.conf"
@@ -1284,10 +1284,16 @@ EOF
     config|configuration)
         action=$2
 
-        # understand the version the user wants to configure
-        v=$( pgenv_guess_postgresql_version $3 $4 )
+
+        if [ -z "$3" ]; then
+            v="default"
+        else
+            # understand the version the user wants to configure
+            v=$( pgenv_guess_postgresql_version $3 $4 )
+        fi
+
         # get the currently in use if none specified
-        if [ -z "$v" ]; then
+        if [ -z "$v"  ]; then
             pgenv_exit_if_no_postgresql_in_use
             v=$( pgenv_current_postgresql_version )
         fi
