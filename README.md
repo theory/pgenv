@@ -494,13 +494,15 @@ the following:
 
     $ pgenv help
     Usage: pgenv <command> [<args>]
-    The pgenv commands are:
+
+    The opgenv commands are:
         use        Set and start the current PostgreSQL version
         clear      Stop and unset the current PostgreSQL version
         start      Start the current PostgreSQL server
         stop       Stop the current PostgreSQL server
         restart    Restart the current PostgreSQL server
         build      Build a specific version of PostgreSQL
+        rebuild    Re-build a specific version of PostgreSQL
         remove     Remove a specific version of PostgreSQL
         version    Show the current PostgreSQL version
         current    Same as 'version'
@@ -509,14 +511,15 @@ the following:
         available  Show which versions can be downloaded
         check      Check all program dependencies
         config     View, edit, delete the program configuration
+        log        Inspects the log of the cluster, if exist.
 
     For full documentation, see: https://github.com/theory/pgenv#readme
 
-    This is 'pgenv' version [99313c4]
+    This is 'pgenv' version 1.0.0 [5839e72]
     
-If possible, the `help` command will display on the last line of output
-also the git `HEAD` short hash. This is useful when reporting
-bugs and/or issues.
+The last line of the 'help' shows the `pgenv` version number and, if
+`git` is available, the short commit hash (this can be useful when
+reporting bugs and filling issue requests).
 Please note that, in order to print out the git `HEAD` information,
 the `pgenv` must be able to find a `git` executable (i.e., it must be
 in your `PATH`) and the `PGENV_ROOT` must be a git *checkout* directory.

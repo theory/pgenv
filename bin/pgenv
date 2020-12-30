@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+#
+# VERSION
+#
+PGENV_VERSION="1.0.0"
+
 
 # https://stackoverflow.com/a/19622569/79202
 trap 'exit' ERR
@@ -69,6 +74,12 @@ pgenv_versions() {
 }
 
 pgenv_help() {
+
+    # get current git version if possible
+    if [ ! -z "$( which git )" -a -d "${PGENV_ROOT}/.git" ]; then
+        git_version="[$( git log -n 1 --format='%h' )]"
+    fi
+
     cat <<EOF
 Usage: pgenv <command> [<args>]
 
@@ -91,17 +102,13 @@ The pgenv commands are:
     log        Inspects the log of the cluster, if exist.
 
 For full documentation, see: https://github.com/theory/pgenv#readme
+
+This is 'pgenv' version $PGENV_VERSION $git_version
 EOF
 
+    
 
-    # display current git version if possible
-    if [ ! -z "$( which git )" -a -d "${PGENV_ROOT}/.git" ]; then
 
-        cat <<EOF
-
-This is 'pgenv' version [$( git log -n 1 --format='%h' )]
-EOF
-    fi
 }
 
 # Searches for all dependencies and prints a report. If the argument is null,
