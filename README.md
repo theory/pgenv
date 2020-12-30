@@ -638,6 +638,14 @@ copy. The `pgenv remove` command also deletes any configuration for the
 removed version.
 
 
+Please note that since commit [5839e721](https://github.com/theory/pgenv/commit/5839e721d43c9eae8b4a0d61ba78996c220a4da0) 
+the file name of the default configuration file has changed. In the case you want to convert your 
+default configuration file, please issue a rename like the following
+
+     $ cp .pgenv.conf .pgenv.default.conf
+
+
+
 ### pgenv log
 
 The `log` command provides a dump of the cluster log, if it exists, so that you don't have to worry about the exact log location.
