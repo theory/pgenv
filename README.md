@@ -367,7 +367,25 @@ file. As an example
     $ PGENV_PATCH_INDEX=/src/my-patch-list.txt pgenv build 10.5
 
 
-#### pgenv rebuild
+#### Build special keywords
+
+The `build` command accepts the special keywords `earliest` and `latest` as 
+indicators of the version to build.
+The logic is as follows:
+- `latest` triggers the build of the very last available PostgreSQL version
+available for download;
+- `earliest` triggers the build of the very first available PostgreSQL version,
+that is `1.08` (and probably is not what you are looking for);
+- `latest xx` where `xx` is a PostgreSQL major version number (e.g., `13`) triggers
+the build of the latest available version in such major version branch (e.g., `13.1`);
+- `earliest xx` where `xx` is a PostgreSQL major version number (e.g., `13`) triggers
+the build of the earliest available version in such major version branch (e.g., `13.0`).
+
+The `latest` and `earliest` keywords work only with the `build` command and not with the 
+`rebuild` command.
+
+
+### pgenv rebuild
 
 The `rebuild` command allows the rebuilding from sources of a specific 
 PostgreSQL version. *The `PGDATA` directory will not be deleted if already

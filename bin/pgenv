@@ -2,7 +2,7 @@
 #
 # VERSION
 #
-PGENV_VERSION="1.0.0"
+PGENV_VERSION="1.1.0"
 
 
 # https://stackoverflow.com/a/19622569/79202
@@ -46,6 +46,62 @@ pgenv_debug(){
         echo "[DEBUG] $1" >&2
     fi
 }
+
+
+# This function connects to the PostgreSQL web site
+# (i.e., PGENV_DOWNLOAD_ROOT) and gets the list of
+# available versions.
+# The function populates the global hash array
+# pg_versions_hash, that is indexed by the version major number
+# multiplied by 10 (e.g., 13 -> 130) and contains a list
+# of versions separated by a dash (e.g., 13.0-13.1)
+pgenv_get_downloadable_versions(){
+    local version
+    local major
+    local minor
+
+    # First of all download the page with the links to each version (href=va.b.c/)
+    # and trim out each version, then extract the major version
+    # and append each version to an hash indexed by the major version number
+    pgenv_debug "Get downloadable version from $PGENV_DOWNLOAD_ROOT"
+    for version in $( curl -s $PGENV_DOWNLOAD_ROOT \
+                          | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' \
+                          | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' \
+                          | sed 's/^v//' \
+                          | sed 's/\/$//')
+    do
+        # skip FTP directories
+        if [ "$version" = ".." ]; then
+            continue
+        fi
+
+            pgenv_debug "Version $version $PGENV_SED"
+            major=$( echo $version | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
+            pgenv_debug "Extracted major version [$major]"
+
+            # check the version is a number!
+            if [[ $major =~ ^[0-9]+$ ]] ; then
+                # Since PostgreSQL 10, a major version is
+                # made by only the first number
+                # (apply the same logic for old versions)
+                # here the major version is considered as multipled
+                # by a ten factor, so that version 10 becomes value 100
+                # while version 9.6 becomes 96
+                if [ $major -ge 10 -o $major -le 6 ]; then
+                    minor=0
+                else
+                    minor=$( echo $version | $PGENV_SED 's/[[:digit:]]\.\([[:digit:]]\{1,2\}\).*/\1/' )
+                fi
+                major=$(( major * 10 + minor ))
+                pgenv_debug "Normalized major version [$major]"
+                # append the current version to the hash
+                # indexed by the major version
+                pg_versions_hash[ "$major" ]+="${version}-"
+            fi
+        done
+
+}
+
 
 pgenv_versions() {
     if [ -e "pgsql" ]; then
@@ -975,10 +1031,62 @@ case $1 in
         ;;
 
     build|rebuild)
+        # load executables
+        pgenv_check_dependencies
+
         # save the 'command' so to display it later if the user needs help
         command=$1
         # save the PostgreSQL version to build
         v=$2
+
+        # in the case the version is a special keyword, this
+        # must be converted into a build command always, since it
+        # does not make sense to `rebuild latest` because
+        # the meaning of the special keyword could have been changed
+        case $v in
+            latest|earliest)
+                pgenv_debug "Triggered '$v' $command $current_major"
+                command="build"
+                current_major="$3"
+
+                # build the hash of the versions
+                pgenv_get_downloadable_versions
+
+
+                if [ -z "$current_major" ]; then
+                    # easy: get the first or last index of the hash
+                    majors=("${!pg_versions_hash[@]}")
+
+                    if [ "$v" = "latest" ]; then
+                        current_major=${majors[-1]}
+                    else
+                        current_major=${majors[0]}
+                    fi
+                else
+                    # the hash has version number multiplied by 10
+                    current_major=$(( current_major * 10 ))
+                fi
+
+
+                # loop thru the array for the selected major version number
+                # and extract the first or last position
+                for vv in $( echo ${pg_versions_hash[$current_major]} \
+                                 | tr '-' '\n'  \
+                                 | sort -V )
+                do
+                    # if earliest stop at the very first iteration
+                    if [ "$v" = "earliest" ]; then
+                        v=$vv
+                        break
+                    else
+                        v=$vv
+                    fi
+                done
+                
+                pgenv_debug "Selected version to build for '$2 $3' is $v"
+
+        esac
+
         # sanity checks before building
         pgenv_input_version_or_exit "$v"
         pgenv_configuration_load $v
@@ -1173,52 +1281,21 @@ EOF
         echo -e "             Available PostgreSQL Versions"
         echo -e "========================================================\n"
 
-        # there should be a simpler single regexp...
-        # First of all download the page with the links to each version (href=va.b.c/)
-        # and trim out each version, then extract the major version
-        # and append each version to an hash indexed by the major version number
-        for version in $( curl -s $PGENV_DOWNLOAD_ROOT \
-                              | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' \
-                              | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' \
-                              | sed 's/^v//' \
-                              | sed 's/\/$//')
-        do
-            major=$( echo $version | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
-            pgenv_debug "Extracted major version [$major]"
-
-            # check the version is a number!
-            if [[ $major =~ ^[0-9]+$ ]] ; then
-                # Since PostgreSQL 10, a major version is
-                # made by only the first number
-                # (apply the same logic for old versions)
-                # here the major version is considered as multipled
-                # by a ten factor, so that version 10 becomes value 100
-                # while version 9.6 becomes 96
-                if [ $major -ge 10 -o $major -le 6 ]; then
-                    minor=0
-                else
-                    minor=$( echo $version | $PGENV_SED 's/[[:digit:]]\.\([[:digit:]]\{1,2\}\).*/\1/' )
-                fi
-                major=$(( major * 10 + minor ))
-                pgenv_debug "Normalized major version [$major]"
-                # append the current version to the hash
-                # indexed by the major version
-                versions_hash[ "$major" ]+="${version}-"
-            fi
-        done
+        # populate the hash of the versions
+        pgenv_get_downloadable_versions
 
         # check to have some version in the hash, or
         # the download did go wrong
-        keys=$( echo ${!versions_hash[@]} )
+        keys=$( echo ${!pg_versions_hash[@]} )
         if [ -z "$keys" ]; then
             echo "No versions found at URL <$PGENV_DOWNLOAD_ROOT>"
-            pgenv_debug "Hash content: ${!versions_hash[@]}"
+            pgenv_debug "Hash content: ${!pg_versions_hash[@]}"
             exit 1
         fi
 
         # read back the versions and display the output
-        # displying each version with a separated header
-        for major in $( echo ${!versions_hash[@]} | sort -n )
+        # displaying each version with a separated header
+        for major in $( echo ${!pg_versions_hash[@]} | sort -n )
         do
             # normalize version numbers
             # (note, use sed instead of bc to avoid introducing another dependency)
@@ -1252,7 +1329,7 @@ EOF
             echo "                     PostgreSQL $current_version"
             echo "    ------------------------------------------------"
             printed=0
-            for numeric in $( echo ${versions_hash[$major]} \
+            for numeric in $( echo ${pg_versions_hash[$major]} \
                                   | tr '-' '\n'  \
                                   | sort -V  )
             do
