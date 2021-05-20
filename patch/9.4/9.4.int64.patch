@@ -1,0 +1,64 @@
+--- a/config/c-compiler.m4
++++ b/config/c-compiler.m4
+@@ -84,8 +84,9 @@
+     return 0;
+   return 1;
+ }
++int
+ main() {
+-  exit(! does_int64_work());
++  return(! does_int64_work());
+ }],
+ [Ac_cachevar=yes],
+ [Ac_cachevar=no],
+--- a/config/c-library.m4
++++ b/config/c-library.m4
+@@ -255,8 +255,9 @@
+     return 0;			/* either multiply or snprintf is busted */
+   return 1;
+ }
++int
+ main() {
+-  exit(! does_int64_snprintf_work());
++  return(! does_int64_snprintf_work());
+ }],
+ [pgac_cv_snprintf_long_long_int_format=$pgac_format; break],
+ [],
+--- a/configure
++++ b/configure
+@@ -13594,8 +13594,10 @@ int does_int64_work()
+     return 0;
+   return 1;
+ }
++
++int
+ main() {
+-  exit(! does_int64_work());
++  return (! does_int64_work());
+ }
+ _ACEOF
+ if ac_fn_c_try_run "$LINENO"; then :
+@@ -13676,8 +13678,10 @@ int does_int64_work()
+     return 0;
+   return 1;
+ }
++
++int
+ main() {
+-  exit(! does_int64_work());
++  return (! does_int64_work());
+ }
+ _ACEOF
+ if ac_fn_c_try_run "$LINENO"; then :
+@@ -13770,8 +13774,10 @@ int does_int64_snprintf_work()
+     return 0;			/* either multiply or snprintf is busted */
+   return 1;
+ }
++
++int
+ main() {
+-  exit(! does_int64_snprintf_work());
++  return (! does_int64_snprintf_work());
+ }
+ _ACEOF
+ if ac_fn_c_try_run "$LINENO"; then :
