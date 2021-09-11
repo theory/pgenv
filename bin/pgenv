@@ -132,7 +132,7 @@ pgenv_versions() {
 pgenv_help() {
 
     # get current git version if possible
-    if [ ! -z "$( which git )" -a -d "${PGENV_ROOT}/.git" ]; then
+    if [ ! -z "$( command -v git )" -a -d "${PGENV_ROOT}/.git" ]; then
         git_version="[$( git log -n 1 --format='%h' )]"
     fi
 
@@ -267,7 +267,7 @@ pgenv_find_version_on_disk(){
 
     # find sed even without the configuration/dependencies
     if [ -z "$PGENV_SED" ]; then
-        PGENV_SED=$(which sed)
+        PGENV_SED=$(command -v sed)
     fi
 
     for version in $( ls -d pgsql-${filter}* 2>/dev/null | $PGENV_SED 's/pgsql-//' ); do
