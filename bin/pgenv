@@ -1432,7 +1432,7 @@ EOF
                     pgenv_debug "Launching editor $EDITOR"
                     $EDITOR $configuration_file
                 else
-                    cat <<EOF
+                    cat <<EOF >&2
 No EDITOR variable set (or executable)!
 You can either start manually your favourite
 editor to edit the configuration file
@@ -1448,7 +1448,19 @@ EOF
                 pgenv_configuration_delete "$v" ;;
             *)
                 if [ -z "$action" ]; then
-                    echo "You need to specify a \`config\` action to perform"
+                    cat <<EOF >&2
+You need to specify one of the following \`config\` actions to perform:
+
+    show
+    write
+    edit
+    delete
+
+For instance:
+
+    pgenv config show <version>
+
+EOF
                 else
                     echo "Configuration action \`$action\` not supported"
                 fi
