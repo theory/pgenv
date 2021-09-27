@@ -658,7 +658,7 @@ pgenv_warning_path(){
 
     local old_ifs=$IFS
     local path_ok=0
-    local path_prepended=0
+    local path_prepend=0
     local executables_wanted=0
     local executables="$PGENV_ROOT/pgsql/bin"
 
@@ -726,7 +726,7 @@ HINT:
 
    $executables
 
-   like for instance
+   for instance
 
    export PATH=$executables:\$PATH
 
