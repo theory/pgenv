@@ -662,9 +662,36 @@ pgenv_warning_path(){
     local executables_wanted=0
     local executables="$PGENV_ROOT/pgsql/bin"
 
+    # Test if pgsql is a link and not manually created
+    # This should be a link only managed by this script
+    if [ -e "$PGENV_ROOT/pgsql" ] && ! [ -h "$PGENV_ROOT/pgsql" ]; then
+        cat <<EOF >&2
+
+WARNING:
+   Database working directory
+
+        $PGENV_ROOT/pgsql
+
+   should not be created manually.
+
+HINT:
+   Make a backup of it if this is an existing database
+   directory and remove it, then let this script manage
+   it automatically by building an instance of a PostgreSQL:
+
+        pgenv build <version>
+
+   and then using it:
+
+        pgenv use <version>
+
+EOF
+    return
+    fi
+
     IFS=':'
 
-    # Thest if PATH contains at least one entry
+    # Test if PATH contains at least one entry
     # with the executables dir
     for p in $PATH
     do
@@ -680,7 +707,7 @@ pgenv_warning_path(){
         cat <<EOF >&2
 
 WARNING:
-  your PATH enrvironemnt variable does not seem to include
+  Your PATH enrvironemnt variable does not seem to include
 
        $executables
 
@@ -688,7 +715,7 @@ WARNING:
   selected PostgreSQL binaries.
 
 HINT:
-  adjust your PATH variable to include
+  Adjust your PATH variable to include
 
   $executables
 
@@ -717,12 +744,12 @@ EOF
         cat <<EOF >&2
 
 WARNING:
-   your PATH environment variable has some PostgreSQL executable
+   Your PATH environment variable has some PostgreSQL executable
    preprended to the currently in-use instance, so you may
    end up using the wrong executables against the selected cluster.
 
 HINT:
-   prepend the following PATH entry in your environment setting
+   Prepend the following PATH entry in your environment setting
 
    $executables
 
