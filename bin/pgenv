@@ -698,6 +698,13 @@ EOF
         if [ "$p" -ef "$executables" ]; then
             path_ok=1
             break
+        elif [ "$p" == "$executables" ]; then
+            # PATH contains the entry
+            # but the entry itself does not exist,
+            # so no PostgreSQL instances are in use.
+            # By the time an instance comes in use
+            # everything should be fine, so ignore this.
+            return
         fi
     done
 
