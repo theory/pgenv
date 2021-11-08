@@ -554,11 +554,10 @@ the appropriate values, or falls back on its own defaults.
 The `config` command accepts the following subcommands:
 
 - `show` prints the current or specified version configuration
-- `init` produces a blank configuration file, with standard settings
+- `init` produces a configuration file from scratch, with default settings
 - `write` store the specified version configuration
 - `edit` opens the current or specified version configuration in an editor (Using $EDITOR, e.g: export EDITOR=/usr/bin/vim)
 - `delete` removes the specified configuration
-- `nuke` similar to `delete`, that removes also the default configuration if none is specified
 
 Each sub-command accepts a PostgreSQL version number (e.g., `10.5`) or a
 special keyword:
@@ -628,7 +627,10 @@ to use the `init` or `write` commands. If no prior default configuration exists,
 the commands do the same, that is they create a from-scratch configuration file.
 If a default configuration exists, the `write` command will "clone" such configuration
 in a PostgreSQL version specific configuration file, while `init` will 
-create a blank configuration file.
+create a configuration file with default settings.
+After a configuration file has been created by `init`, the `write` or `edit`
+commands must be used against it, that means an existing configuration file
+cannot be `init`ed more than once.
 
    $ pgenv config write 10.5
    pgenv configuration file [~/.pgenv/.pgenv.10.5.conf] written
@@ -654,8 +656,7 @@ Use the `delete` subcommand to delete a configuration:
 The `delete` subcommand will not attempt to delete the default configuration
 file, since it can be shared among different PostgreSQL versions.
 However, if it is explicitly specified `default` as the version to delete
-(i.e., `config delete default`) or the `config nuke` command is run, the
-default configuration file will be deleted.
+(i.e., `config delete default`), the default configuration file will be deleted.
 
          
 
@@ -664,13 +665,7 @@ copy. The `pgenv remove` command also deletes any configuration for the
 removed version.
 
 
-The `nuke` subcommand behaves as `delete`, but allows for deletion of the default
-configuration file even if it is not explicitly specified as argument. In other
-words, the two following commands are the same
-
-    $ pgenv config delete default
-    $ pgenv config nuke
-
+     
 Please note that since commit [5839e721](https://github.com/theory/pgenv/commit/5839e721d43c9eae8b4a0d61ba78996c220a4da0) 
 the file name of the default configuration file has changed. In the case you want to convert your 
 default configuration file, please issue a rename like the following
