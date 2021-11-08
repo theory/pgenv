@@ -1468,8 +1468,6 @@ EOF
                 ;;
             delete)
                 pgenv_configuration_delete "$v" "$nuke";;
-            nuke)
-                pgenv_configuration_delete "$v" "default";;
             *)
                 if [ -z "$action" ]; then
                     cat <<EOF >&2
@@ -1480,7 +1478,6 @@ You need to specify one of the following \`config\` actions to perform:
     write
     edit
     delete
-    nuke
 
 
 For instance:
