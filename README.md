@@ -554,9 +554,11 @@ the appropriate values, or falls back on its own defaults.
 The `config` command accepts the following subcommands:
 
 - `show` prints the current or specified version configuration
-- `write` store the current or specified version configuration
+- `init` produces a blank configuration file, with standard settings
+- `write` store the specified version configuration
 - `edit` opens the current or specified version configuration in an editor (Using $EDITOR, e.g: export EDITOR=/usr/bin/vim)
 - `delete` removes the specified configuration
+- `nuke` similar to `delete`, that removes also the default configuration if none is specified
 
 Each sub-command accepts a PostgreSQL version number (e.g., `10.5`) or a
 special keyword:
@@ -568,6 +570,7 @@ special keyword:
 version of PostgreSQL installed. As in other commands, these two keywords
 can be combined with a PostgreSQL major version number to point to the
 configuration of the earliest/latest version within that major number.
+
 
 
 
@@ -620,14 +623,19 @@ PGENV_INITDB_OPTS='-U postgres --locale en_US.UTF-8 --encoding UNICODE'
 
 You can edit the file and adjust parameters to your needs.
 
-In order to create a configuration file for a specific version, pass the
-version to the `write` subcommand:
+In order to create a configuration file for a specific version, it is possible
+to use the `init` or `write` commands. If no prior default configuration exists,
+the commands do the same, that is they create a from-scratch configuration file.
+If a default configuration exists, the `write` command will "clone" such configuration
+in a PostgreSQL version specific configuration file, while `init` will 
+create a blank configuration file.
 
    $ pgenv config write 10.5
    pgenv configuration file [~/.pgenv/.pgenv.10.5.conf] written
 
 Each time pgenv writes a configuration file, it first creates a backup with
-the suffix `.backup`.
+the suffix `.backup` and a timestamp string related to when the backup file has
+been created.
 
 Use the `edit` subcommand to edit a configuration file in your favourite
 editor:
@@ -643,18 +651,25 @@ Use the `delete` subcommand to delete a configuration:
    $ pgenv config delete 10.5
    Configuration file ~/.pgenv/.pgenv.10.5.conf (and backup) deleted
 
-Note that you cannot delete the default configuration unless all other
-versions have been removed (e.g., by `pgenv remove`). This prevents accidental
-loss of configuration:
+The `delete` subcommand will not attempt to delete the default configuration
+file, since it can be shared among different PostgreSQL versions.
+However, if it is explicitly specified `default` as the version to delete
+(i.e., `config delete default`) or the `config nuke` command is run, the
+default configuration file will be deleted.
 
-   $ pgenv config delete
-   Cannot delete default configuration while version configurations exist
-   To remove it anyway, delete ~/.pgenv/.pgenv.default.conf.
+         
 
 The `delete` subcommand deletes both the configuration file and its backup
 copy. The `pgenv remove` command also deletes any configuration for the
 removed version.
 
+
+The `nuke` subcommand behaves as `delete`, but allows for deletion of the default
+configuration file even if it is not explicitly specified as argument. In other
+words, the two following commands are the same
+
+    $ pgenv config delete default
+    $ pgenv config nuke
 
 Please note that since commit [5839e721](https://github.com/theory/pgenv/commit/5839e721d43c9eae8b4a0d61ba78996c220a4da0) 
 the file name of the default configuration file has changed. In the case you want to convert your 
