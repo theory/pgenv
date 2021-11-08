@@ -548,8 +548,8 @@ pgenv_configuration_delete(){
 
     # remove the file
     pgenv_debug "Deleting configuration file [$PGENV_CONFIG_FILE]"
-    rm -f "$PGENV_CONFIG_FILE"           # remove config file
-    rm -f "${PGENV_CONFIG_FILE}.backup"  # remove also backup file
+    rm -f "$PGENV_CONFIG_FILE"            # remove config file
+    rm -f ${PGENV_CONFIG_FILE}*.backup    # remove also backup file
     echo "Configuration file $PGENV_CONFIG_FILE (and backup) deleted"
 }
 
