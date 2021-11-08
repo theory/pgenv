@@ -619,8 +619,8 @@ pgenv_configuration_write() {
     # ok, write the configuration
     echo "# pgenv configuration created on $(date)" > "$CONF"
     echo "" >> "$CONF"
-    pgenv_configuration_write_variable "$CONF" "PGENV_DEBUG" "" 'Enables debug output'
-    pgenv_configuration_write_variable "$CONF" "PGENV_WARNINGS" "true" 'Enables warning messages'
+    pgenv_configuration_write_variable "$CONF" "PGENV_DEBUG" "$PGENV_DEBUG" 'Enables debug output'
+    pgenv_configuration_write_variable "$CONF" "PGENV_WARNINGS" "$PGENV_WARNINGS" 'Enables warning messages'
 
     echo "###### Build settings #####" >> "$CONF"
     pgenv_configuration_write_variable "$CONF" "PGENV_MAKE" "$PGENV_MAKE" 'Make command to use for build'
@@ -1435,6 +1435,10 @@ EOF
                 # in an explicit write load first the variables from the runtime
                 # environment, so PL/Perl, make, and stuff can be already set
                 pgenv_check_dependencies
+                pgenv_configuration_write "$v" ;;
+            write)
+                # load default configuration if exists
+                pgenv_configuration_load
                 pgenv_configuration_write "$v" ;;
             edit)
                 configuration_file=$( pgenv_configuration_file_name $v )
