@@ -1427,11 +1427,20 @@ EOF
         fi
 
         title="PostgreSQL version $v"
+        configuration_file=$( pgenv_configuration_file_name $v )
 
         case $action in
             show)
                 pgenv_configuration_dump_or_exit "$v" "$title" ;;
             init)
+                # check that the file does not exist, so
+                # that the program does not re-initialize it
+                if [ -f "$configuration_file" ]; then
+                    echo "Configuration file [$configuration_file] for version [$v] already exists"
+                    echo "Cannot re-init it!"
+                    exit 1
+                fi
+
                 # in an explicit write load first the variables from the runtime
                 # environment, so PL/Perl, make, and stuff can be already set
                 pgenv_check_dependencies
@@ -1441,7 +1450,6 @@ EOF
                 pgenv_configuration_load
                 pgenv_configuration_write "$v" ;;
             edit)
-                configuration_file=$( pgenv_configuration_file_name $v )
                 if [ ! -z "$EDITOR" ] && [ $(command -v $EDITOR ) ]; then
                     pgenv_debug "Launching editor $EDITOR"
                     $EDITOR $configuration_file
