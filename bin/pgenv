@@ -1421,7 +1421,7 @@ EOF
         case $action in
             show)
                 pgenv_configuration_dump_or_exit "$v" "$title" ;;
-            write)
+            init)
                 # in an explicit write load first the variables from the runtime
                 # environment, so PL/Perl, make, and stuff can be already set
                 pgenv_check_dependencies
