@@ -605,7 +605,7 @@ pgenv_configuration_write() {
 
     # make a backup copy
     if [ -f "$CONF" ]; then
-        CONF_BACKUP="${CONF}.backup"
+        CONF_BACKUP="${CONF}.$(date +'%Y-%m-%dT%H-%M').backup"
         pgenv_debug "Making backup copy of [$CONF] into [$CONF_BACKUP]"
         mv "$CONF" "$CONF_BACKUP"
     fi
