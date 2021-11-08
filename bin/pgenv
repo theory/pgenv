@@ -522,13 +522,19 @@ pgenv_configuration_load(){
 # on this system.
 pgenv_configuration_delete(){
     local v=$1
+    local nuke=$2
     local PGENV_DEFAULT_CONFIG_FILE=$( pgenv_configuration_file_name )
     local PGENV_CONFIG_FILE=$( pgenv_configuration_file_name $v )
 
 
-    # if the file is the default one, delete only if there are
-    # no installed instances
+    # if the file is the default one, delete only if the user
+    # is really sure, without any regard about the installed versions
     if [ "$PGENV_CONFIG_FILE" = "$PGENV_DEFAULT_CONFIG_FILE" ]; then
+        if [ -z "$nuke" ]; then
+            echo "To delete the default configuration file [$PGENV_DEFAULT_CONFIG_FILE] you need to run"
+            echo "the \`config nuke\` command"
+            exit 1
+        fi
         local installed_versions=0
         for installed in $( ls -d pgsql-* 2>/dev/null )
         do
@@ -1405,9 +1411,13 @@ EOF
 
         if [ -z "$3" ]; then
             v="default"
+            nuke=""
         else
             # understand the version the user wants to configure
             v=$( pgenv_guess_postgresql_version $3 $4 )
+            if [ "$3" = "default" ]; then
+                nuke="default"
+            fi
         fi
 
         # get the currently in use if none specified
@@ -1445,16 +1455,21 @@ EOF
                 fi
                 ;;
             delete)
-                pgenv_configuration_delete "$v" ;;
+                pgenv_configuration_delete "$v" "$nuke";;
+            nuke)
+                pgenv_configuration_delete "$v" "default";;
             *)
                 if [ -z "$action" ]; then
                     cat <<EOF >&2
 You need to specify one of the following \`config\` actions to perform:
 
     show
+    init
     write
     edit
     delete
+    nuke
+
 
 For instance:
 
