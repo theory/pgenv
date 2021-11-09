@@ -547,8 +547,12 @@ pgenv_configuration_delete(){
     # no installed instances
     if [ "$PGENV_CONFIG_FILE" = "$PGENV_DEFAULT_CONFIG_FILE" ]; then
         if [ -z "$nuke" ]; then
-            echo "To delete the default configuration file [$PGENV_DEFAULT_CONFIG_FILE] you need to run"
-            echo "the \`config nuke\` command"
+            cat <<EOF >&2
+No specific version specified, automatically selected the "default" one.
+To delete the default configuration file in
+   $PGENV_DEFAULT_CONFIG_FILE
+you need to run the \`config delete default\` command explicitly.
+EOF
             exit 1
         fi
         local installed_versions=0
