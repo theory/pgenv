@@ -542,7 +542,7 @@ pgenv_configuration_delete(){
     local PGENV_DEFAULT_CONFIG_FILE=$( pgenv_configuration_file_name )
     local PGENV_CONFIG_FILE=$( pgenv_configuration_file_name $v )
 
-    pgenv_debug "\`config delete` for version [$v] (nuke [$nuke])"
+    pgenv_debug "\`config delete\` for version [$v] (nuke [$nuke])"
 
     # if the file is the default one, delete only if there are
     # no installed instances and the version has been explicitly
