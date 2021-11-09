@@ -215,7 +215,7 @@ command won't stop it, but will initialize its data directory and starts it if
 it's not already running.
 
 ```
-$ pgenv use 10.4
+pgenv use 10.4
 waiting for server to shut down.... done
 server stopped
 waiting for server to start.... done
@@ -242,7 +242,7 @@ available for use by `pgenv` and the second lists the subdirectory of
 `$PGENV_ROOT` in which the each version is installed:
 
 ```
-$ pgenv versions
+pgenv versions
       10.4      pgsql-10.4
       11beta3   pgsql-11beta3
       9.5.13    pgsql-9.5.13
@@ -258,14 +258,14 @@ Each version is installed in a `pgsql-` subdirectory of `$PGENV_ROOT`.
 Displays the currently active PostgreSQL version.
 
 ```
-$ pgenv current
+pgenv current
 10.4
 ```
 
 Please note that `version` is a command synonym for version:
 
 ```
-$ pgenv version
+pgenv version
 10.4
 ```
 
@@ -275,7 +275,7 @@ Clears the currently active version of PostgreSQL. If the current version is
 running, `clear` will stop it before clearing it.
 
 ```
-$ pgenv clear
+pgenv clear
 waiting for server to shut down.... done
 server stopped
 PostgreSQL stopped
@@ -291,7 +291,7 @@ version is already built, it will not be rebuilt; use `clear` to remove an
 existing version before building it again.
 
 ```
-$ pgenv build 10.3
+pgenv build 10.3
 # [Curl, configure, and make output elided]
 PostgreSQL 10.3 built
 ```
@@ -302,7 +302,7 @@ warning is shown to the user to remind she can edit a configuration file and
 start over the build process:
 
 ```sh
-$ pgenv build 10.3
+pgenv build 10.3
   ...
 WARNING: no configuration file found for version 10.3
 HINT: if you wish to customize the build process please
@@ -428,7 +428,7 @@ Removes the specified version of PostgreSQL unless it is the currently-active
 version. Use the `clear` command to clear the active version before removing it.
 
 ```
-$ pgenv remove 10.3
+pgenv remove 10.3
 PostgreSQL 10.3 removed
 ```
 
@@ -440,7 +440,7 @@ one. It is also possible to indicate a major version to narrow the scope of the
 special keywords. As an example:
 
 ```
-$ pgenv remove latest 10
+pgenv remove latest 10
 ```
     
 will remove the most recent PostgreSQL version of the 10 series installed.    
@@ -451,7 +451,7 @@ Starts the currently active version of PostgreSQL if it's not already running.
 Initializes the data directory if none exists.
 
 ```
-$ pgenv start
+pgenv start
 PostgreSQL started
 ```
     
@@ -465,7 +465,7 @@ directory, nor the log file.
 Stops the currently active version of PostgreSQL.
 
 ```
-$ pgenv stop
+pgenv stop
 PostgreSQL 10.5 stopped
 ```
 
@@ -479,7 +479,7 @@ Restarts the currently active version of PostgreSQL, or starts it if it's not
 already running.
 
 ```
-$ pgenv restart
+pgenv restart
 PostgreSQL 10.1 restarted
 Logging to pgsql/data/server.log
 ```
@@ -539,7 +539,7 @@ To limit the list to versions for specific major releases, pass them to
 `available`. For example, to list only the `9.6` and `10` available versions:
 
 ```
-$ pgenv available 10 9.6
+pgenv available 10 9.6
             Available PostgreSQL Versions
 ========================================================
 
@@ -565,7 +565,7 @@ Outputs a brief usage statement and summary of available commands, like the
 following:
 
 ```
-$ pgenv help
+pgenv help
 Usage: pgenv <command> [<args>]
 
 The pgenv commands are:
@@ -635,7 +635,7 @@ program will work against the currently active version of PostgreSQL.
 In order to start with a default configuration, use the `write` subcommand:
 
 ```
-$ pgenv config write default
+pgenv config write default
 pgenv configuration file ~/.pgenv/.pgenv.default.conf written
 ```
 
@@ -702,7 +702,7 @@ been created.
 Use the `edit` subcommand to edit a configuration file in your favorite editor:
 
 ```
-$ pgenv config edit 10.5
+pgenv config edit 10.5
 <output omitted>
 ```
 
@@ -724,7 +724,7 @@ However, if it is explicitly specified `default` as the version to delete
          
 
 ```
-$ pgenv config delete
+pgenv config delete
 Cannot delete default configuration while version configurations exist
 To remove it anyway, delete ~/.pgenv/.pgenv.default.conf.
 ```
@@ -751,7 +751,7 @@ don't have to worry about the exact log location. The log is dumped using the
 `tail`. As an example:
 
 ```
-$ pgenv log     
+pgenv log     
 Dumping the content of /home/luca/git/misc/PostgreSQL/pgenv/pgsql/data/server.log 
 
 2020-08-28 19:04:44.199 CEST [10702] LOG:  could not bind IPv4 address "127.0.0.1": Address already in use
@@ -775,7 +775,7 @@ tail /home/luca/git/misc/PostgreSQL/pgenv/pgsql/data/server.log
 It is possible to pass arguments to `tail` as command line flags:
 
 ```
-$ pgenv log -n 2
+pgenv log -n 2
 Dumping the content of /home/luca/git/misc/PostgreSQL/pgenv/pgsql/data/server.log 
 
 2020-08-28 19:09:09.045 CEST [11868] LOG:  database system was shut down at 2020-08-28 12:57:33 CEST
