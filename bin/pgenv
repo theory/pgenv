@@ -544,7 +544,8 @@ pgenv_configuration_delete(){
 
 
     # if the file is the default one, delete only if there are
-    # no installed instances
+    # no installed instances and the version has been explicitly
+    # indicated by the user
     if [ "$PGENV_CONFIG_FILE" = "$PGENV_DEFAULT_CONFIG_FILE" ]; then
         if [ -z "$nuke" ]; then
             cat <<EOF >&2
@@ -562,13 +563,18 @@ EOF
         done
 
         if [ $installed_versions -gt 0 ]; then
-            echo "Cannot delete default configuration while version configurations exist"
-            echo "To remove it anyway, delete $PGENV_CONFIG_FILE"
+            cat <<EOF >&2
+Cannot delete default configuration file while PostgreSQL versions exists:
+the file could be shared among such installations.
+If you really want to delete the default configuration file
+execute a command like
+   rm $PGENV_CONFIG_FILE
+EOF
             exit 1
         fi
         # if the file is not here, nothing to do!
       elif [ ! -f "$PGENV_CONFIG_FILE" ]; then
-            echo "No configuration to delete"
+            echo "No configuration file bound to version $v to delete"
             exit 1
     fi
 
