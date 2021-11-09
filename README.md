@@ -494,12 +494,13 @@ Shows all the versions of PostgreSQL available to download and build. Handy to
 help you finding a version to pass to the `build` command. Note that the
 `available` command produces copious output.
 
-```
-$ pgenv available
-...
+``` sh
+pgenv available
+
             Available PostgreSQL Versions
 ========================================================
-
+                  ...
+ 
                     PostgreSQL 9.6
     ------------------------------------------------
     9.6.0   9.6.1   9.6.2   9.6.3   9.6.4   9.6.5
@@ -511,7 +512,24 @@ $ pgenv available
 
                     PostgreSQL 11
     ------------------------------------------------
-    11beta1  11beta2  11beta3
+     11.0    11.1    11.2    11.3    11.4    11.5   
+     11.6    11.7    11.8    11.9    11.10   11.11  
+     11.12   11.13  
+
+                     PostgreSQL 12
+    ------------------------------------------------
+     12.0    12.1    12.2    12.3    12.4    12.5   
+     12.6    12.7    12.8   
+
+                     PostgreSQL 13
+    ------------------------------------------------
+     13.0    13.1    13.2    13.3    13.4   
+
+                     PostgreSQL 14
+    ------------------------------------------------
+     14beta1  14beta2  14beta3  14rc1   14.0   
+
+     
 ```
 
 The versions are organized and sorted by major release number. Any listed
@@ -590,19 +608,14 @@ appropriate values, or falls back on its own defaults.
 
 The `config` command accepts the following subcommands:
 
-<<<<<<< HEAD
+
 - `show` prints the current or specified version configuration
 - `init` produces a configuration file from scratch, with default settings
 - `write` store the specified version configuration
-- `edit` opens the current or specified version configuration in an editor (Using $EDITOR, e.g: export EDITOR=/usr/bin/vim)
+- `edit` opens the current or specified version configuration file in your favourite text editor 
+        (Using `$EDITOR`, e.g: `export EDITOR=/usr/bin/emacs`)
 - `delete` removes the specified configuration
-=======
--   `show` prints the current or specified version configuration
--   `write` store the current or specified version configuration
--   `edit` opens the current or specified version configuration in an editor
-    (Using $EDITOR, e.g: export `EDITOR=/usr/bin/vim`)
--   `delete` removes the specified configuration
->>>>>>> e7e289cea8c3a232d51e06af93fc798d01c8a36b
+ 
 
 Each sub-command accepts a PostgreSQL version number (e.g., `10.5`) or a
 special keyword:
