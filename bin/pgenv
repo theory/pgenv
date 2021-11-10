@@ -575,7 +575,7 @@ EOF
         fi
         # if the file is not here, nothing to do!
       elif [ ! -f "$PGENV_CONFIG_FILE" ]; then
-            echo "No configuration file bound to version $v to delete"
+            echo "No configuration file to delete fo version $v"
             exit 1
     fi
 
@@ -1447,7 +1447,7 @@ EOF
                 # check that the file does not exist, so
                 # that the program does not re-initialize it
                 if [ -f "$configuration_file" ]; then
-                    pgenv_debug "Cannot init [$configuration_file] for version [$v]: file already existing"
+                    pgenv_debug "Cannot init [$configuration_file] for version [$v]: file already exists"
                     echo "Configuration file [$configuration_file] already exists, cannot re-init it!"
                     exit 1
                 fi
