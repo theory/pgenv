@@ -1447,7 +1447,7 @@ EOF
                 # check that the file does not exist, so
                 # that the program does not re-initialize it
                 if [ -f "$configuration_file" ]; then
-                    pgenv_debug "Cannot init [$configuration_file] for version [$v]: file already exists"
+                    pgenv_debug "init $v -> [$configuration_file]"
                     echo "Configuration file [$configuration_file] already exists, cannot re-init it!"
                     exit 1
                 fi
