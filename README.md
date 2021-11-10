@@ -720,24 +720,19 @@ The `delete` subcommand will not attempt to delete the default configuration
 file, since it can be shared among different PostgreSQL versions.
 However, if it is explicitly specified `default` as the version to delete
 (i.e., `config delete default`), the default configuration file will be deleted.
-
-         
-
+      
 ```
 pgenv config delete
 Cannot delete default configuration while version configurations exist
 To remove it anyway, delete ~/.pgenv/.pgenv.default.conf.
 ```
-
 The `delete` subcommand deletes both the configuration file and its backup copy.
 The `pgenv remove` command also deletes any configuration for the removed
 version.
 
-
 Please note that since commit [5839e721] the file name of the default
 configuration file has changed. In the case you want to convert your default
 configuration file, please issue a rename like the following
-
 
 ``` sh
 cp .pgenv.conf .pgenv.default.conf
