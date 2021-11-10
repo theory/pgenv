@@ -609,12 +609,12 @@ appropriate values, or falls back on its own defaults.
 The `config` command accepts the following subcommands:
 
 
-- `show` prints the current or specified version configuration
-- `init` produces a configuration file from scratch, with default settings
-- `write` store the specified version configuration
-- `edit` opens the current or specified version configuration file in your favourite text editor 
-        (Using `$EDITOR`, e.g: `export EDITOR=/usr/bin/emacs`)
-- `delete` removes the specified configuration
+-    `show` prints the current or specified version configuration
+-    `init` produces a configuration file from scratch, with default settings
+-    `write` store the specified version configuration
+-    `edit` opens the current or specified version configuration file in your favourite text editor 
+           (Using `$EDITOR`, e.g: `export EDITOR=/usr/bin/emacs`)
+-    `delete` removes the specified configuration
  
 
 Each sub-command accepts a PostgreSQL version number (e.g., `10.5`) or a
