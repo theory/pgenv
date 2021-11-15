@@ -2,7 +2,7 @@
 #
 # VERSION
 #
-PGENV_VERSION="1.1.0"
+PGENV_VERSION="1.2.0"
 
 # https://stackoverflow.com/a/19622569/79202
 trap 'exit' ERR
@@ -538,12 +538,25 @@ pgenv_merge_arrays() {
 # on this system.
 pgenv_configuration_delete(){
     local v=$1
+    local nuke=$2
     local PGENV_DEFAULT_CONFIG_FILE=$( pgenv_configuration_file_name )
     local PGENV_CONFIG_FILE=$( pgenv_configuration_file_name $v )
 
+    pgenv_debug "\`config delete\` for version [$v] (nuke [$nuke])"
+
     # if the file is the default one, delete only if there are
-    # no installed instances
+    # no installed instances and the version has been explicitly
+    # indicated by the user
     if [ "$PGENV_CONFIG_FILE" = "$PGENV_DEFAULT_CONFIG_FILE" ]; then
+        if [ -z "$nuke" ]; then
+            cat <<EOF >&2
+No specific version specified, automatically selected the "default" one.
+To delete the default configuration file in
+   $PGENV_DEFAULT_CONFIG_FILE
+you need to run the \`config delete default\` command explicitly.
+EOF
+            exit 1
+        fi
         local installed_versions=0
         for installed in $( ls -d pgsql-* 2>/dev/null )
         do
@@ -551,20 +564,25 @@ pgenv_configuration_delete(){
         done
 
         if [ $installed_versions -gt 0 ]; then
-            echo "Cannot delete default configuration while version configurations exist"
-            echo "To remove it anyway, delete $PGENV_CONFIG_FILE"
+            cat <<EOF >&2
+Cannot delete default configuration file while PostgreSQL versions exists:
+the file could be shared among such installations.
+If you really want to delete the default configuration file
+execute a command like
+   rm $PGENV_CONFIG_FILE
+EOF
             exit 1
         fi
         # if the file is not here, nothing to do!
       elif [ ! -f "$PGENV_CONFIG_FILE" ]; then
-            echo "No configuration to delete"
+            echo "No configuration file to delete fo version $v"
             exit 1
     fi
 
     # remove the file
     pgenv_debug "Deleting configuration file [$PGENV_CONFIG_FILE]"
-    rm -f "$PGENV_CONFIG_FILE"           # remove config file
-    rm -f "${PGENV_CONFIG_FILE}.backup"  # remove also backup file
+    rm -f "$PGENV_CONFIG_FILE"            # remove config file
+    rm -f ${PGENV_CONFIG_FILE}*.backup    # remove also backup file
     echo "Configuration file $PGENV_CONFIG_FILE (and backup) deleted"
 }
 
@@ -623,7 +641,7 @@ pgenv_configuration_write() {
 
     # make a backup copy
     if [ -f "$CONF" ]; then
-        CONF_BACKUP="${CONF}.backup"
+        CONF_BACKUP="${CONF}.$(date +'%Y-%m-%dT%H-%M').backup"
         pgenv_debug "Making backup copy of [$CONF] into [$CONF_BACKUP]"
         mv "$CONF" "$CONF_BACKUP"
     fi
@@ -631,8 +649,8 @@ pgenv_configuration_write() {
     # ok, write the configuration
     echo "# pgenv configuration created on $(date)" > "$CONF"
     echo "" >> "$CONF"
-    pgenv_configuration_write_variable "$CONF" "PGENV_DEBUG" "" 'Enables debug output'
-    pgenv_configuration_write_variable "$CONF" "PGENV_WARNINGS" "true" 'Enables warning messages'
+    pgenv_configuration_write_variable "$CONF" "PGENV_DEBUG" "$PGENV_DEBUG" 'Enables debug output'
+    pgenv_configuration_write_variable "$CONF" "PGENV_WARNINGS" "$PGENV_WARNINGS" 'Enables warning messages'
 
     echo "###### Build settings #####" >> "$CONF"
     pgenv_configuration_write_variable "$CONF" "PGENV_MAKE" "$PGENV_MAKE" 'Make command to use for build'
@@ -1404,9 +1422,13 @@ EOF
 
         if [ -z "$3" ]; then
             v="default"
+            nuke=""
         else
             # understand the version the user wants to configure
             v=$( pgenv_guess_postgresql_version $3 $4 )
+            if [ "$3" = "default" ]; then
+                nuke="default"
+            fi
         fi
 
         # get the currently in use if none specified
@@ -1416,17 +1438,29 @@ EOF
         fi
 
         title="PostgreSQL version $v"
+        configuration_file=$( pgenv_configuration_file_name $v )
 
         case $action in
             show)
                 pgenv_configuration_dump_or_exit "$v" "$title" ;;
-            write)
+            init)
+                # check that the file does not exist, so
+                # that the program does not re-initialize it
+                if [ -f "$configuration_file" ]; then
+                    pgenv_debug "init $v -> [$configuration_file]"
+                    echo "Configuration file [$configuration_file] already exists, cannot re-init it!"
+                    exit 1
+                fi
+
                 # in an explicit write load first the variables from the runtime
                 # environment, so PL/Perl, make, and stuff can be already set
                 pgenv_check_dependencies
                 pgenv_configuration_write "$v" ;;
+            write)
+                # load default configuration if exists
+                pgenv_configuration_load
+                pgenv_configuration_write "$v" ;;
             edit)
-                configuration_file=$( pgenv_configuration_file_name $v )
                 if [ ! -z "$EDITOR" ] && [ $(command -v $EDITOR ) ]; then
                     pgenv_debug "Launching editor $EDITOR"
                     $EDITOR $configuration_file
@@ -1444,16 +1478,18 @@ EOF
                 fi
                 ;;
             delete)
-                pgenv_configuration_delete "$v" ;;
+                pgenv_configuration_delete "$v" "$nuke";;
             *)
                 if [ -z "$action" ]; then
                     cat <<EOF >&2
 You need to specify one of the following \`config\` actions to perform:
 
     show
+    init
     write
     edit
     delete
+
 
 For instance:
 

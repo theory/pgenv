@@ -138,8 +138,8 @@ The above configuration variables can be set in the configuration file or on the
 fly, for instance:
 
 ``` sh
-export PGENV_SCRIPT_POSTSTART=/usr/local/bin/load_data.sh
-pgenv start 12.0
+$ export PGENV_SCRIPT_POSTSTART=/usr/local/bin/load_data.sh
+$ pgenv start 12.0
 ```
 
 It is worth noting that the start, restart and post script are not shared
@@ -156,8 +156,8 @@ You can upgrade your installation to the cutting-edge version at any time
 with a simple `git pull`.
 
 ``` sh
-cd ~/.pgenv
-git pull
+$ cd ~/.pgenv
+$ git pull
 ```
 
 ### Dependencies
@@ -185,9 +185,9 @@ Some commands require you to specify the PostgreSQL version to act on.
 You can specify the version the command applies to by either entering the
 PostgreSQL version number or by specifying any of the special keywords:
 
-- `current` or `version` to indicate the currently selected PostgreSQL version;
-- `earliest` to indicate the oldest installed version (excluding beta versions);
-- `newest` to indicate the newest installed version (excluding beta versions).
+-    `current` or `version` to indicate the currently selected PostgreSQL version;
+-    `earliest` to indicate the oldest installed version (excluding beta versions);
+-    `newest` to indicate the newest installed version (excluding beta versions).
 
 It is important to note that `earliest` and `latest` have nothing to do with the
 time you installed PostgreSQL by means of `pgenv`: they refer only to PostgreSQL
@@ -301,7 +301,7 @@ system does not find a configuration file when the `build` is executed, a
 warning is shown to the user to remind she can edit a configuration file and
 start over the build process:
 
-```sh
+```
 $ pgenv build 10.3
   ...
 WARNING: no configuration file found for version 10.3
@@ -318,7 +318,7 @@ PL/Perl, it is possible to configure the variable `PGENV_CONFIGURE_OPTIONS`
 adding `--with-perl`. Or say you need SSL support and to tell teh compiler to
 use Homebrew-installed OpenSSL. Edit it something like:
 
-``` sh
+``` 
 PGENV_CONFIGURE_OPTIONS=(
     --with-perl
     --with-openssl
@@ -331,17 +331,18 @@ Please note that it is possible to pass argument variables within the command
 line to instrument the build phase. As an example, the following is a possible
 workflow to configure and build a customized 10.5 instance:
 
-``` sh
-pgenv config write 10.5
+``` 
+$ pgenv config write 10.5
 pgenv config edit 10.5
 # adjust PGENV_CONFIGURE_OPTIONS
-pgenv build 10.5
+
+$ pgenv build 10.5
 ```
 
 In the case you need to specify a particular variable, such as the Perl
 interpreter, pass it on the command line at the time of build:
 
-``` sh
+``` 
 PERL=/usr/local/my-fancy-perl pgenv build 10.5
 ```
 
@@ -362,7 +363,7 @@ version and Operating System or a mix of possible combinations of those. As an
 example, in the case of the PostgreSQL version 8.1.4 the index files is searched
 among one of the following:
 
-``` sh
+``` 
 $PGENV_ROOT/patch/index/patch.8.1.4.Linux
 $PGENV_ROOT/patch/index/patch.8.1.4
 $PGENV_ROOT/patch/index/patch.8.1.Linux
@@ -384,8 +385,8 @@ It is possible to specify a particular index file, that means avoid the
 automatic index selection, by either setting the `PGENV_PATCH_INDEX` variable on
 the command line or in the configuration file. As an example
 
-``` sh
-PGENV_PATCH_INDEX=/src/my-patch-list.txt pgenv build 10.5
+``` 
+$ PGENV_PATCH_INDEX=/src/my-patch-list.txt pgenv build 10.5
 ```
 
 #### Build special keywords
@@ -439,8 +440,8 @@ respectively indicate the oldest PostgreSQL version installed and the newest
 one. It is also possible to indicate a major version to narrow the scope of the
 special keywords. As an example:
 
-```
-$ pgenv remove latest 10
+``` sh
+pgenv remove latest 10
 ```
     
 will remove the most recent PostgreSQL version of the 10 series installed.    
@@ -450,7 +451,7 @@ will remove the most recent PostgreSQL version of the 10 series installed.
 Starts the currently active version of PostgreSQL if it's not already running.
 Initializes the data directory if none exists.
 
-```
+``` 
 $ pgenv start
 PostgreSQL started
 ```
@@ -464,7 +465,7 @@ directory, nor the log file.
 
 Stops the currently active version of PostgreSQL.
 
-```
+``` 
 $ pgenv stop
 PostgreSQL 10.5 stopped
 ```
@@ -478,7 +479,7 @@ It is possible to specify flags to pass to `pg_ctl(1)` when performing the
 Restarts the currently active version of PostgreSQL, or starts it if it's not
 already running.
 
-```
+``` 
 $ pgenv restart
 PostgreSQL 10.1 restarted
 Logging to pgsql/data/server.log
@@ -494,12 +495,13 @@ Shows all the versions of PostgreSQL available to download and build. Handy to
 help you finding a version to pass to the `build` command. Note that the
 `available` command produces copious output.
 
-```
+``` 
 $ pgenv available
-...
+
             Available PostgreSQL Versions
 ========================================================
-
+                  ...
+ 
                     PostgreSQL 9.6
     ------------------------------------------------
     9.6.0   9.6.1   9.6.2   9.6.3   9.6.4   9.6.5
@@ -511,7 +513,24 @@ $ pgenv available
 
                     PostgreSQL 11
     ------------------------------------------------
-    11beta1  11beta2  11beta3
+     11.0    11.1    11.2    11.3    11.4    11.5   
+     11.6    11.7    11.8    11.9    11.10   11.11  
+     11.12   11.13  
+
+                     PostgreSQL 12
+    ------------------------------------------------
+     12.0    12.1    12.2    12.3    12.4    12.5   
+     12.6    12.7    12.8   
+
+                     PostgreSQL 13
+    ------------------------------------------------
+     13.0    13.1    13.2    13.3    13.4   
+
+                     PostgreSQL 14
+    ------------------------------------------------
+     14beta1  14beta2  14beta3  14rc1   14.0   
+
+     
 ```
 
 The versions are organized and sorted by major release number. Any listed
@@ -520,7 +539,7 @@ version may be passed to the `build` command.
 To limit the list to versions for specific major releases, pass them to
 `available`. For example, to list only the `9.6` and `10` available versions:
 
-```
+```  
 $ pgenv available 10 9.6
             Available PostgreSQL Versions
 ========================================================
@@ -546,7 +565,7 @@ the command was not found.
 Outputs a brief usage statement and summary of available commands, like the
 following:
 
-```
+``` 
 $ pgenv help
 Usage: pgenv <command> [<args>]
 
@@ -590,11 +609,14 @@ appropriate values, or falls back on its own defaults.
 
 The `config` command accepts the following subcommands:
 
--   `show` prints the current or specified version configuration
--   `write` store the current or specified version configuration
--   `edit` opens the current or specified version configuration in an editor
-    (Using $EDITOR, e.g: export `EDITOR=/usr/bin/vim`)
--   `delete` removes the specified configuration
+
+-    `show` prints the current or specified version configuration
+-    `init` produces a configuration file from scratch, with default settings
+-    `write` store the specified version configuration
+-    `edit` opens the current or specified version configuration file in your favourite text editor 
+           (Using `$EDITOR`, e.g: `export EDITOR=/usr/bin/emacs`)
+-    `delete` removes the specified configuration
+ 
 
 Each sub-command accepts a PostgreSQL version number (e.g., `10.5`) or a
 special keyword:
@@ -607,20 +629,21 @@ special keyword:
     can be combined with a PostgreSQL major version number to point to the
     configuration of the earliest/latest version within that major number.
 
+
 If no version is explicitly passed to any of the `config` subcommands, the
 program will work against the currently active version of PostgreSQL.
 
 In order to start with a default configuration, use the `write` subcommand:
 
-```
+``` 
 $ pgenv config write default
 pgenv configuration file ~/.pgenv/.pgenv.default.conf written
 ```
 
 A subsequent `show` displays the defaults:
 
-``` sh
-pgenv config show default
+``` 
+$ pgenv config show default
 # Default configuration
 # pgenv configuration for PostgreSQL
 # File: /home/luca/git/misc/PostgreSQL/pgenv/.pgenv.default.conf
@@ -656,43 +679,53 @@ PGENV_INITDB_OPTIONS=(-U postgres --locale en_US.UTF-8 --encoding UNICODE)
 
 You can edit the file and adjust parameters to your needs.
 
-In order to create a configuration file for a specific version, pass the version
-to the `write` subcommand:
 
-```
+In order to create a configuration file for a specific version, it is possible
+to use the `init` or `write` commands. If no prior default configuration exists,
+the commands do the same, that is they create a from-scratch configuration file.
+If a default configuration exists, the `write` command will "clone" such configuration
+in a PostgreSQL version specific configuration file, while `init` will 
+create a configuration file with default settings.
+After a configuration file has been created by `init`, the `write` or `edit`
+commands must be used against it, that means an existing configuration file
+cannot be `init`ed more than once.
+
+``` 
 $ pgenv config write 10.5
 pgenv configuration file [~/.pgenv/.pgenv.10.5.conf] written
 ```
 
-Each time pgenv writes a configuration file, it first creates a backup with the
-suffix `.backup`.
+
+Each time pgenv writes a configuration file, it first creates a backup with
+the suffix `.backup` and a timestamp string related to when the backup file has
+been created.
 
 Use the `edit` subcommand to edit a configuration file in your favorite editor:
 
-```
-$ pgenv config edit 10.5
-<output omitted>
+``` sh 
+pgenv config edit 10.5
 ```
 
 The `edit` command will start your favorite editor, that is whatever it is set
 within the `EDITOR` variable. If such variable is not set you will be warned.
 Use the `delete` subcommand to delete a configuration:
 
-```
+``` 
 $ pgenv config delete 10.5
 Configuration file ~/.pgenv/.pgenv.10.5.conf (and backup) deleted
 ```
+   
 
-Note that you cannot delete the default configuration unless all other versions
-have been removed (e.g., by `pgenv remove`). This prevents accidental loss of
-configuration:
-
-```
+The `delete` subcommand will not attempt to delete the default configuration
+file, since it can be shared among different PostgreSQL versions.
+However, if it is explicitly specified `default` as the version to delete
+(i.e., `config delete default`), the default configuration file will be deleted.
+      
+``` 
 $ pgenv config delete
 Cannot delete default configuration while version configurations exist
 To remove it anyway, delete ~/.pgenv/.pgenv.default.conf.
 ```
-
 The `delete` subcommand deletes both the configuration file and its backup copy.
 The `pgenv remove` command also deletes any configuration for the removed
 version.
@@ -701,7 +734,7 @@ Please note that since commit [5839e721] the file name of the default
 configuration file has changed. In the case you want to convert your default
 configuration file, please issue a rename like the following
 
-``` sh
+``` sh 
 cp .pgenv.conf .pgenv.default.conf
 ```
 
@@ -712,36 +745,36 @@ don't have to worry about the exact log location. The log is dumped using the
 `tail` command, and every option passed to the command line is passed thru
 `tail`. As an example:
 
-```
+``` 
 $ pgenv log     
 Dumping the content of /home/luca/git/misc/PostgreSQL/pgenv/pgsql/data/server.log 
 
-2020-08-28 19:04:44.199 CEST [10702] LOG:  could not bind IPv4 address "127.0.0.1": Address already in use
-2020-08-28 19:04:44.199 CEST [10702] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
-2020-08-28 19:04:44.199 CEST [10702] WARNING:  could not create listen socket for "localhost"
-2020-08-28 19:04:44.199 CEST [10702] FATAL:  could not create any TCP/IP sockets
-2020-08-28 19:04:44.199 CEST [10702] LOG:  database system is shut down
-2020-08-28 19:09:09.024 CEST [11867] LOG:  starting PostgreSQL 12.1 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 8.3.0-6ubuntu1) 8.3.0, 64-bit
-2020-08-28 19:09:09.024 CEST [11867] LOG:  listening on IPv4 address "127.0.0.1", port 5432
-2020-08-28 19:09:09.028 CEST [11867] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
-2020-08-28 19:09:09.045 CEST [11868] LOG:  database system was shut down at 2020-08-28 12:57:33 CEST
-2020-08-28 19:09:09.048 CEST [11867] LOG:  database system is ready to accept connections
+LOG:  could not bind IPv4 address "127.0.0.1": Address already in use
+HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+WARNING:  could not create listen socket for "localhost"
+FATAL:  could not create any TCP/IP sockets
+LOG:  database system is shut down
+LOG:  starting PostgreSQL 12.1 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 8.3.0-6ubuntu1) 8.3.0, 64-bit
+LOG:  listening on IPv4 address "127.0.0.1", port 5432
+LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+LOG:  database system was shut down at 2020-08-28 12:57:33 CEST
+LOG:  database system is ready to accept connections
  ```
 
 The above is equivalent to manually executing
 
 ``` sh
-tail /home/luca/git/misc/PostgreSQL/pgenv/pgsql/data/server.log
+tail ~/git/misc/PostgreSQL/pgenv/pgsql/data/server.log
 ```
 
 It is possible to pass arguments to `tail` as command line flags:
 
-```
+``` 
 $ pgenv log -n 2
 Dumping the content of /home/luca/git/misc/PostgreSQL/pgenv/pgsql/data/server.log 
 
-2020-08-28 19:09:09.045 CEST [11868] LOG:  database system was shut down at 2020-08-28 12:57:33 CEST
-2020-08-28 19:09:09.048 CEST [11867] LOG:  database system is ready to accept connections
+LOG:  database system was shut down at 2020-08-28 12:57:33 CEST
+LOG:  database system is ready to accept connections
 ```
 
 which results in executing
