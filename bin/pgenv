@@ -439,10 +439,10 @@ pgenv_current_postgresql_version(){
 # file is provided.
 pgenv_configuration_file_name(){
     local v=$1
-    local PGENV_DEFAULT_CONFIG_FILE="${PGENV_CONFIG_ROOT}/.pgenv.default.conf"
+    local PGENV_DEFAULT_CONFIG_FILE="${PGENV_CONFIG_ROOT}/default.conf"
 
     if [ ! -z "$v" ]; then
-        echo "${PGENV_CONFIG_ROOT}/.pgenv.$v.conf"
+        echo "${PGENV_CONFIG_ROOT}/$v.conf"
     else
         echo "${PGENV_DEFAULT_CONFIG_FILE}"
     fi
