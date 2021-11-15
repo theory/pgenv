@@ -637,7 +637,7 @@ In order to start with a default configuration, use the `write` subcommand:
 
 ``` 
 $ pgenv config write default
-pgenv configuration file ~/.pgenv/config/.pgenv.default.conf written
+pgenv configuration file ~/.pgenv/config/default.conf written
 ```
 
 A subsequent `show` displays the defaults:
@@ -646,7 +646,7 @@ A subsequent `show` displays the defaults:
 $ pgenv config show default
 # Default configuration
 # pgenv configuration for PostgreSQL
-# File: /home/luca/git/misc/PostgreSQL/pgenv/config/.pgenv.default.conf
+# File: /home/luca/git/misc/PostgreSQL/pgenv/config/default.conf
 # ---------------------------------------------------
 # pgenv configuration created on mer 12 set 2018, 08.35.52, CEST
 
@@ -692,7 +692,7 @@ cannot be `init`ed more than once.
 
 ``` 
 $ pgenv config write 10.5
-pgenv configuration file [~/.pgenv/config/.pgenv.10.5.conf] written
+pgenv configuration file [~/.pgenv/config/10.5.conf] written
 ```
 
 
@@ -712,7 +712,7 @@ Use the `delete` subcommand to delete a configuration:
 
 ``` 
 $ pgenv config delete 10.5
-Configuration file ~/.pgenv/config/.pgenv.10.5.conf (and backup) deleted
+Configuration file ~/.pgenv/config/10.5.conf (and backup) deleted
 ```
    
 
@@ -724,7 +724,7 @@ However, if it is explicitly specified `default` as the version to delete
 ``` 
 $ pgenv config delete
 Cannot delete default configuration while version configurations exist
-To remove it anyway, delete ~/.pgenv/config/.pgenv.default.conf.
+To remove it anyway, delete ~/.pgenv/config/default.conf.
 ```
 The `delete` subcommand deletes both the configuration file and its backup copy.
 The `pgenv remove` command also deletes any configuration for the removed
@@ -742,6 +742,18 @@ Please note also that, since version `1.2.1` [811ba05], all the configuration fi
 have been moved into the `config` subdirectory, so to keep them in a single place.
 In order to "migrate" your existing configuration, you have to manually
 copy all the `.pgenv.*.conf` files into the `config` subdirectory.
+The best way to quickly migrate your configuration files to the new
+naming scheme, is running a small shell loop as the following one:
+
+
+```
+for f in .pgenv.*.conf; do
+  F=$( echo $f | sed 's/\.pgenv\.//' ); mv $f config/$F;
+done
+```
+
+that has to be run from your `$PGENV_ROOT`, that is from the directory that
+contains the `.pgenv.*.conf` files.
 
 ### pgenv log
 
