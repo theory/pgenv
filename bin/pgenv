@@ -2,7 +2,7 @@
 #
 # VERSION
 #
-PGENV_VERSION="1.2.0"
+PGENV_VERSION="1.2.1"
 
 # https://stackoverflow.com/a/19622569/79202
 trap 'exit' ERR
@@ -18,6 +18,9 @@ fi
 cd $PGENV_ROOT
 # Always use an absolute path or configure could complain.
 PGENV_ROOT=$(pwd)
+
+# configuration file location
+PGENV_CONFIG_ROOT=${PGENV_ROOT}/config
 
 PGSQL=$PGENV_ROOT/pgsql
 PG_DATA=$PGSQL/data
@@ -436,10 +439,10 @@ pgenv_current_postgresql_version(){
 # file is provided.
 pgenv_configuration_file_name(){
     local v=$1
-    local PGENV_DEFAULT_CONFIG_FILE="${PGENV_ROOT}/.pgenv.default.conf"
+    local PGENV_DEFAULT_CONFIG_FILE="${PGENV_CONFIG_ROOT}/.pgenv.default.conf"
 
     if [ ! -z "$v" ]; then
-        echo "${PGENV_ROOT}/.pgenv.$v.conf"
+        echo "${PGENV_CONFIG_ROOT}/.pgenv.$v.conf"
     else
         echo "${PGENV_DEFAULT_CONFIG_FILE}"
     fi
@@ -637,6 +640,11 @@ pgenv_configuration_write() {
     if [ -z "$CONF" ]; then
         echo "Cannot determine which configuration file to use!"
         exit 1
+    fi
+
+    # check the configuration directory exists
+    if [ ! -d "$PGENV_CONFIG_ROOT" ]; then
+        mkdir -p "$PGENV_CONFIG_ROOT"
     fi
 
     # make a backup copy
