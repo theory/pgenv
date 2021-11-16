@@ -1208,7 +1208,7 @@ WARNING: no configuration file found for version $v
 HINT: if you wish to customize the build process please
 stop the execution within $seconds seconds (CTRL-c) and run
 
-       pgenv config write $v && pgenv config edit $v
+       pgenv config init $v && pgenv config edit $v
 
 adjust 'configure' and 'make' options and flags and run again
 
