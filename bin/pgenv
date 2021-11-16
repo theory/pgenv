@@ -1449,6 +1449,38 @@ EOF
         configuration_file=$( pgenv_configuration_file_name $v )
 
         case $action in
+            migrate)
+                if [ -z "$PGENV_CONFIG_ROOT" ]; then
+                    PGENV_CONFIG_ROOT="$PGENV_ROOT/config"
+                    echo "No configuration directory set, using [$PGENV_CONFIG_ROOT]"
+                fi
+
+                if [ ! -d "$PGENV_CONFIG_ROOT" ]; then
+                    mkdir "$PGENV_CONFIG_ROOT"
+                fi
+
+                counter=0
+                missing=0
+                for old_config_file in "$PGENV_ROOT"/.pgenv.*.conf; do
+                    if [ -f "$old_config_file" ]; then
+                        new_config_file=$( basename "$old_config_file" | sed 's/\.pgenv\.//' )
+                        new_config_file="$PGENV_CONFIG_ROOT/${new_config_file}"
+                        pgenv_debug "Migrating [$old_config_file] to [$new_config_file]"
+                        mv "$old_config_file" "$new_config_file"
+                        if [ $? -eq 0 ]; then
+                            counter=$(( counter + 1 ))
+                        else
+                            missing=$(( missing + 1 ))
+                        fi
+                    fi
+                done
+
+                if [ $counter -gt 0 ]; then
+                    echo "Migrated $counter configuration files from previous versions ($missing missing)"
+                    echo "Your configuration files are now into [$PGENV_CONFIG_ROOT]"
+                fi
+                ;;
+
             show)
                 pgenv_configuration_dump_or_exit "$v" "$title" ;;
             init)

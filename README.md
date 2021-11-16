@@ -616,6 +616,7 @@ The `config` command accepts the following subcommands:
 -    `edit` opens the current or specified version configuration file in your favourite text editor 
            (Using `$EDITOR`, e.g: `export EDITOR=/usr/bin/emacs`)
 -    `delete` removes the specified configuration
+-    `migrate` is a command used to change the configuration format between versions of `pgenv`
  
 
 Each sub-command accepts a PostgreSQL version number (e.g., `10.5`) or a
@@ -738,23 +739,20 @@ configuration file, please issue a rename like the following
 cp .pgenv.conf .pgenv.default.conf
 ```
 
-Please note also that, since version `1.2.1` [811ba05], all the configuration files
-have been moved into the `config` subdirectory, so to keep them in a single place.
-In order to "migrate" your existing configuration, you have to manually
-copy all the `.pgenv.*.conf` files into the `config` subdirectory.
-The best way to quickly migrate your configuration files to the new
-naming scheme, is running a small shell loop as the following one:
+
+The `migrate` command allows `pgenv` to change the configuration format of
+the files between different releases. For example, it must be run if
+you are upgrading `pgenv` from a version before `1.2.1` [811ba05], that changed the
+location of configuration files into the `config` subdirectory.
 
 
 ```
-for f in .pgenv.*.conf; do
-  F=$( echo $f | sed 's/\.pgenv\.//' ); mv $f config/$F;
-done
+pgenv config migrate
+Migrated 3 configuration files from previous versions (0 missing)
+Your configuration files are now into [~/git/misc/PostgreSQL/pgenv/config]
 ```
 
-that has to be run from your `$PGENV_ROOT`, that is from the directory that
-contains the `.pgenv.*.conf` files.
-
+ 
 ### pgenv log
 
 The `log` command provides a dump of the cluster log, if it exists, so that you
