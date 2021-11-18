@@ -748,8 +748,8 @@ location of configuration files into the `config` subdirectory.
 
 ```
 pgenv config migrate
-Migrated 3 configuration files from previous versions (0 missing)
-Your configuration files are now into [~/git/misc/PostgreSQL/pgenv/config]
+Migrated 3 configuration file(s) from previous versions (0 not migrated)
+Your configuration file(s) are now into [~/git/misc/PostgreSQL/pgenv/config]
 ```
 
  
