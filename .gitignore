@@ -1,3 +1,4 @@
 /pgsql*
 /src/
 /.pgenv.*
+/config/
