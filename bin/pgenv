@@ -142,6 +142,7 @@ pgenv_help() {
 Usage: pgenv <command> [<args>]
 
 The pgenv commands are:
+    switch     Set the current PostgreSQL version
     use        Set and start the current PostgreSQL version
     clear      Stop and unset the current PostgreSQL version
     start      Start the current PostgreSQL server
@@ -1034,6 +1035,26 @@ pgenv_patch_source_tree() {
 }
 
 case $1 in
+    switch)
+        v=$( pgenv_guess_postgresql_version $2 $3)
+        pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
+        pgenv_installed_version_or_exit $v
+        pgenv_configuration_load $v
+
+        # check PATH settings
+        pgenv_warning_path
+
+        # Check if current version?
+        if [ "`readlink pgsql`" = "pgsql-$v" ]; then
+            echo "Already using PostgreSQL $v"
+        else
+            # Link the new instance.
+            ln -nsf pgsql-$v pgsql
+        fi
+
+        exit
+        ;;
+
     use)
         v=$( pgenv_guess_postgresql_version $2 $3)
         pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
