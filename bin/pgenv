@@ -2,7 +2,7 @@
 #
 # VERSION
 #
-PGENV_VERSION="1.2.1"
+PGENV_VERSION="1.2.2"
 
 # https://stackoverflow.com/a/19622569/79202
 trap 'exit' ERR
@@ -619,7 +619,9 @@ pgenv_configuration_write_variable(){
 
     # if no value supplied, put a comment
     if [[ "$name" =~ _OPTIONS$ ]]; then
-        typeset -p "${name}" >> "$file"
+        # declare has no way to output a global variable
+        # that is then needed when reloading configuration !
+        declare  -p "${name}" | sed 's/declare/declare -g /' >> "$file"
     else
         if [ -z "$value" ]; then
             echo -n "#" >> "$file"
