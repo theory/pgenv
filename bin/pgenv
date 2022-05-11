@@ -895,7 +895,7 @@ pgenv_stop_or_restart_instance(){
                 # if there is a pre-stop script to run, run it
                 if [ -x "$PGENV_SCRIPT_PRESTOP" ]; then
                     echo "Running pre-stop script [$PGENV_SCRIPT_PRESTOP]"
-                    $PGENV_SCRIPT_PRESTOP "$PG_DATA" 
+                    $PGENV_SCRIPT_PRESTOP "$PG_DATA"
                 fi
 
                 $PG_CTL stop -D "$PG_DATA" "${PGENV_STOP_OPTIONS[@]}" &> /dev/null
@@ -924,7 +924,7 @@ pgenv_stop_or_restart_instance(){
         # server not running
         case $command in
             stop)
-                echo "PostgreSQL $v not running"
+                pgenv_debug "PostgreSQL $v not running"
                 ;;
             restart)
                 pgenv_start_instance
@@ -1148,7 +1148,7 @@ case $1 in
                         v=$vv
                     fi
                 done
-                
+
                 pgenv_debug "Selected version to build for '$2 $3' is $v"
 
         esac
@@ -1245,7 +1245,7 @@ EOF
             # Unpack the source.
             $PGENV_TAR $TAR_OPTS $PG_TARBALL
         fi
-            
+
         cd postgresql-$v
 
         # patch the source tree if required
