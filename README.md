@@ -240,7 +240,7 @@ will select the most recent PostgreSQL version of the 10 series installed.
 ### pgenv switch
 
 Sets the version of PostgreSQL to be used in all shells by symlinking its
-directory to `~/$PGENV_ROOT/pgsql`. Contrary to `pgenv use` this command does
+directory to `$PGENV_ROOT/pgsql`. Contrary to `pgenv use` this command does
 _not_ manage a database for you. Meaning, it will not start, stop and
 initialize a postgres database with the given version. Instead it simply
 changes the environment to a different version of PostgreSQL. This can be
@@ -587,12 +587,12 @@ $ pgenv help
 Usage: pgenv <command> [<args>]
 
 The pgenv commands are:
-    switch     Set the current PostgreSQL version
     use        Set and start the current PostgreSQL version
-    clear      Stop and unset the current PostgreSQL version
     start      Start the current PostgreSQL server
     stop       Stop the current PostgreSQL server
     restart    Restart the current PostgreSQL server
+    switch     Set the current PostgreSQL version
+    clear      Stop and unset the current PostgreSQL version
     build      Build a specific version of PostgreSQL
     rebuild    Re-build a specific version of PostgreSQL
     remove     Remove a specific version of PostgreSQL
