@@ -618,12 +618,14 @@ pgenv_configuration_write_variable(){
         echo "# $comment" >> "$file"
     fi
 
-    # if no value supplied, put a comment
+
     if [[ "$name" =~ _OPTIONS$ ]]; then
         # declare has no way to output a global variable
         # that is then needed when reloading configuration !
-        declare  -p "${name}" | sed 's/declare/declare -g /' >> "$file"
+        declare  -p "${name}"  >> "$file"
+        echo "export ${name}"  >> "$file"
     else
+        # if no value supplied, put a comment
         if [ -z "$value" ]; then
             echo -n "#" >> "$file"
         fi
@@ -1209,7 +1211,7 @@ case $1 in
         fi
 
         # warn if no configuration was loaded
-        if [ ! -z "PGENV_WARNINGS" ]; then
+        if [ ! -z "$PGENV_WARNINGS" ]; then
             if [ -z "$PGENV_CONFIGURATION_FILE" ]; then
                 seconds=5
                 cat <<EOF
