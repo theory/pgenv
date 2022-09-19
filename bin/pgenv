@@ -623,7 +623,7 @@ pgenv_configuration_write_variable(){
         # using `declare` will make the variable `local`
         # once it is read from the pgenv_configuration_read function
         # so don't use it and export as a global variable
-        declare -p "${name}" | sed 's/^declare -a\ //' >> "$file"
+        declare -p "${name}" | sed 's/^declare -ax\? //' >> "$file"
         echo "export ${name}"  >> "$file"
     else
         # if no value supplied, put a comment
