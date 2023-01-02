@@ -579,7 +579,7 @@ EOF
         fi
         # if the file is not here, nothing to do!
       elif [ ! -f "$PGENV_CONFIG_FILE" ]; then
-            echo "No configuration file to delete fo version $v"
+            echo "No configuration file to delete for version $v"
             exit 1
     fi
 
