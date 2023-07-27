@@ -635,6 +635,8 @@ The `config` command accepts the following subcommands:
            (Using `$EDITOR`, e.g: `export EDITOR=/usr/bin/emacs`)
 -    `delete` removes the specified configuration
 -    `migrate` is a command used to change the configuration format between versions of `pgenv`
+-    `use` accepts a versione number and prints on standard output the environment variable that,
+           once exported, will force `pgenv` to use that configuration file
  
 
 Each sub-command accepts a PostgreSQL version number (e.g., `10.5`) or a
@@ -769,6 +771,20 @@ pgenv config migrate
 Migrated 3 configuration file(s) from previous versions (0 not migrated)
 Your configuration file(s) are now into [~/git/misc/PostgreSQL/pgenv/config]
 ```
+
+
+The `use` command accepts a specific version that will be used to compute the
+configuration file name related to such version, and the environment variable
+`PGENV_CONFIGURATION_FILE` will be printed out.
+It is required that variable to be exported or used within the shell session
+for subsequent `pgenv` invocations to use such configuration file. For example:
+
+```
+export $( pgenv config use 15.4 )
+```
+
+The above will set the environment variable `PGENV_CONFIGURATION_FILE` to the configuration
+file for the PostgreSQL version `15.4`.
 
  
 ### pgenv log

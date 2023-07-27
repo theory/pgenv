@@ -438,9 +438,27 @@ pgenv_current_postgresql_version(){
 #
 # If no version is specified, the default configuration
 # file is provided.
+#
+# If the user has defined an environment variable named
+#       PGENV_CONFIGURATION_FILE
+# the function returns such name. This allows the user
+# to use always a well established configuration file.
+# It is possible to avoid the usage of the PGENV_CONFIGURATION_FILE
+# environment variable if the second argument is something not null.
 pgenv_configuration_file_name(){
     local v=$1
+    local skip_env=$2
     local PGENV_DEFAULT_CONFIG_FILE="${PGENV_CONFIG_ROOT}/default.conf"
+
+
+    # if the user has defined an environment variable PGENV_CONFIGURATION_FILE
+    # I need to use that instead of trying to understand which file to use
+    if [ ! -z "$PGENV_CONFIGURATION_FILE" -a -z "$skip_env" ]; then
+	pgenv_debug "Configuration file overwritten by environment variable PGENV_CONFIGURATION_FILE = $PGENV_CONFIGURATION_FILE"
+	echo "${PGENV_CONFIGURATION_FILE}"
+	return
+    fi
+
 
     if [ ! -z "$v" ]; then
         echo "${PGENV_CONFIG_ROOT}/$v.conf"
@@ -588,6 +606,27 @@ EOF
     rm -f "$PGENV_CONFIG_FILE"            # remove config file
     rm -f ${PGENV_CONFIG_FILE}*.backup    # remove also backup file
     echo "Configuration file $PGENV_CONFIG_FILE (and backup) deleted"
+}
+
+
+# Utility function to print on stdout
+# the variable to use in order to force a configuration
+# file decided by the user.
+#
+# For example, in a shell run
+#
+#    % export $(pgenv config use 16neta2)
+#
+# that will result in setting the PGENV_CONFIGURATION_FILE
+# so that following usage of `pgenv` will use such a configuration
+# file.
+pgenv_configuration_use(){
+    local v=$1
+    local c=$( pgenv_configuration_file_name "$v" "SKIP-ENV" )
+
+    pgenv_debug "Configuration use for [$v] -> [$c]"
+    echo "PGENV_CONFIGURATION_FILE=$c"
+
 }
 
 # Utility function to write a single variable in the configuration file.
@@ -1538,6 +1577,8 @@ EOF
                 ;;
             delete)
                 pgenv_configuration_delete "$v" "$nuke";;
+	    use)
+		pgenv_configuration_use "$v";;
             *)
                 if [ -z "$action" ]; then
                     cat <<EOF >&2
@@ -1548,7 +1589,7 @@ You need to specify one of the following \`config\` actions to perform:
     write
     edit
     delete
-
+    use
 
 For instance:
 
