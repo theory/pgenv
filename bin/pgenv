@@ -674,14 +674,25 @@ pgenv_configuration_write_variable(){
 # Writes the whole current configuration to the current version file
 # or the version file specified. It does a backup copy in the case
 # the file already exists.
+#
+# If the environment variable PGENV_CONFIGURATION_FILE is set
+# no configuration file (over)writing will happen: it is supposed
+# the user has declared the variable and thus it is not required to
+# update the configuration.
 pgenv_configuration_write() {
     local v=$1
     CONF=$( pgenv_configuration_file_name $v )
 
     # sanity check
     if [ -z "$CONF" ]; then
-        echo "Cannot determine which configuration file to use!"
+        echo "Cannot determine which configuration file to use!" > 2
         exit 1
+    fi
+
+    # avoid overwriting configuration if the environment variable is set
+    if [ ! -z "${PGENV_CONFIGURATION_FILE}" ]; then
+	pgenv_debug "Cannot write configuration file while PGENV-CONFIGURATION_FILE set!"
+	exit 1
     fi
 
     # check the configuration directory exists
