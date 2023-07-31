@@ -610,23 +610,20 @@ EOF
 
 
 # Utility function to print on stdout
-# the variable to use in order to force a configuration
-# file decided by the user.
+# the path to which the program will look for a
+# configuration file.
 #
-# For example, in a shell run
+# This can be useful to exdport the environment variable
+# to point to a custom path, like this:
 #
-#    % export $(pgenv config use 16neta2)
+#    % export PGENV_CONFIGURATION_FILE=$( pgenv config path 16neta2 )
 #
 # that will result in setting the PGENV_CONFIGURATION_FILE
 # so that following usage of `pgenv` will use such a configuration
 # file.
-pgenv_configuration_use(){
+pgenv_configuration_show_path(){
     local v=$1
-    local c=$( pgenv_configuration_file_name "$v" "SKIP-ENV" )
-
-    pgenv_debug "Configuration use for [$v] -> [$c]"
-    echo "PGENV_CONFIGURATION_FILE=$c"
-
+    echo $( pgenv_configuration_file_name "$v" "SKIP-ENV" )
 }
 
 # Utility function to write a single variable in the configuration file.
@@ -1577,8 +1574,8 @@ EOF
                 ;;
             delete)
                 pgenv_configuration_delete "$v" "$nuke";;
-	    use)
-		pgenv_configuration_use "$v";;
+	    path)
+		pgenv_configuration_show_path "$v";;
             *)
                 if [ -z "$action" ]; then
                     cat <<EOF >&2
