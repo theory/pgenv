@@ -438,9 +438,27 @@ pgenv_current_postgresql_version(){
 #
 # If no version is specified, the default configuration
 # file is provided.
+#
+# If the user has defined an environment variable named
+#       PGENV_CONFIGURATION_FILE
+# the function returns such name. This allows the user
+# to use always a well established configuration file.
+# It is possible to avoid the usage of the PGENV_CONFIGURATION_FILE
+# environment variable if the second argument is something not null.
 pgenv_configuration_file_name(){
     local v=$1
+    local skip_env=$2
     local PGENV_DEFAULT_CONFIG_FILE="${PGENV_CONFIG_ROOT}/default.conf"
+
+
+    # if the user has defined an environment variable PGENV_CONFIGURATION_FILE
+    # I need to use that instead of trying to understand which file to use
+    if [ ! -z "$PGENV_CONFIGURATION_FILE" -a -z "$skip_env" ]; then
+	pgenv_debug "Configuration file overwritten by environment variable PGENV_CONFIGURATION_FILE = $PGENV_CONFIGURATION_FILE"
+	echo "${PGENV_CONFIGURATION_FILE}"
+	return
+    fi
+
 
     if [ ! -z "$v" ]; then
         echo "${PGENV_CONFIG_ROOT}/$v.conf"
@@ -590,6 +608,24 @@ EOF
     echo "Configuration file $PGENV_CONFIG_FILE (and backup) deleted"
 }
 
+
+# Utility function to print on stdout
+# the path to which the program will look for a
+# configuration file.
+#
+# This can be useful to exdport the environment variable
+# to point to a custom path, like this:
+#
+#    % export PGENV_CONFIGURATION_FILE=$( pgenv config path 16neta2 )
+#
+# that will result in setting the PGENV_CONFIGURATION_FILE
+# so that following usage of `pgenv` will use such a configuration
+# file.
+pgenv_configuration_show_path(){
+    local v=$1
+    echo $( pgenv_configuration_file_name "$v" "SKIP-ENV" )
+}
+
 # Utility function to write a single variable in the configuration file.
 #
 # Accepts:
@@ -638,14 +674,25 @@ pgenv_configuration_write_variable(){
 # Writes the whole current configuration to the current version file
 # or the version file specified. It does a backup copy in the case
 # the file already exists.
+#
+# If the environment variable PGENV_CONFIGURATION_FILE is set
+# no configuration file (over)writing will happen: it is supposed
+# the user has declared the variable and thus it is not required to
+# update the configuration.
 pgenv_configuration_write() {
     local v=$1
     CONF=$( pgenv_configuration_file_name $v )
 
     # sanity check
     if [ -z "$CONF" ]; then
-        echo "Cannot determine which configuration file to use!"
+        echo "Cannot determine which configuration file to use!" > 2
         exit 1
+    fi
+
+    # avoid overwriting configuration if the environment variable is set
+    if [ ! -z "${PGENV_CONFIGURATION_FILE}" ]; then
+	pgenv_debug "Cannot write configuration file while PGENV-CONFIGURATION_FILE set!"
+	exit 1
     fi
 
     # check the configuration directory exists
@@ -1538,6 +1585,8 @@ EOF
                 ;;
             delete)
                 pgenv_configuration_delete "$v" "$nuke";;
+	    path)
+		pgenv_configuration_show_path "$v";;
             *)
                 if [ -z "$action" ]; then
                     cat <<EOF >&2
@@ -1548,7 +1597,7 @@ You need to specify one of the following \`config\` actions to perform:
     write
     edit
     delete
-
+    use
 
 For instance:
 
