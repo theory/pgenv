@@ -635,6 +635,8 @@ The `config` command accepts the following subcommands:
            (Using `$EDITOR`, e.g: `export EDITOR=/usr/bin/emacs`)
 -    `delete` removes the specified configuration
 -    `migrate` is a command used to change the configuration format between versions of `pgenv`
+-    `path` accepts a version number and prints on standard output the path to such version
+            configuration path
  
 
 Each sub-command accepts a PostgreSQL version number (e.g., `10.5`) or a
@@ -770,6 +772,30 @@ Migrated 3 configuration file(s) from previous versions (0 not migrated)
 Your configuration file(s) are now into [~/git/misc/PostgreSQL/pgenv/config]
 ```
 
+
+The `path` command accepts a specific version that will be used to compute the
+configuration file name related to such version, printing out the resulting
+path to the configuration file.
+This allows the user to set the `PGENV_CONFIGURATION_FILE` environment variable
+to a specific path to a custom configuration file, so that other subsequent
+invocations of `pgenv` will refer to such path.
+As an example, this is a way to exploit the default configuration file
+for different versions of PostgreSQL.
+In order to export the variable to a specific custom file location
+you can do, in your terminal, something like the following:
+
+```
+export PGENV_CONFIGURATION_FILE=$( pgenv config path 15.4 )
+```
+
+The above will set the environment variable `PGENV_CONFIGURATION_FILE` to the configuration
+file for the PostgreSQL version `15.4`.
+If you want to use the default configuration file, substitute the version number with the
+special `default` keyowrd, for example:
+
+```
+export PGENV_CONFIGURATION_FILE=pgenv config path default
+```
  
 ### pgenv log
 
