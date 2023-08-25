@@ -8,6 +8,82 @@ PGENV_VERSION="1.3.2"
 trap 'exit' ERR
 set -E
 
+
+##############################################
+### Command line parsing                   ###
+##############################################
+#
+# The command line parsing must be the very first step, so that
+# subsequent parts of the script can get the correct value of
+# internal and environmental variables.
+#
+# Note that here we parse only the options, not the real commands
+# to `pgenv`, that is made at the end of the script.
+#
+
+# evaluate arguments via getop
+GETOPT_EVALUTAION=$(getopt -o 'r:R:vc:w:D:' --long 'root:,config-root:,verbose,config-file:,config-file-write:,--pgdata:' -n 'pgenv' -- "$@")
+if [ $? -ne 0 ]; then
+    echo "Cannot parse command line" >&2
+    pgenv_help
+    exit 1
+fi
+
+eval set -- "$GETOPT_EVALUTAION"
+unset GETOP_EVALUTAION
+
+
+# parse the options
+do_parse='true'
+while [ ! -z $do_parse ]; do
+    case "$1" in
+	'-r'|'--root')
+	    PGENV_ROOT=$2
+	    shift
+	    shift
+	    ;;
+	'-R'|'--config-root')
+	    PGENV_CONFIG_ROOT=$2
+	    shift
+	    shift
+	    ;;
+	'-v'|'--verbose')
+	    PGENV_DEBUG=true
+	    shift
+	    ;;
+	'-c'|'--config-file')
+	    PGENV_CONFIGURATION_FILE=$2
+	    shift
+	    shift
+	    ;;
+	'-w'|'--config-file-write')
+	    PGENV_WRITE_CONFIGURATION_FILE_AUTOMATICALLY=$2
+	    shift
+	    shift
+	    ;;
+	'-D'|'--pgdata')
+	    PG_DATA=$2
+	    shift
+	    shift
+	    ;;
+	'--')
+	    # end of the getopt parsing
+	    # resume normal command line parsing from here
+	    do_parse=''
+	    shift
+	    ;;
+	*)
+	    echo "Command line parsing error: unrecognized token $1" >&2
+	    exit 1
+	    ;;
+    esac
+done
+
+
+
+
+
+
 # Set PGENV_ROOT only if not already set.
 if [ -z "$PGENV_ROOT" ]; then
     PGENV_ROOT=$(dirname $(dirname $0))
@@ -20,7 +96,9 @@ cd $PGENV_ROOT
 PGENV_ROOT=$(pwd)
 
 # configuration file location
-PGENV_CONFIG_ROOT=${PGENV_ROOT}/config
+if [ -z "$PGENV_CONFIG_ROOT" ]; then
+    PGENV_CONFIG_ROOT=${PGENV_ROOT}/config
+fi
 
 PGSQL=$PGENV_ROOT/pgsql
 PG_DATA=$PGSQL/data
@@ -675,10 +753,8 @@ pgenv_configuration_write_variable(){
 # or the version file specified. It does a backup copy in the case
 # the file already exists.
 #
-# If the environment variable PGENV_CONFIGURATION_FILE is set
-# no configuration file (over)writing will happen: it is supposed
-# the user has declared the variable and thus it is not required to
-# update the configuration.
+# If the environment variable PGENV_WRITE_CONFIGURATION_FILE_AUTOMATICALLY
+# is set to 'no', the configuration file will not be written.
 pgenv_configuration_write() {
     local v=$1
     CONF=$( pgenv_configuration_file_name $v )
@@ -690,10 +766,13 @@ pgenv_configuration_write() {
     fi
 
     # avoid overwriting configuration if the environment variable is set
-    if [ ! -z "${PGENV_CONFIGURATION_FILE}" ]; then
-	pgenv_debug "Cannot write configuration file while PGENV-CONFIGURATION_FILE set!"
-	exit 1
-    fi
+    case $PGENV_WRITE_CONFIGURATION_FILE_AUTOMATICALLY in
+	[nN][oO])
+	pgenv_debug "Not writing configuration file due to user request"
+	return
+	;;
+    esac
+
 
     # check the configuration directory exists
     if [ ! -d "$PGENV_CONFIG_ROOT" ]; then
@@ -1083,6 +1162,12 @@ pgenv_patch_source_tree() {
         fi
     done
 }
+
+
+
+
+
+
 
 case $1 in
     use|switch)

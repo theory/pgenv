@@ -172,6 +172,7 @@ $ git pull
 *   sed, grep, cat, tar, sort, tr, uname, tail - General Unix command line utilities
 *   patch - For patching versions that need patching
 *   make -  Builds PostgreSQL
+*   getopt - Command line parsing
 
 Optional dependencies:
 
@@ -194,17 +195,25 @@ PostgreSQL version number or by specifying any of the special keywords:
 
 It is important to note that `earliest` and `latest` have nothing to do with the
 time you installed PostgreSQL by means of `pgenv`: they refer only to PostgreSQL
-*stable* versions. To better clarify this, the following snippet shows you which
+*stable* versions. Both `earliest` and `latest` accept an option PostgreSQL
+major version, in such case they resolve within that major version. For instance
+`earliest 15` means "the earliest version within only major version 15".
+To better clarify this, the following snippet shows you which
 aliases point to which versions in an example installation.
 
 ```
-9.6.19                 <-- earliest (also earliest 9.6)
+9.6.19                 <-- earliest (also 'earliest 9.6')
 9.6.20      <-- latest 9.6
 12.2        <-- earliest 12
 12.4        <-- latest 12
 13beta2
-13.0                   <-- latest (also latest 13)
+13.0                   <-- latest (also 'latest 13')
 ```
+
+
+It is possible to specify some options via command line flags, that are parsed
+by `getopt(1)`. Options can be specified with a short command line flag
+or by a long name (e.g., `-v` or `--verbose`).
 
 The subcommands are:
 
@@ -846,7 +855,29 @@ and of course, you can inspect the log of live system continuously:
 
 ``` sh
 pgenv log -f
-```    
+```
+
+# Environment Variables and Associated Command Line Options
+
+There are several environment variables that can be used to instrument
+`pgenv` behavior. All the environment variables have a common prefix `PGENV_`
+like for example `PGENV_DEBUG`, and most of them are associated to command line
+arguments.
+
+If a command line argument is specified, that will override the associated
+environment variable value, that is the command line options have precedence
+over environment variables.
+
+The following is a list of each variable and associated command line argument.
+
+| Variable | Description | Command line options | Example |
+|----------|-------------|----------------------|---------|
+|`PGENV_DEBUG`|Forces `pgenv` to emit verbose (debug) output| `-v` or `--verbose` | `pgenv build 16 --verbose`|
+|`PGENV_ROOT`|The main directory where `pgenv` will keep the installed clusters.| `-r` or `--root`| `pgenv build 16 --root $HOME/pg`|
+|`PGENV_CONFIG_ROOT`|The place where `pgenv` will store and look for configuration files.| `-R` or `--config-root`| `pgenv build 16 -R $HOME/.config/pgenv`|
+|`PGENV_CONFIGURATION_FILE`|Instruments `pgenv` to use the specified configuration file instead of guessing it from the PostgreSQL version| `-c` or `--config-file`| `pgenv start -c $HOME/myconfig.conf`|
+|`PGENV_WRITE_CONFIGURATION_FILE_AUTOMATICALLY`|Instruments `pgenv` to automatically write or overwrite a configuration file when a build or rebuild is done. If set to `yes` (default behavior) will make the configuration file to be written. | `w` or `--config-file-write`| `pgenv build 16 --config-file-write no`|
+
 
 # Bug Reporting
 
