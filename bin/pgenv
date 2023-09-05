@@ -692,7 +692,7 @@ pgenv_configuration_write() {
     # avoid overwriting configuration if the environment variable is set
     if [ ! -z "${PGENV_CONFIGURATION_FILE}" ]; then
 	pgenv_debug "Cannot write configuration file while PGENV_CONFIGURATION_FILE set!"
-	exit 1
+	return
     fi
 
     # check the configuration directory exists
