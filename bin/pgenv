@@ -1598,6 +1598,7 @@ You need to specify one of the following \`config\` actions to perform:
     edit
     delete
     use
+    path
 
 For instance:
 
