@@ -2,7 +2,7 @@
 #
 # VERSION
 #
-PGENV_VERSION="1.3.2"
+PGENV_VERSION="1.3.3"
 
 # https://stackoverflow.com/a/19622569/79202
 trap 'exit' ERR
@@ -454,7 +454,7 @@ pgenv_configuration_file_name(){
     # if the user has defined an environment variable PGENV_CONFIGURATION_FILE
     # I need to use that instead of trying to understand which file to use
     if [ ! -z "$PGENV_CONFIGURATION_FILE" -a -z "$skip_env" ]; then
-	pgenv_debug "Configuration file overwritten by environment variable PGENV_CONFIGURATION_FILE = $PGENV_CONFIGURATION_FILE"
+	pgenv_debug "Configuration file forced by environment variable PGENV_CONFIGURATION_FILE = $PGENV_CONFIGURATION_FILE"
 	echo "${PGENV_CONFIGURATION_FILE}"
 	return
     fi
@@ -675,10 +675,12 @@ pgenv_configuration_write_variable(){
 # or the version file specified. It does a backup copy in the case
 # the file already exists.
 #
-# If the environment variable PGENV_CONFIGURATION_FILE is set
-# no configuration file (over)writing will happen: it is supposed
-# the user has declared the variable and thus it is not required to
-# update the configuration.
+# If the environment variable PGENV_WRITE_CONFIGURATION_FILE_AUTOMATICALLY
+# is set to a non-empty, non-zero value, the configuration file
+# will be overwritten. In the case the variable is not set at all
+# the application will apply the backward compatible behavior, so
+# not setting the PGENV_CONFIGURATION_FILE_AUTOMATICALLY is like
+# setting it to "YES".
 pgenv_configuration_write() {
     local v=$1
     CONF=$( pgenv_configuration_file_name $v )
@@ -689,11 +691,21 @@ pgenv_configuration_write() {
         exit 1
     fi
 
-    # avoid overwriting configuration if the environment variable is set
-    if [ ! -z "${PGENV_CONFIGURATION_FILE}" ]; then
-	pgenv_debug "Cannot write configuration file while PGENV_CONFIGURATION_FILE set!"
-	return
+
+    # check if we need to write the configuration file automatically:
+    # if the variable is not set, assume the user wants the backward
+    # compatible behavior: write the configuration file automatically
+    if [ -z "$PGENV_WRITE_CONFIGURATION_FILE_AUTOMATICALLY" ]; then
+	PGENV_WRITE_CONFIGURATION_FILE_AUTOMATICALLY="YES"
     fi
+
+    # in the case the variable is set to a non-yes value, avoid overwriting
+    case "$PGENV_WRITE_CONFIGURATION_FILE_AUTOMATICALLY" in
+	0|[nN][oO])
+	pgenv_debug "Not writing config file automatically: set \`PGENV_WRITE_CONFIGURATION_FILE_AUTOMATICALLY\` to a true value to enable the automatic file writing"
+	return
+	;;
+    esac
 
     # check the configuration directory exists
     if [ ! -d "$PGENV_CONFIG_ROOT" ]; then
