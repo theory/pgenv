@@ -366,11 +366,12 @@ PERL=/usr/local/my-fancy-perl pgenv build 10.5
 At the end of a `build` (or a `rebuild`) phase, `pgenv` creates a configuration
 file for the specific PostgreSQL version. If the file already exists, due to
 a prior `build` or `rebuild` action, the file will be automatically overwritten.
-In order to avoid the overwriting of the configuration file, it is possible to
-set the environment variable `PGENV_WRITE_CONFIGURATION_FILE_AUTOMATICALLY` to
-a false value (either `0` or `NO`). If the variable is not set at all,
+In order to avoid the creation or overwriting of the configuration file,
+it is possible to set the environment variable
+`PGENV_WRITE_CONFIGURATION_FILE_AUTOMATICALLY` to a false value
+(either `0` or `NO`). If the variable is not set at all,
 or it is set to a true value (e.g., `1`, `YES`, etc.)
-the configuration file will be overwritten.
+the configuration file will be created or  overwritten (if it already exists).
 
 #### Patching
 
