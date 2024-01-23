@@ -145,6 +145,7 @@ The pgenv commands are:
     use        Set and start the current PostgreSQL version
     start      Start the current PostgreSQL server
     stop       Stop the current PostgreSQL server
+    status     Show the current PostgreSQL server status
     restart    Restart the current PostgreSQL server
     switch     Set the current PostgreSQL version
     clear      Stop and unset the current PostgreSQL version
@@ -915,7 +916,7 @@ pgenv_start_instance(){
     trap 'exit' ERR
 }
 
-# Initializes and instance if no data directory is found.
+# Initializes an instance if no data directory is found.
 # Requires PG_DATA to be set.
 # It is safe to call multiple times.
 pgenv_initdb(){
@@ -1132,6 +1133,19 @@ case $1 in
             pgenv_start_instance
         fi
 
+        exit
+        ;;
+
+    status)
+        # one word status of current instance, if any in use
+        if [ ! -e "pgsql" ]; then
+            # no instance is in use
+            echo "unloaded"
+        elif $PG_CTL status -D "$PG_DATA" &> /dev/null; then
+            echo "running"
+        else
+            echo "stopped"
+        fi
         exit
         ;;
 
