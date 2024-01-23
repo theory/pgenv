@@ -27,6 +27,9 @@ Synopsis
     # Start current version
     pgenv start
 
+    # Show server status
+    pgenv status
+
     # Restart current version
     pgenv restart
    
