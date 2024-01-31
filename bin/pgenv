@@ -145,8 +145,8 @@ The pgenv commands are:
     use        Set and start the current PostgreSQL version
     start      Start the current PostgreSQL server
     stop       Stop the current PostgreSQL server
-    status     Show the current PostgreSQL server status
     restart    Restart the current PostgreSQL server
+    status     Show the current PostgreSQL server status
     switch     Set the current PostgreSQL version
     clear      Stop and unset the current PostgreSQL version
     build      Build a specific version of PostgreSQL
@@ -1136,19 +1136,6 @@ case $1 in
         exit
         ;;
 
-    status)
-        # one word status of current instance, if any in use
-        if [ ! -e "pgsql" ]; then
-            # no instance is in use
-            echo "unloaded"
-        elif $PG_CTL status -D "$PG_DATA" &> /dev/null; then
-            echo "running"
-        else
-            echo "stopped"
-        fi
-        exit
-        ;;
-
     start)
         # check a version is currently in use
         pgenv_exit_if_no_postgresql_in_use
@@ -1180,6 +1167,15 @@ case $1 in
         # stop the current instance (or restart it)
         pgenv_stop_or_restart_instance $command "$v"
         exit
+        ;;
+
+    status)
+        # only proceed when an instance is loaded
+        pgenv_exit_if_no_postgresql_in_use
+        # print standard postgres status
+        $PG_CTL status -D "$PG_DATA"
+        # instance is either running or stopped at this point
+        exit $?
         ;;
 
     build|rebuild)
