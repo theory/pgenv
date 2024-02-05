@@ -1173,7 +1173,7 @@ case $1 in
         # only proceed when an instance is loaded
         pgenv_exit_if_no_postgresql_in_use
         # print standard postgres status
-        $PG_CTL status -D "$PG_DATA"
+        $PG_CTL status -s -D "$PG_DATA" | sed -n '/^pg_ctl:\s/s/pg_ctl:\s\(.*\)/\1/p'
         # instance is either running or stopped at this point
         exit $?
         ;;
