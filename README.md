@@ -523,21 +523,21 @@ It is possible to specify flags to pass to `pg_ctl(1)` when performing the
 
 Indicates whether an instance is already *running* or is *stopped*. This option
 is only meaningful when an instance is already in use. In case an instance is
-not currently in use, the script complains and immediately exits. Furthermore,
+not currently in use, the script complains and exits immediately. Furthermore,
 use `pgenv current` to see which version is in use.
 
 ```sh
 $ pgenv status
 ```
 
-Above command results following output:
+Above command results the following output:
 
 ```
 server is running (PID: 81803)
 /opt/pgsql-16.0/bin/postgres "-D" "/opt/pgsql/data"
 ```
 
-Same results can be achieved by running `pg_ctl` as follows:
+Same result can be achieved by running `pg_ctl` as follows:
 
 ```sh
 $ $PG_ROOT/bin/pg_ctl status -D $PG_DATA
