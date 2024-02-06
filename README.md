@@ -27,6 +27,9 @@ Synopsis
     # Start current version
     pgenv start
 
+    # Show server status
+    pgenv status
+
     # Restart current version
     pgenv restart
    
@@ -516,6 +519,32 @@ It is possible to specify flags to pass to `pg_ctl(1)` when performing the
 `restart` action, setting the `PGENV_RESTART_OPTIONS` array in the
 [configuration](#pgenv-config).
 
+### pgenv status
+
+Indicates whether an instance is already *running* or is *stopped*. In case an
+instance is not currently in use, the script complains and exits immediately.
+Furthermore, you can use `pgenv current` to see which version is in use.
+
+```sh
+$ pgenv status
+```
+
+The above command results in an output like the following:
+
+```
+server is running (PID: 81803)
+/opt/pgsql-16.0/bin/postgres "-D" "/opt/pgsql/data"
+```
+
+Same result can be achieved by running `pg_ctl` as follows:
+
+```sh
+$ $PG_ROOT/bin/pg_ctl status -D $PG_DATA
+```
+
+Where `PG_ROOT` is the path to your PostgreSQL installation directory, and
+`PG_DATA` is the path to your database directory.
+
 ### pgenv available
 
 Shows all the versions of PostgreSQL available to download and build. Handy to
@@ -601,6 +630,7 @@ The pgenv commands are:
     start      Start the current PostgreSQL server
     stop       Stop the current PostgreSQL server
     restart    Restart the current PostgreSQL server
+    status     Show the current PostgreSQL server status
     switch     Set the current PostgreSQL version
     clear      Stop and unset the current PostgreSQL version
     build      Build a specific version of PostgreSQL
