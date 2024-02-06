@@ -521,16 +521,15 @@ It is possible to specify flags to pass to `pg_ctl(1)` when performing the
 
 ### pgenv status
 
-Indicates whether an instance is already *running* or is *stopped*. This option
-is only meaningful when an instance is already in use. In case an instance is
-not currently in use, the script complains and exits immediately. Furthermore,
-use `pgenv current` to see which version is in use.
+Indicates whether an instance is already *running* or is *stopped*. In case an
+instance is not currently in use, the script complains and exits immediately.
+Furthermore, you can use `pgenv current` to see which version is in use.
 
 ```sh
 $ pgenv status
 ```
 
-Above command results the following output:
+The above command results in an output like the following:
 
 ```
 server is running (PID: 81803)
