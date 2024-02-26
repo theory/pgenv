@@ -2,7 +2,7 @@
 #
 # VERSION
 #
-PGENV_VERSION="1.3.3"
+PGENV_VERSION="1.3.4"
 
 # https://stackoverflow.com/a/19622569/79202
 trap 'exit' ERR
@@ -78,30 +78,38 @@ pgenv_get_downloadable_versions(){
             continue
         fi
 
-            pgenv_debug "Version $version $PGENV_SED"
-            major=$( echo $version | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
-            pgenv_debug "Extracted major version [$major]"
+        pgenv_debug "Version $version"
+        major=$( echo $version | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
+        pgenv_debug "Extracted major version [$major]"
 
-            # check the version is a number!
-            if [[ $major =~ ^[0-9]+$ ]] ; then
-                # Since PostgreSQL 10, a major version is
-                # made by only the first number
-                # (apply the same logic for old versions)
-                # here the major version is considered as multipled
-                # by a ten factor, so that version 10 becomes value 100
-                # while version 9.6 becomes 96
-                if [ $major -ge 10 -o $major -le 6 ]; then
-                    minor=0
-                else
-                    minor=$( echo $version | $PGENV_SED 's/[[:digit:]]\.\([[:digit:]]\{1,2\}\).*/\1/' )
-                fi
-                major=$(( major * 10 + minor ))
-                pgenv_debug "Normalized major version [$major]"
-                # append the current version to the hash
-                # indexed by the major version
-                pg_versions_hash[ "$major" ]+="${version}-"
+
+	# skip versions 6.x and 1.x because the
+	# tarballs have different names and probably they will
+	# not build
+	if [ $major -le 6 ]; then
+	    pgenv_debug "Skipping too old version $major"
+	    continue
+	fi
+
+        # check the version is a number!
+        if [[ $major =~ ^[0-9]+$ ]] ; then
+            # Since PostgreSQL 10, a major version is
+            # made by only the first number
+            # here the major version is considered as multipled
+            # by a ten factor, so that version 10 becomes value 100
+            # while version 9.6 becomes 96
+            if [ $major -ge 10  ]; then
+                minor=0
+            else
+                minor=$( echo $version | $PGENV_SED 's/[[:digit:]]\.\([[:digit:]]\{1,2\}\).*/\1/' )
             fi
-        done
+            major=$(( major * 10 + minor ))
+            pgenv_debug "Normalized major version [$major]"
+            # append the current version to the hash
+            # indexed by the major version
+            pg_versions_hash[ "$major" ]+="${version}-"
+        fi
+    done
 
 }
 
@@ -382,7 +390,25 @@ pgenv_input_version_or_exit() {
         fi
     fi
 
+
     if [[ $version =~ ^[1-9][0-9]?\.[0-9]+(\.[0-9]+)?$ ]]; then
+	major=$( echo $version | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
+	pgenv_debug "Extracted major version [$major]"
+
+
+	# skip versions 6.x and 1.x because the
+	# tarballs have different names and probably they will
+	# not build
+	if [ $major -le 6 ]; then
+	    pgenv_debug "Skipping too old version $major"
+	    cat <<EOF
+PostgreSQL version $version cannot be built or used via pgenv.
+pgenv supports only PostgreSQL version 7.0 or greater.
+EOF
+	    exit 1
+	fi
+
+	# if here, all ok
         return # versions 9.5.4 or 10.1 and alike
     elif [[ $version =~ ^[1-9][1-9](beta|rc)[1-9]?$ ]]; then
         return # versions 11beta1 and alike
