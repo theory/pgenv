@@ -63,6 +63,11 @@ pgenv_get_downloadable_versions(){
     local major
     local minor
 
+    if [ -z "$PGENV_SED" ]; then
+        PGENV_SED=$(command -v sed)
+    fi
+
+
     # First of all download the page with the links to each version (href=va.b.c/)
     # and trim out each version, then extract the major version
     # and append each version to an hash indexed by the major version number
@@ -78,7 +83,7 @@ pgenv_get_downloadable_versions(){
             continue
         fi
 
-        pgenv_debug "Version $version"
+
         major=$( echo $version | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
         pgenv_debug "Extracted major version [$major]"
 
@@ -360,6 +365,11 @@ pgenv_input_version_or_exit() {
     local version=$1
     local verbose=$2
     local hint=$3
+
+    if [ -z "$PGENV_SED" ]; then
+        PGENV_SED=$(command -v sed)
+    fi
+
 
     if [ -z "$version" ]; then
         if [ ! -z "$hint" ]; then
