@@ -2,7 +2,7 @@
 #
 # VERSION
 #
-PGENV_VERSION="1.3.4"
+PGENV_VERSION="1.3.5"
 
 # https://stackoverflow.com/a/19622569/79202
 trap 'exit' ERR
@@ -961,9 +961,9 @@ pgenv_initdb(){
         $INITDB -D "$PG_DATA" "${PGENV_INITDB_OPTIONS[@]}"
 
         # if there is a post-initdb script to run, run it
-        if [ -x "$PGENV_SCRIPT_INITDB" ]; then
-            echo "Running post-initdb script [$PGENV_SCRIPT_INITDB]"
-            $PGENV_SCRIPT_INITDB "$PG_DATA"
+        if [ -x "$PGENV_SCRIPT_POSTINITDB" ]; then
+            echo "Running post-initdb script [$PGENV_SCRIPT_POSTINITDB]"
+            $PGENV_SCRIPT_POSTINITDB "$PG_DATA"
         fi
 
     else
