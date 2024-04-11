@@ -2,7 +2,7 @@
 #
 # VERSION
 #
-PGENV_VERSION="1.3.5"
+PGENV_VERSION="1.3.6"
 
 # https://stackoverflow.com/a/19622569/79202
 trap 'exit' ERR
@@ -781,7 +781,8 @@ pgenv_configuration_write() {
     pgenv_configuration_write_variable "$CONF" "PGENV_RESTART_OPTIONS" "" 'Restart configuration flags'
 
     pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTINSTALL" "" 'Script to execute when the build process finishes'
-    pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTINITDB" "" 'Script to execute when initdb finishes'
+    pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTINITDB" "" 'Script to execute when initdb finishes (and the server has not started yet)'
+    pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_FIRSTSTART"   "" 'Script to execute at the very first start of the instance'
     pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_PRESTOP" "" 'Script to execute before the cluster stops'
     pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTSTOP" "" 'Script to execute when the cluster has been stopped'
     pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTSTART" "" 'Script to execute when the cluster has been started'
@@ -927,6 +928,7 @@ pgenv_start_instance(){
     fi
 
     # Init the database if needed.
+    # the special variable PGENV_INITDB_DONE will be valued accordingly
     pgenv_initdb
 
     pgenv_debug "pg_ctl starting instance with flags [${PGENV_START_OPTIONS[@]}] log [$PGENV_LOG]"
@@ -934,6 +936,22 @@ pgenv_start_instance(){
     if [ $? -eq 0 ]; then
         echo "PostgreSQL $v started"
         echo "Logging to $PGENV_LOG"
+
+	# if this is the first start, i.e., the start run
+	# just after the initialization, execute
+	# the appropriate custom script
+	if [ $PGENV_INITDB_DONE -eq 1 ]; then
+	    if [ ! -z "$PGENV_SCRIPT_FIRSTSTART" -a -x "$PGENV_SCRIPT_FIRSTSTART" ]; then
+		cat <<EOF
+This is the first time PostgreSQL $v is started,
+executing the \`PGENV_SCRIPT_FIRSTSTART\` script
+   "$PGENV_SCRIPT_FIRSTSTART"
+
+EOF
+		$PGENV_SCRIPT_FIRSTSTART "$PG_DATA"
+	    fi
+	fi
+
 
         # if there is a post-start script to run, run it
         if [ -x "$PGENV_SCRIPT_POSTSTART" ]; then
@@ -955,6 +973,10 @@ pgenv_start_instance(){
 # Initializes an instance if no data directory is found.
 # Requires PG_DATA to be set.
 # It is safe to call multiple times.
+#
+# The function cannot return a value, because it alredy outputs
+# values on the stdout, so it sets a variable to indicate that this is
+# a first initialization of the database.
 pgenv_initdb(){
     if [ ! -d $PG_DATA ]; then
         pgenv_debug "initdb running with flags [${PGENV_INITDB_OPTIONS[@]}]"
@@ -966,8 +988,10 @@ pgenv_initdb(){
             $PGENV_SCRIPT_POSTINITDB "$PG_DATA"
         fi
 
+	export PGENV_INITDB_DONE=1
     else
         pgenv_debug "Directory $PG_DATA exists, not initdb-ing!"
+	export PGENV_INITDB_DONE=0
     fi
 }
 
@@ -1162,10 +1186,8 @@ case $1 in
 
         # only start the database if the user specified the need to use the database
         if [ "$command" == 'use' ]; then
-            # Init if needed.
-            pgenv_initdb
-
             # start the instance
+	    # (it will automatically initdb if needed)
             pgenv_start_instance
         fi
 
