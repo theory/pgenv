@@ -117,7 +117,17 @@ The script gets the version of PostgreSQL being installed as first argument.
     command ends the `initdb` phase, that happens only the `PGDATA` has not been
     initialized (i.e., on *very first `use`*). The return value of the script
     does not affect the `pgenv` workflow. The script gets the current `PGDATA`
-    path as first argument.
+    path as first argument. Please note that this script runs with the cluster
+	turned off.
+
+-   `PGENV_SCRIPT_POSTSTART` is an executable script run at the very first of
+    a freshly installed cluster. Typically, this happens immediatly after the
+	`initdb` phase, after the cluster has been succesfully started. Please
+	note that this script is run only once in the whole cluster's life, that
+	means it will not run at every cluster start action, but only on the very first
+	start of the cluster. Therefore, this script can be used to initialize
+	the cluster with custmo data (e.g., creating users, databases, populating
+	tables and so on).
 
 -   `PGENV_SCRIPT_POSTSTART` is an executable script executed each time an
     instances is started, that is `start` is executed. The return value of the
