@@ -248,7 +248,20 @@ special keywords. As an example:
 pgenv use latest 10
 ```
 
-will select the most recent PostgreSQL version of the 10 series installed.    
+will select the most recent PostgreSQL version of the 10 series installed.
+
+Since `pgenv` version `1.3.7`, the `use` command accepts also arbitrary strings
+as version specifiers, assuming such specifiers identify *externally managed* PostgreSQL
+installations.
+An externally managed PostgreSQL installation must have the same directory layout
+of those managed by `pgenv`, and therefore:
+- it must live within `pgenv-<your_version_identifier>` inside the `PGENV_ROOT` directory;
+- it must contain a `data` subdirectory that will be used as `PGDATA` for such installation;
+- it must contain a `bin`, `lib`, `share` and `include` subdirectories as for other installations.
+
+Please consider that using externally managed PostgreSQL installations requires you to use unique version
+identifiers to avoid clashing with those used by `pgenv`. All PostgreSQL version numbering, as well as the reserved
+words `latest` and `earliest`, cannot be used as custom identifiers.
 
 ### pgenv switch
 
