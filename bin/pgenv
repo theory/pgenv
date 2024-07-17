@@ -2,7 +2,7 @@
 #
 # VERSION
 #
-PGENV_VERSION="1.3.6"
+PGENV_VERSION="1.3.7"
 
 # https://stackoverflow.com/a/19622569/79202
 trap 'exit' ERR
@@ -361,10 +361,23 @@ pgenv_guess_postgresql_version() {
 # Invoking with `pgenv_input_version_or_exit "$v" "verbose"` will produce a list
 # from which the user can choose, while `pgenv_input_version_or_exit "$v"`` will
 # not. Mind the quotes!
+#
+# Invoking with a fourth non-empty parameter will allow the function to succeed
+# in the case an "externally managed" version is found. An externally managed version
+# is something that is do not represent a PostgreSQL version number (e.g, a git
+# commit hash or branch) and does exist on the disk (i.e., there is a directory
+# named `pgsql-` followed by the version string). This is called "externally
+# managed" because the directory could have been created by something else (e.g.,
+# a git checkout).
+# As an example:
+#        pgenv_input_version_or_exit "fluca" "verbose" '' "on-disk"
+# will search for a directory named 'pgenv-fluca', and if exists, will not
+# abort the script.
 pgenv_input_version_or_exit() {
     local version=$1
     local verbose=$2
     local hint=$3
+    local on_disk=$4
 
     if [ -z "$PGENV_SED" ]; then
         PGENV_SED=$(command -v sed)
@@ -422,8 +435,18 @@ EOF
         return # versions 9.5.4 or 10.1 and alike
     elif [[ $version =~ ^[1-9][1-9](beta|rc)[1-9]?$ ]]; then
         return # versions 11beta1 and alike
+    elif [ ! -z "$on_disk" ]; then
+	# the user specified something that is not an ordinary version, so check
+	# for the existance on disk
+	pgsql_dir="pgsql-$version"
+	if [ ! -d "$pgsql_dir" ]; then
+	    echo "No externally managed version $version found!"
+	    exit 1
+	else
+	    pgenv_debug "Using externally managed version [$version] within [$pgsql_dir]"
+	fi
     else
-        echo "Value \"$version\" does not appear to be a PostgreSQL valid version number"
+        echo "Value \"$version\" does not appear to be a PostgreSQL valid version"
         exit 1
     fi
 }
@@ -1163,7 +1186,7 @@ case $1 in
         command=$1
 
         v=$( pgenv_guess_postgresql_version $2 $3)
-        pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
+        pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build' 'search_also_on_disk'
         pgenv_installed_version_or_exit $v
         pgenv_configuration_load $v
 
