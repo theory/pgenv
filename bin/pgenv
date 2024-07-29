@@ -199,9 +199,9 @@ pgenv_check_dependencies(){
         local nl=$'\n'
         local tab=$'\t'
         if [ -z "$command" ]; then
-                missing+="[KO] $command_name:${tab}NOT found!$nl"
+                missing+="[ERROR] $command_name${tab}required but NOT found!$nl"
         else
-            present+="[OK] $command_name:$tab$command$nl"
+            present+="[FOUND] $command_name:$tab$command$nl"
         fi
     }
 
