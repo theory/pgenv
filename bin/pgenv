@@ -1359,6 +1359,20 @@ case $1 in
             if [ ! -f $PG_TARBALL ]; then
                 $PGENV_CURL -fLO ${PGENV_DOWNLOAD_ROOT}/v$v/${PG_TARBALL}
             fi
+
+            # Starting from 17.x docs target might fail
+            # due to a missing dependency (docbooks-xsl).
+            # Download the docs tarball separately and
+            # install it after build.
+            if [[ ${v%.*} -ge 17 ]]; then
+                PG_DOCS_TARBALL="postgresql-$v-docs.tar.gz"
+
+                pgenv_debug "Downloading docs tarball"
+
+                if [ ! -f $PG_DOCS_TARBALL ]; then
+                    $PGENV_CURL -fLO ${PGENV_DOWNLOAD_ROOT}/v$v/${PG_DOCS_TARBALL}
+                fi
+            fi
         fi
 
         # warn if no configuration was loaded
@@ -1403,8 +1417,20 @@ EOF
             (cd $PGENV_LOCAL_POSTGRESQL_REPO &&
                  git archive --format=tar $tag) | tar xp -C postgresql-$v
         else
+            pgenv_debug "Unpacking tarball"
+
             # Unpack the source.
             $PGENV_TAR $TAR_OPTS $PG_TARBALL
+
+            # In order to prevent build failures due to missing
+            # dependency for docs since 17.x and above, extracted
+            # docs will be placed into the source directory,
+            # as if they were built.
+            if [[ ${v%.*} -ge 17 ]]; then
+                pgenv_debug "Unpacking docs tarball"
+
+                $PGENV_TAR zxf $PG_DOCS_TARBALL
+            fi
         fi
 
         cd postgresql-$v
@@ -1424,6 +1450,14 @@ EOF
             cd contrib
             $PGENV_MAKE "${PGENV_MAKE_OPTIONS[@]}"
             $PGENV_MAKE install
+        elif [[ ${v%.*} -ge 17 ]]; then
+            # Starting from 17.x docs target might fail
+            # due to a missing dependency (docbooks-xsl).
+            # Build world without docs, then copy prebuilt
+            # docs from tarball separately.
+            $PGENV_MAKE world-bin "${PGENV_MAKE_OPTIONS[@]}"
+            $PGENV_MAKE install-world-bin
+            cp -R doc/src/sgml/html $PGENV_ROOT/pgsql-$v/share/doc
         else
             # Yay, make world!
             $PGENV_MAKE world "${PGENV_MAKE_OPTIONS[@]}"
