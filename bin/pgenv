@@ -472,7 +472,7 @@ pgenv_exit_if_no_postgresql_in_use(){
 No version of PostgreSQL currently in use!
 To use a specific version run
     pgenv use <version>
-To start immediatly a specific version run
+To start immediately a specific version run
     pgenv start <version>
 To see all locally installed clusters run
     pgenv versions
