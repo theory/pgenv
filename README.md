@@ -305,7 +305,7 @@ $ pgenv current
 10.4
 ```
 
-Please note that `version` is a command synonym for version:
+Please note that `current` is a command synonym for version:
 
 ```
 $ pgenv version
