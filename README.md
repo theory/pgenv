@@ -358,7 +358,7 @@ adjust 'configure' and 'make' options and flags and run again
 Within the configuration file it is possible to instrument the build phase from
 the configuration to the actual build. For instance, in order to build with
 PL/Perl, it is possible to configure the variable `PGENV_CONFIGURE_OPTIONS`
-adding `--with-perl`. Or say you need SSL support and to tell teh compiler to
+adding `--with-perl`. Or say you need SSL support and to tell the compiler to
 use Homebrew-installed OpenSSL. Edit it something like:
 
 ``` 
