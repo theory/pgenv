@@ -554,28 +554,29 @@ pgenv_configuration_dump_or_exit(){
     fi
 }
 
-# Function to load the configuration from a file.
-# A configuration file is a shell file that contains variables that
-# will be 'sourced' into the current script runtime.
+# Function to load the configuration from one or more files. A configuration
+# file is a shell file that contains variables that will be 'sourced' into the
+# current script runtime.
 #
-# The function accepts an optional argument which is the version number
-# in the format <major>.<minor>.
+# The function accepts an optional argument which is the version number in the
+# format <major>.<minor>.
+#
 # The function searches for files in this order:
-# - if a version number has been specified, searches for the <major>.<minor>.conf file
-# - if the above is not found, it searches for <major>.conf file
-# - if the above is not found or no version has been specified, it searches for the default.conf
-#   file.
-#
-# This means that, for instance, specifying the version as 17.2 makes the files to be selected
-# in the following order of preference:
-# - 17.2.conf
-# - 17.conf
 # - default.conf
+# - <major>.conf
+# - <major>.<minor>.conf
 #
-# The first file found is used to load the configuration from.
+# This means that, for instance, specifying the version as 17.2 makes the
+# files to be selected in the following order of preference:
+#
+# - default.conf
+# - 17.conf
+# - 17.2.conf
+#
+# Each file is sourced, thus able to override values from the previous file.
 #
 # The function sets the PGENV_CONFIGURATION_FILE variable to the name of the
-# file loaded or to an empty string. This helps understanding later on
+# last file loaded or to an empty string. This helps understanding later on
 # if the configuration has been loaded.
 pgenv_configuration_load(){
     local v=$1
@@ -595,30 +596,35 @@ pgenv_configuration_load(){
 
 
     local PGENV_DEFAULT_CONFIG_FILE=$( pgenv_configuration_file_name )
+    PGENV_CONFIGURATION_FILE=''
     local PGENV_MAJOR_CONFIG_FILE=$( pgenv_configuration_file_name $major )
     local PGENV_CONFIG_FILE=$( pgenv_configuration_file_name $v )
-    PGENV_CONFIGURATION_FILE=''
+    local loaded=0
 
-    for conf in $( echo "$PGENV_CONFIG_FILE" "$PGENV_MAJOR_CONFIG_FILE" "$PGENV_DEFAULT_CONFIG_FILE" )
+    for conf in $( echo "$PGENV_DEFAULT_CONFIG_FILE" "$PGENV_MAJOR_CONFIG_FILE" "$PGENV_CONFIG_FILE" )
     do
         pgenv_debug "Looking for configuration in $conf"
 
         if [ -r "$conf" ]; then
             pgenv_debug "Load configuration from [$conf]"
             source "$conf"
-            PGENV_CONFIGURATION_FILE="$conf"
+            PGENV_CONFIGURATION_FILE="${PGENV_CONFIGURATION_FILE:-$conf}"
             pgenv_merge_arrays
-            return
+            loaded=$((loaded+1))
         fi
     done
 
-    pgenv_debug "No configuration loaded"
-    PGENV_WARNINGS=true  # for backward compatibility
+    if [ $loaded -eq 0 ]; then
+        pgenv_debug "No configuration loaded"
+        PGENV_WARNINGS=true  # for backward compatibility
+    else
+        pgenv_debug "Loaded $loaded configuration files"
+    fi
 }
 
 # Function to merge older string-based configuration variables into their array
 # replacements. Arrays are the preferred way to configure options, since they're
-# better at paramter passing, but we need to support older configurations that
+# better at parameter passing, but we need to support older configurations that
 # used string variables.
 pgenv_merge_arrays() {
     if [ ! -z ${PGENV_INITDB_OPTS+x} ]; then
