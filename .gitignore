@@ -3,3 +3,4 @@
 /.pgenv.*
 /config
 .DS_Store
+.vscode

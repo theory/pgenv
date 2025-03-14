@@ -1,0 +1,10 @@
+name: ✅ ShellCheck
+on: [push, pull_request]
+
+jobs:
+  shellcheck:
+    name: ✅ ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: shellcheck bin/pgenv
