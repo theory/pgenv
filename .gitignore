@@ -1,4 +1,6 @@
 /pgsql*
 /src/
 /.pgenv.*
-/config/
+/config
+.DS_Store
+.vscode

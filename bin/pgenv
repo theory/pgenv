@@ -2,7 +2,7 @@
 #
 # VERSION
 #
-PGENV_VERSION="1.3.2"
+PGENV_VERSION="1.4.1"
 
 # https://stackoverflow.com/a/19622569/79202
 trap 'exit' ERR
@@ -10,19 +10,19 @@ set -E
 
 # Set PGENV_ROOT only if not already set.
 if [ -z "$PGENV_ROOT" ]; then
-    PGENV_ROOT=$(dirname $(dirname $0))
+    PGENV_ROOT=$(dirname "$(dirname "$0")")
 else
     echo "Using PGENV_ROOT $PGENV_ROOT" >&2
 fi
 
-cd $PGENV_ROOT
+cd "$PGENV_ROOT" || exit
 # Always use an absolute path or configure could complain.
 PGENV_ROOT=$(pwd)
 
 # configuration file location
-PGENV_CONFIG_ROOT=${PGENV_ROOT}/config
+PGENV_CONFIG_ROOT="${PGENV_ROOT}/config"
 
-PGSQL=$PGENV_ROOT/pgsql
+PGSQL="$PGENV_ROOT/pgsql"
 PG_DATA=$PGSQL/data
 PGENV_DOWNLOAD_ROOT='https://ftp.postgresql.org/pub/source/'
 
@@ -46,8 +46,8 @@ PGENV_RESTART_OPTIONS=()
 # Prints a debug message if PGENV_DEBUG
 # variable enabled
 pgenv_debug(){
-    if [ ! -z "$PGENV_DEBUG" ]; then
-        echo "[DEBUG] $@" >&2
+    if [ -n "$PGENV_DEBUG" ]; then
+        echo "[DEBUG] $*" >&2
     fi
 }
 
@@ -62,6 +62,11 @@ pgenv_get_downloadable_versions(){
     local version
     local major
     local minor
+
+    if [ -z "$PGENV_SED" ]; then
+        PGENV_SED=$(command -v sed)
+    fi
+
 
     # First of all download the page with the links to each version (href=va.b.c/)
     # and trim out each version, then extract the major version
@@ -78,40 +83,49 @@ pgenv_get_downloadable_versions(){
             continue
         fi
 
-            pgenv_debug "Version $version $PGENV_SED"
-            major=$( echo $version | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
-            pgenv_debug "Extracted major version [$major]"
 
-            # check the version is a number!
-            if [[ $major =~ ^[0-9]+$ ]] ; then
-                # Since PostgreSQL 10, a major version is
-                # made by only the first number
-                # (apply the same logic for old versions)
-                # here the major version is considered as multipled
-                # by a ten factor, so that version 10 becomes value 100
-                # while version 9.6 becomes 96
-                if [ $major -ge 10 -o $major -le 6 ]; then
-                    minor=0
-                else
-                    minor=$( echo $version | $PGENV_SED 's/[[:digit:]]\.\([[:digit:]]\{1,2\}\).*/\1/' )
-                fi
-                major=$(( major * 10 + minor ))
-                pgenv_debug "Normalized major version [$major]"
-                # append the current version to the hash
-                # indexed by the major version
-                pg_versions_hash[ "$major" ]+="${version}-"
+        major=$( echo "$version" | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
+        pgenv_debug "Extracted major version [$major]"
+
+
+        # skip versions 6.x and 1.x because the
+        # tarballs have different names and probably they will
+        # not build
+        if [ "$major" -le 6 ]; then
+            pgenv_debug "Skipping too old version $major"
+            continue
+        fi
+
+        # check the version is a number!
+        if [[ $major =~ ^[0-9]+$ ]] ; then
+            # Since PostgreSQL 10, a major version is
+            # made by only the first number
+            # here the major version is considered as multiplied
+            # by a ten factor, so that version 10 becomes value 100
+            # while version 9.6 becomes 96
+            if [ "$major" -ge 10  ]; then
+                minor=0
+            else
+                minor=$( echo "$version" | $PGENV_SED 's/[[:digit:]]\.\([[:digit:]]\{1,2\}\).*/\1/' )
             fi
-        done
+            major=$(( major * 10 + minor ))
+            pgenv_debug "Normalized major version [$major]"
+            # append the current version to the hash
+            # indexed by the major version
+            pg_versions_hash[ "$major" ]+="${version}-"
+        fi
+    done
 
 }
 
 pgenv_versions() {
+    local curr
     if [ -e "pgsql" ]; then
-        local curr=$(readlink pgsql)
+        curr=$(readlink pgsql)
     fi
     local installed=0
     local flags=""
-    for dir in $( ls -d pgsql-* 2>/dev/null); do
+    for dir in pgsql-*; do
         if [ "$dir" = "$curr" ]; then
             flags="  *"
         else
@@ -121,7 +135,8 @@ pgenv_versions() {
         if [ -z "$PGENV_SED" ]; then
             PGENV_SED=$(command -v sed)
         fi
-        local version=$( echo $dir | $PGENV_SED 's/^pgsql-//' )
+        local version
+        version=$( echo "$dir" | $PGENV_SED 's/^pgsql-//' )
         printf "%s   %-6s    %s\n" "$flags" "$version" "$dir"
         installed=$(( installed + 1 ))
     done
@@ -134,7 +149,7 @@ pgenv_versions() {
 pgenv_help() {
 
     # get current git version if possible
-    if [ ! -z "$( command -v git )" -a -d "${PGENV_ROOT}/.git" ]; then
+    if [ -n "$( command -v git )" ] && [ -d "${PGENV_ROOT}/.git" ]; then
         git_version="[$( git -c log.showSignature=false log -n 1 --format='%h' )]"
     fi
 
@@ -146,6 +161,7 @@ The pgenv commands are:
     start      Start the current PostgreSQL server
     stop       Stop the current PostgreSQL server
     restart    Restart the current PostgreSQL server
+    status     Show the current PostgreSQL server status
     switch     Set the current PostgreSQL version
     clear      Stop and unset the current PostgreSQL version
     build      Build a specific version of PostgreSQL
@@ -167,7 +183,7 @@ EOF
 }
 
 # Searches for all dependencies and prints a report. If the argument is null,
-# only missing depencencies will be reported. Otherwise, it prints the paths for
+# only missing dependencies will be reported. Otherwise, it prints the paths for
 # all commands.
 pgenv_check_dependencies(){
     local verbose=$1
@@ -185,9 +201,9 @@ pgenv_check_dependencies(){
         local nl=$'\n'
         local tab=$'\t'
         if [ -z "$command" ]; then
-                missing+="[KO] $command_name:${tab}NOT found!$nl"
+                missing+="[ERROR] $command_name:${tab}required but NOT found!$nl"
         else
-            present+="[OK] $command_name:$tab$command$nl"
+            present+="[FOUND] $command_name:$tab$command$nl"
         fi
     }
 
@@ -197,45 +213,45 @@ pgenv_check_dependencies(){
             PGENV_MAKE=$(command -v gmake)
         fi
     fi
-    pgenv_detail_command "make" $PGENV_MAKE
+    pgenv_detail_command "make" "$PGENV_MAKE"
 
     if [ -z "$PGENV_CURL" ]; then
         PGENV_CURL=$(command -v curl)
     fi
-    pgenv_detail_command "curl" $PGENV_CURL
+    pgenv_detail_command "curl" "$PGENV_CURL"
 
     if [ -z "$PGENV_PATCH" ]; then
         PGENV_PATCH=$(command -v patch)
     fi
-    pgenv_detail_command "patch" $PGENV_PATCH
+    pgenv_detail_command "patch" "$PGENV_PATCH"
 
     if [ -z "$PGENV_TAR" ]; then
         PGENV_TAR=$(command -v tar)
     fi
-    pgenv_detail_command "tar" $PGENV_TAR
+    pgenv_detail_command "tar" "$PGENV_TAR"
 
     if [ -z "$PGENV_SED" ]; then
         PGENV_SED=$(command -v sed)
     fi
-    pgenv_detail_command "sed" $PGENV_SED
+    pgenv_detail_command "sed" "$PGENV_SED"
 
     # check for sort and tr and tail, but not place into
     # variables (do we need to push to that extent?)
-    pgenv_detail_command "sort" $(command -v sort)
-    pgenv_detail_command "tr" $(command -v tr)
-    pgenv_detail_command "tail" $(command -v tail)
+    pgenv_detail_command "sort" "$(command -v sort)"
+    pgenv_detail_command "tr" "$(command -v tr)"
+    pgenv_detail_command "tail" "$(command -v tail)"
 
     # Go back to exiting on error.
     trap 'exit' ERR
-    if [ ! -z "$verbose" ]; then
+    if [ -n "$verbose" ]; then
         # Report found dependencies only in verbose mode.
         echo -n "$present"
     fi
-    if [ ! -z "$warning" ]; then
+    if [ -n "$warning" ]; then
         # Always show warnings.
         echo -n "$warning"
     fi
-    if [ ! -z "$missing" ]; then
+    if [ -n "$missing" ]; then
         # Always show missing dependencies and exit with an error.
         echo "$missing"
         exit 1
@@ -266,16 +282,16 @@ pgenv_find_version_on_disk(){
         PGENV_SED=$(command -v sed)
     fi
 
-    for version in $( ls -d pgsql-${filter}* 2>/dev/null | $PGENV_SED 's/pgsql-//' ); do
+    for version in $( find "pgsql-${filter}"* -prune -print | $PGENV_SED 's/pgsql-//' ); do
         # skip beta versions
         if [[ $version =~ ^[1-9][1-9](beta|rc)[1-9]?$ ]]; then
             continue
         fi
 
         pgenv_debug "Version $version"
-        brand=$( echo $version | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
-        year=$(  echo $version | $PGENV_SED 's/[[:digit:]]\{1,2\}\.\([[:digit:]]\{1,2\}\).*/\1/' )
-        patch=$( echo $version | $PGENV_SED 's/[[:digit:]]\{1,2\}\.[[:digit:]]\{1,2\}\.\{0,1\}\([[:digit:]]\{0,2\}\).*/\1/' )
+        brand=$( echo "$version" | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
+        year=$(  echo "$version" | $PGENV_SED 's/[[:digit:]]\{1,2\}\.\([[:digit:]]\{1,2\}\).*/\1/' )
+        patch=$( echo "$version" | $PGENV_SED 's/[[:digit:]]\{1,2\}\.[[:digit:]]\{1,2\}\.\{0,1\}\([[:digit:]]\{0,2\}\).*/\1/' )
 
         # to avoid that version less than 10 confuses the match, let's
         # multiply the brand version by 1000
@@ -299,7 +315,7 @@ pgenv_find_version_on_disk(){
     done
 
     pgenv_debug "Version selected for [$search_for $filter] = $selected"
-    echo $selected
+    echo "$selected"
 }
 
 # Guesses the selected PostgreSQL version to use.
@@ -347,16 +363,34 @@ pgenv_guess_postgresql_version() {
 # Invoking with `pgenv_input_version_or_exit "$v" "verbose"` will produce a list
 # from which the user can choose, while `pgenv_input_version_or_exit "$v"`` will
 # not. Mind the quotes!
+#
+# Invoking with a fourth non-empty parameter will allow the function to succeed
+# in the case an "externally managed" version is found. An externally managed version
+# is something that is do not represent a PostgreSQL version number (e.g, a git
+# commit hash or branch) and does exist on the disk (i.e., there is a directory
+# named `pgsql-` followed by the version string). This is called "externally
+# managed" because the directory could have been created by something else (e.g.,
+# a git checkout).
+# As an example:
+#        pgenv_input_version_or_exit "fluca" "verbose" '' "on-disk"
+# will search for a directory named 'pgenv-fluca', and if exists, will not
+# abort the script.
 pgenv_input_version_or_exit() {
     local version=$1
     local verbose=$2
     local hint=$3
+    local on_disk=$4
+
+    if [ -z "$PGENV_SED" ]; then
+        PGENV_SED=$(command -v sed)
+    fi
+
 
     if [ -z "$version" ]; then
-        if [ ! -z "$hint" ]; then
+        if [ -n "$hint" ]; then
             # count the versions
             local installed_versions=0
-            for installed in $( ls -d pgsql-* 2>/dev/null )
+            for installed in pgsql-*
             do
                 installed_versions=$(( installed_versions + 1 ))
             done
@@ -366,7 +400,7 @@ pgenv_input_version_or_exit() {
         fi
 
         # if no version is installed, suggest the user to build one
-        if [ $installed_versions -eq 0 ]; then
+        if [ "$installed_versions" -eq 0 ]; then
             echo "No PostgreSQL version is installed!"
             echo "Are you looking for command \`$hint\` instead?"
             exit 1
@@ -374,19 +408,47 @@ pgenv_input_version_or_exit() {
             # at least one version is available,
             # ask more details to the user
             echo "Which version of PostgreSQL do you want?"
-            if [ ! -z "$verbose" ]; then
+            if [ -n "$verbose" ]; then
                 pgenv_versions
             fi
             exit 1
         fi
     fi
 
+
     if [[ $version =~ ^[1-9][0-9]?\.[0-9]+(\.[0-9]+)?$ ]]; then
+        major=$( echo "$version" | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
+        pgenv_debug "Extracted major version [$major]"
+
+
+        # skip versions 6.x and 1.x because the
+        # tarballs have different names and probably they will
+        # not build
+        if [ "$major" -le 6 ]; then
+            pgenv_debug "Skipping too old version $major"
+            cat <<EOF
+PostgreSQL version $version cannot be built or used via pgenv.
+pgenv supports only PostgreSQL version 7.0 or greater.
+EOF
+            exit 1
+        fi
+
+        # if here, all ok
         return # versions 9.5.4 or 10.1 and alike
     elif [[ $version =~ ^[1-9][1-9](beta|rc)[1-9]?$ ]]; then
         return # versions 11beta1 and alike
+    elif [ -n "$on_disk" ]; then
+        # the user specified something that is not an ordinary version, so check
+        # for the existence on disk
+        pgsql_dir="pgsql-$version"
+        if [ ! -d "$pgsql_dir" ]; then
+            echo "No externally managed version $version found!"
+            exit 1
+        else
+            pgenv_debug "Using externally managed version [$version] within [$pgsql_dir]"
+        fi
     else
-        echo "Value \"$version\" does not appear to be a PostgreSQL valid version number"
+        echo "Value \"$version\" does not appear to be a PostgreSQL valid version"
         exit 1
     fi
 }
@@ -404,7 +466,7 @@ pgenv_installed_version_or_exit(){
     fi
 }
 
-# Checks if there is a currently activer version and, if not, reports that fact
+# Checks if there is a currently active version and, if not, reports that fact
 # and aborts the script.
 pgenv_exit_if_no_postgresql_in_use(){
     if [ ! -e "pgsql" ]; then
@@ -412,7 +474,7 @@ pgenv_exit_if_no_postgresql_in_use(){
 No version of PostgreSQL currently in use!
 To use a specific version run
     pgenv use <version>
-To start immediatly a specific version run
+To start immediately a specific version run
     pgenv start <version>
 To see all locally installed clusters run
     pgenv versions
@@ -429,8 +491,7 @@ pgenv_current_postgresql_version(){
     if [ -z "$PGENV_SED" ]; then
         PGENV_SED=$(command -v sed)
     fi
-    local v=$( readlink pgsql | $PGENV_SED 's/^pgsql-//' )
-    echo $v
+    readlink pgsql | $PGENV_SED 's/^pgsql-//'
 }
 
 # Provides the configuration file name
@@ -438,11 +499,28 @@ pgenv_current_postgresql_version(){
 #
 # If no version is specified, the default configuration
 # file is provided.
+#
+# If the user has defined an environment variable named
+#       PGENV_CONFIGURATION_FILE
+# the function returns such name. This allows the user
+# to use always a well established configuration file.
+# It is possible to avoid the usage of the PGENV_CONFIGURATION_FILE
+# environment variable if the second argument is something not null.
 pgenv_configuration_file_name(){
     local v=$1
+    local skip_env=$2
     local PGENV_DEFAULT_CONFIG_FILE="${PGENV_CONFIG_ROOT}/default.conf"
 
-    if [ ! -z "$v" ]; then
+    # if the user has defined an environment variable PGENV_CONFIGURATION_FILE
+    # I need to use that instead of trying to understand which file to use
+    if [ -n "$PGENV_CONFIGURATION_FILE" ] && [ -z "$skip_env" ]; then
+        pgenv_debug "Configuration file forced by environment variable PGENV_CONFIGURATION_FILE = $PGENV_CONFIGURATION_FILE"
+        echo "${PGENV_CONFIGURATION_FILE}"
+        return
+    fi
+
+
+    if [ -n "$v" ]; then
         echo "${PGENV_CONFIG_ROOT}/$v.conf"
     else
         echo "${PGENV_DEFAULT_CONFIG_FILE}"
@@ -453,22 +531,21 @@ pgenv_configuration_file_name(){
 #
 # The function accept two option arguments:
 # - the version number (if not specified the default configuration will be considered)
-# - a title to use for printing the configruation file
+# - a title to use for printing the configuration file
 #
 # If the file cannot be found the function exits.
 pgenv_configuration_dump_or_exit(){
     local v=$1
     local title=$2
+    local CONF
+    CONF=$( pgenv_configuration_file_name "$v" )
 
-    local CONF=$( pgenv_configuration_file_name $v )
-
-    if [ -r $CONF ]; then
-
+    if [ -r "$CONF" ]; then
         echo "# $title"
         echo "# pgenv configuration for PostgreSQL $v"
         echo "# File: $CONF"
         echo "# ---------------------------------------------------"
-        cat $CONF
+        cat "$CONF"
         echo
     else
         echo "No configuration found for version <$title> [$CONF]" >&2
@@ -476,64 +553,97 @@ pgenv_configuration_dump_or_exit(){
     fi
 }
 
-# Function to load the configuration from a file.
-# A configuration file is a shell file that contains variables that
-# will be 'sourced' into the current script runtime.
+# Function to load the configuration from one or more files. A configuration
+# file is a shell file that contains variables that will be 'sourced' into the
+# current script runtime.
 #
-# The function accepts an optional argument which is the version number
-# to search for. A configuration file with such version number
-# will be used as configuration, and in the case it is missing, the default
-# configuration file will be used.
+# The function accepts an optional argument which is the version number in the
+# format <major>.<minor>.
+#
+# The function searches for files in this order:
+# - default.conf
+# - <major>.conf
+# - <major>.<minor>.conf
+#
+# This means that, for instance, specifying the version as 17.2 makes the
+# files to be selected in the following order of preference:
+#
+# - default.conf
+# - 17.conf
+# - 17.2.conf
+#
+# Each file is sourced, thus able to override values from the previous file.
 #
 # The function sets the PGENV_CONFIGURATION_FILE variable to the name of the
-# file loaded or to an empty string. This helps understanding later on
+# last file loaded or to an empty string. This helps understanding later on
 # if the configuration has been loaded.
 pgenv_configuration_load(){
     local v=$1
+    local major
 
-    local PGENV_DEFAULT_CONFIG_FILE=$( pgenv_configuration_file_name )
-    local PGENV_CONFIG_FILE=$( pgenv_configuration_file_name $v )
+    # extract the major version of PostgreSQL
+    if [[ "$v" =~ ^([[:digit:]]+) ]]; then
+         major="${BASH_REMATCH[1]}"
+    fi
+
+    if [ -n "$major" ] && [ "$major" -lt 10 ]; then
+        # here the major version is made by two numbers, e.g., 9.6
+        if [[ "$v" =~ ^([[:digit:]].[[:digit:]]) ]]; then
+            major="${BASH_REMATCH[1]}"
+        fi
+    fi
+
+    local PGENV_DEFAULT_CONFIG_FILE PGENV_MAJOR_CONFIG_FILE PGENV_CONFIG_FILE
+    PGENV_DEFAULT_CONFIG_FILE=$( pgenv_configuration_file_name )
     PGENV_CONFIGURATION_FILE=''
+    PGENV_MAJOR_CONFIG_FILE=$( pgenv_configuration_file_name "$major" )
+    PGENV_CONFIG_FILE=$( pgenv_configuration_file_name "$v" )
+    local loaded=0
 
-    for conf in $( echo "$PGENV_CONFIG_FILE" "$PGENV_DEFAULT_CONFIG_FILE" )
+    for conf in "$PGENV_DEFAULT_CONFIG_FILE" "$PGENV_MAJOR_CONFIG_FILE" "$PGENV_CONFIG_FILE"
     do
         pgenv_debug "Looking for configuration in $conf"
 
         if [ -r "$conf" ]; then
             pgenv_debug "Load configuration from [$conf]"
+            # shellcheck disable=SC1090
             source "$conf"
-            PGENV_CONFIGURATION_FILE="$conf"
+            PGENV_CONFIGURATION_FILE="${PGENV_CONFIGURATION_FILE:-$conf}"
             pgenv_merge_arrays
-            return
+            loaded=$((loaded+1))
         fi
     done
 
-    pgenv_debug "No configuration loaded"
-    PGENV_WARNINGS=true  # for backward compatibility
+    if [ $loaded -eq 0 ]; then
+        pgenv_debug "No configuration loaded"
+        PGENV_WARNINGS=true  # for backward compatibility
+    else
+        pgenv_debug "Loaded $loaded configuration files"
+    fi
 }
 
 # Function to merge older string-based configuration variables into their array
 # replacements. Arrays are the preferred way to configure options, since they're
-# better at paramter passing, but we need to support older configurations that
+# better at parameter passing, but we need to support older configurations that
 # used string variables.
 pgenv_merge_arrays() {
-    if [ ! -z ${PGENV_INITDB_OPTS+x} ]; then
-        PGENV_INITDB_OPTIONS=($PGENV_INITDB_OPTS)
+    if [ -n "${PGENV_INITDB_OPTS+x}" ]; then
+        IFS=" " read -r -a PGENV_INITDB_OPTIONS <<< "$PGENV_INITDB_OPTS"
     fi
-    if [ ! -z ${PGENV_MAKE_OPTS+x} ]; then
-        PGENV_MAKE_OPTIONS=($PGENV_MAKE_OPTS)
+    if [ -n "${PGENV_MAKE_OPTS+x}" ]; then
+        IFS=" " read -r -a PGENV_MAKE_OPTIONS <<< "$PGENV_MAKE_OPTS"
     fi
-    if [ ! -z ${PGENV_CONFIGURE_OPTS+x} ]; then
-        PGENV_CONFIGURE_OPTIONS=($PGENV_CONFIGURE_OPTS)
+    if [ -n "${PGENV_CONFIGURE_OPTS+x}" ]; then
+        IFS=" " read -r -a PGENV_CONFIGURE_OPTIONS <<< "$PGENV_CONFIGURE_OPTS"
     fi
-    if [ ! -z ${PGENV_START_OPTS+x} ]; then
-        PGENV_START_OPTIONS=($PGENV_START_OPTS)
+    if [ -n "${PGENV_START_OPTS+x}" ]; then
+        IFS=" " read -r -a PGENV_START_OPTIONS <<< "$PGENV_START_OPTS"
     fi
-    if [ ! -z ${PGENV_STOP_OPTS+x} ]; then
-        PGENV_STOP_OPTIONS=($PGENV_STOP_OPTS)
+    if [ -n "${PGENV_STOP_OPTS+x}" ]; then
+        IFS=" " read -r -a PGENV_STOP_OPTIONS <<< "$PGENV_STOP_OPTS"
     fi
-    if [ ! -z ${PGENV_RESTART_OPTS+x} ]; then
-        PGENV_RESTART_OPTIONS=($PGENV_RESTART_OPTS)
+    if [ -n "${PGENV_RESTART_OPTS+x}" ]; then
+        IFS=" " read -r -a PGENV_RESTART_OPTIONS <<< "$PGENV_RESTART_OPTS"
     fi
 }
 
@@ -543,8 +653,9 @@ pgenv_merge_arrays() {
 pgenv_configuration_delete(){
     local v=$1
     local nuke=$2
-    local PGENV_DEFAULT_CONFIG_FILE=$( pgenv_configuration_file_name )
-    local PGENV_CONFIG_FILE=$( pgenv_configuration_file_name $v )
+    local PGENV_DEFAULT_CONFIG_FILE PGENV_CONFIG_FILE
+    PGENV_DEFAULT_CONFIG_FILE=$( pgenv_configuration_file_name )
+    PGENV_CONFIG_FILE=$( pgenv_configuration_file_name "$v" )
 
     pgenv_debug "\`config delete\` for version [$v] (nuke [$nuke])"
 
@@ -562,7 +673,7 @@ EOF
             exit 1
         fi
         local installed_versions=0
-        for installed in $( ls -d pgsql-* 2>/dev/null )
+        for installed in pgsql-*
         do
             installed_versions=$(( installed_versions + 1 ))
         done
@@ -578,16 +689,34 @@ EOF
             exit 1
         fi
         # if the file is not here, nothing to do!
-      elif [ ! -f "$PGENV_CONFIG_FILE" ]; then
-            echo "No configuration file to delete for version $v"
-            exit 1
+    elif [ ! -f "$PGENV_CONFIG_FILE" ]; then
+        echo "No configuration file to delete for version $v"
+        exit 1
     fi
 
     # remove the file
     pgenv_debug "Deleting configuration file [$PGENV_CONFIG_FILE]"
     rm -f "$PGENV_CONFIG_FILE"            # remove config file
-    rm -f ${PGENV_CONFIG_FILE}*.backup    # remove also backup file
+    rm -f "${PGENV_CONFIG_FILE}"*.backup  # remove also backup file
     echo "Configuration file $PGENV_CONFIG_FILE (and backup) deleted"
+}
+
+
+# Utility function to print on stdout
+# the path to which the program will look for a
+# configuration file.
+#
+# This can be useful to export the environment variable
+# to point to a custom path, like this:
+#
+#    % export PGENV_CONFIGURATION_FILE=$( pgenv config path 16beta2 )
+#
+# that will result in setting the PGENV_CONFIGURATION_FILE
+# so that following usage of `pgenv` will use such a configuration
+# file.
+pgenv_configuration_show_path(){
+    local v=$1
+    pgenv_configuration_file_name "$v" "SKIP-ENV"
 }
 
 # Utility function to write a single variable in the configuration file.
@@ -614,7 +743,7 @@ pgenv_configuration_write_variable(){
     local value=$3
     local comment=$4
 
-    if [ ! -z "comment" ]; then
+    if [ -n "$comment" ]; then
         echo "# $comment" >> "$file"
     fi
 
@@ -638,15 +767,37 @@ pgenv_configuration_write_variable(){
 # Writes the whole current configuration to the current version file
 # or the version file specified. It does a backup copy in the case
 # the file already exists.
+#
+# If the environment variable PGENV_WRITE_CONFIGURATION_FILE_AUTOMATICALLY
+# is set to a non-empty, non-zero value, the configuration file
+# will be overwritten. In the case the variable is not set at all
+# the application will apply the backward compatible behavior, so
+# not setting the PGENV_CONFIGURATION_FILE_AUTOMATICALLY is like
+# setting it to "YES".
 pgenv_configuration_write() {
     local v=$1
-    CONF=$( pgenv_configuration_file_name $v )
+    CONF=$( pgenv_configuration_file_name "$v" )
 
     # sanity check
     if [ -z "$CONF" ]; then
-        echo "Cannot determine which configuration file to use!"
+        echo "Cannot determine which configuration file to use!" >&2
         exit 1
     fi
+
+    # check if we need to write the configuration file automatically:
+    # if the variable is not set, assume the user wants the backward
+    # compatible behavior: write the configuration file automatically
+    if [ -z "$PGENV_WRITE_CONFIGURATION_FILE_AUTOMATICALLY" ]; then
+        PGENV_WRITE_CONFIGURATION_FILE_AUTOMATICALLY="YES"
+    fi
+
+    # in the case the variable is set to a non-yes value, avoid overwriting
+    case "$PGENV_WRITE_CONFIGURATION_FILE_AUTOMATICALLY" in
+    0|[nN][oO])
+        pgenv_debug "Not writing config file automatically: set \`PGENV_WRITE_CONFIGURATION_FILE_AUTOMATICALLY\` to a true value to enable the automatic file writing"
+        return
+    ;;
+    esac
 
     # check the configuration directory exists
     if [ ! -d "$PGENV_CONFIG_ROOT" ]; then
@@ -685,7 +836,8 @@ pgenv_configuration_write() {
     pgenv_configuration_write_variable "$CONF" "PGENV_RESTART_OPTIONS" "" 'Restart configuration flags'
 
     pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTINSTALL" "" 'Script to execute when the build process finishes'
-    pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTINITDB" "" 'Script to execute when initdb finishes'
+    pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTINITDB" "" 'Script to execute when initdb finishes (and the server has not started yet)'
+    pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_FIRSTSTART"   "" 'Script to execute at the very first start of the instance'
     pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_PRESTOP" "" 'Script to execute before the cluster stops'
     pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTSTOP" "" 'Script to execute when the cluster has been stopped'
     pgenv_configuration_write_variable "$CONF" "PGENV_SCRIPT_POSTSTART" "" 'Script to execute when the cluster has been started'
@@ -735,7 +887,7 @@ HINT:
         pgenv use <version>
 
 EOF
-    return
+        return
     fi
 
     IFS=':'
@@ -763,7 +915,7 @@ EOF
         cat <<EOF >&2
 
 WARNING:
-  Your PATH enrvironemnt variable does not seem to include
+  Your PATH environment variable does not seem to include
 
        $executables
 
@@ -800,8 +952,8 @@ EOF
 
 WARNING:
    Your PATH environment variable has some PostgreSQL executable
-   preprended to the currently in-use instance, so you may
-   end up using the wrong executables against the selected cluster.
+   prepended to the currently in-use instance, so you may end up
+   using the wrong executables against the selected cluster.
 
 HINT:
    Prepend the following PATH entry in your environment setting
@@ -831,13 +983,31 @@ pgenv_start_instance(){
     fi
 
     # Init the database if needed.
+    # the special variable PGENV_INITDB_DONE will be valued accordingly
     pgenv_initdb
 
-    pgenv_debug "pg_ctl starting instance with flags [${PGENV_START_OPTIONS[@]}] log [$PGENV_LOG]"
+    pgenv_debug "pg_ctl starting instance with flags [${PGENV_START_OPTIONS[*]}] log [$PGENV_LOG]"
+    local ret
     $PG_CTL start -D "$PG_DATA"  -l "$PGENV_LOG" "${PGENV_START_OPTIONS[@]}" &> /dev/null
-    if [ $? -eq 0 ]; then
+    ret=$?
+    if [ $ret -eq 0 ]; then
         echo "PostgreSQL $v started"
         echo "Logging to $PGENV_LOG"
+
+        # if this is the first start, i.e., the start run
+        # just after the initialization, execute
+        # the appropriate custom script
+        if [ $PGENV_INITDB_DONE -eq 1 ]; then
+            if [ -n "$PGENV_SCRIPT_FIRSTSTART" ] && [ -x "$PGENV_SCRIPT_FIRSTSTART" ]; then
+                cat <<EOF
+This is the first time PostgreSQL $v is started,
+executing the \`PGENV_SCRIPT_FIRSTSTART\` script
+   "$PGENV_SCRIPT_FIRSTSTART"
+
+EOF
+                $PGENV_SCRIPT_FIRSTSTART "$PG_DATA"
+            fi
+        fi
 
         # if there is a post-start script to run, run it
         if [ -x "$PGENV_SCRIPT_POSTSTART" ]; then
@@ -856,22 +1026,28 @@ pgenv_start_instance(){
     trap 'exit' ERR
 }
 
-# Initializes and instance if no data directory is found.
+# Initializes an instance if no data directory is found.
 # Requires PG_DATA to be set.
 # It is safe to call multiple times.
+#
+# The function cannot return a value, because it already outputs
+# values on the stdout, so it sets a variable to indicate that this is
+# a first initialization of the database.
 pgenv_initdb(){
-    if [ ! -d $PG_DATA ]; then
-        pgenv_debug "initdb running with flags [${PGENV_INITDB_OPTIONS[@]}]"
+    if [ ! -d "$PG_DATA" ]; then
+        pgenv_debug "initdb running with flags [${PGENV_INITDB_OPTIONS[*]}]"
         $INITDB -D "$PG_DATA" "${PGENV_INITDB_OPTIONS[@]}"
 
         # if there is a post-initdb script to run, run it
-        if [ -x "$PGENV_SCRIPT_INITDB" ]; then
-            echo "Running post-initdb script [$PGENV_SCRIPT_INITDB]"
-            $PGENV_SCRIPT_INITDB "$PG_DATA"
+        if [ -x "$PGENV_SCRIPT_POSTINITDB" ]; then
+            echo "Running post-initdb script [$PGENV_SCRIPT_POSTINITDB]"
+            $PGENV_SCRIPT_POSTINITDB "$PG_DATA"
         fi
 
+        export PGENV_INITDB_DONE=1
     else
         pgenv_debug "Directory $PG_DATA exists, not initdb-ing!"
+        export PGENV_INITDB_DONE=0
     fi
 }
 
@@ -894,7 +1070,7 @@ pgenv_stop_or_restart_instance(){
         # ok, server running, apply the command
         case $command in
             stop)
-                pgenv_debug "pg_ctl stopping with flags [${PGENV_STOP_OPTIONS[@]}]"
+                pgenv_debug "pg_ctl stopping with flags [${PGENV_STOP_OPTIONS[*]}]"
 
                 # if there is a pre-stop script to run, run it
                 if [ -x "$PGENV_SCRIPT_PRESTOP" ]; then
@@ -912,7 +1088,7 @@ pgenv_stop_or_restart_instance(){
                 fi
                 ;;
             restart)
-                pgenv_debug "pg_ctl restarting with flags [${PGENV_RESTART_OPTIONS[@]}]"
+                pgenv_debug "pg_ctl restarting with flags [${PGENV_RESTART_OPTIONS[*]}]"
                 $PG_CTL restart -D "$PG_DATA" -l "$PGENV_LOG" "${PGENV_RESTART_OPTIONS[@]}" &> /dev/null
                 echo "PostgreSQL $v restarted"
                 echo "Logging to $PGENV_LOG"
@@ -956,9 +1132,10 @@ pgenv_stop_or_restart_instance(){
 pgenv_patch_get_index_file_names(){
     local version=$1
 
-    local brand=$( echo $version | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
-    local year=$(  echo $version | $PGENV_SED 's/[[:digit:]]\{1,2\}\.\([[:digit:]]\{1,2\}\).*/\1/' )
-    local patch_dir=$PGENV_ROOT/patch/index
+    local brand year patch_dir
+    brand=$( echo "$version" | $PGENV_SED 's/\([[:digit:]]\{1,2\}\).*/\1/' )
+    year=$(  echo "$version" | $PGENV_SED 's/[[:digit:]]\{1,2\}\.\([[:digit:]]\{1,2\}\).*/\1/' )
+    patch_dir=$PGENV_ROOT/patch/index
 
     # show all the files in the correct order
     cat <<EOF
@@ -994,7 +1171,7 @@ pgenv_patch_source_tree() {
 
     # see what index to apply
     if [ -z "$PGENV_PATCH_INDEX" ]; then
-        for current_patch in  $( pgenv_patch_get_index_file_names $version )
+        for current_patch in $( pgenv_patch_get_index_file_names "$version" )
         do
             if [ -r "$current_patch" ]; then
                 PGENV_PATCH_INDEX=$current_patch
@@ -1011,6 +1188,7 @@ pgenv_patch_source_tree() {
     fi
 
     # if here, apply all the patches listed in the index file
+    # shellcheck disable=SC2013
     for current_patch in $( cat "$PGENV_PATCH_INDEX" )
     do
         # is the current patch file name relative or absolute?
@@ -1021,12 +1199,14 @@ pgenv_patch_source_tree() {
 
         if [ -r "$current_patch" ]; then
             pgenv_debug "Applying patch [$current_patch] into source tree $( pwd )"
+            local ret
             $PGENV_PATCH -s -p1 < "$current_patch"
+            ret=$?
 
             # if in verbose mode, print out
             # a status message about this patch
-            if [ ! -z "$verbose" ]; then
-                if [ $? -eq 0 ]; then
+            if [ -n "$verbose" ]; then
+                if [ $ret -eq 0 ]; then
                     echo -n "Applied"
                 else
                     echo -n "NOT applied"
@@ -1042,16 +1222,16 @@ case $1 in
         # save the 'command' to check if we should initialize and start the database or not
         command=$1
 
-        v=$( pgenv_guess_postgresql_version $2 $3)
-        pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
-        pgenv_installed_version_or_exit $v
-        pgenv_configuration_load $v
+        v=$( pgenv_guess_postgresql_version "$2" "$3")
+        pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build' 'search_also_on_disk'
+        pgenv_installed_version_or_exit "$v"
+        pgenv_configuration_load "$v"
 
         # check PATH settings
         pgenv_warning_path
 
         # Check if current version?
-        if [ "`readlink pgsql`" = "pgsql-$v" ]; then
+        if [ "$(readlink pgsql)" = "pgsql-$v" ]; then
             echo "Already using PostgreSQL $v"
         else
             # Shut down existing running instance.
@@ -1061,15 +1241,13 @@ case $1 in
             fi
 
             # Link the new instance.
-            ln -nsf pgsql-$v pgsql
+            ln -nsf "pgsql-$v" pgsql
         fi
 
         # only start the database if the user specified the need to use the database
         if [ "$command" == 'use' ]; then
-            # Init if needed.
-            pgenv_initdb
-
             # start the instance
+        # (it will automatically initdb if needed)
             pgenv_start_instance
         fi
 
@@ -1081,7 +1259,7 @@ case $1 in
         pgenv_exit_if_no_postgresql_in_use
         v=$( pgenv_current_postgresql_version )
         pgenv_debug "Current version $v"
-        pgenv_configuration_load $v
+        pgenv_configuration_load "$v"
 
         # check PATH settings
         pgenv_warning_path
@@ -1096,7 +1274,7 @@ case $1 in
         pgenv_exit_if_no_postgresql_in_use
         v=$( pgenv_current_postgresql_version )
         pgenv_debug "Current version $v"
-        pgenv_configuration_load $v
+        pgenv_configuration_load "$v"
 
         # check PATH settings
         pgenv_warning_path
@@ -1105,8 +1283,17 @@ case $1 in
         command="$1"
 
         # stop the current instance (or restart it)
-        pgenv_stop_or_restart_instance $command "$v"
+        pgenv_stop_or_restart_instance "$command" "$v"
         exit
+        ;;
+
+    status)
+        # only proceed when an instance is loaded
+        pgenv_exit_if_no_postgresql_in_use
+        # print standard postgres status
+        $PG_CTL status -s -D "$PG_DATA" | sed -E 's/^pg_ctl:\s+//'
+        # instance is either running or stopped at this point
+        exit $?
         ;;
 
     build|rebuild)
@@ -1147,7 +1334,7 @@ case $1 in
 
                 # loop thru the array for the selected major version number
                 # and extract the first or last position
-                for vv in $( echo ${pg_versions_hash[$current_major]} \
+                for vv in $( echo "${pg_versions_hash[$current_major]}" \
                                  | tr '-' '\n'  \
                                  | sort -V )
                 do
@@ -1166,7 +1353,7 @@ case $1 in
 
         # sanity checks before building
         pgenv_input_version_or_exit "$v"
-        pgenv_configuration_load $v
+        pgenv_configuration_load "$v"
         pgenv_check_dependencies
 
         # Skip it if we already have it, and are not rebuilding
@@ -1177,7 +1364,7 @@ case $1 in
             fi
         else
             # rebuild, ensure this is not in use
-            if [ "`readlink pgsql`" = "pgsql-$v" ]; then
+            if [ "$(readlink pgsql)" = "pgsql-$v" ]; then
                 echo "PostgreSQL $v in use, prevent rebuilding while in use!"
                 exit 1
             fi
@@ -1187,9 +1374,9 @@ case $1 in
         if [ ! -e "src" ]; then
             mkdir src
         fi
-        cd src
+        cd src || exit
 
-        if [ ! -z "$PGENV_LOCAL_POSTGRESQL_REPO" ] && [ -d $PGENV_LOCAL_POSTGRESQL_REPO ]; then
+        if [ -n "$PGENV_LOCAL_POSTGRESQL_REPO" ] && [ -d "$PGENV_LOCAL_POSTGRESQL_REPO" ]; then
             pgenv_debug "Using local postgresql repo: $PGENV_LOCAL_POSTGRESQL_REPO"
         else
             pgenv_debug "Downloading tarball"
@@ -1206,13 +1393,26 @@ case $1 in
                 TAR_OPTS="jxf"
             fi
 
-            if [ ! -f $PG_TARBALL ]; then
-                $PGENV_CURL -fLO ${PGENV_DOWNLOAD_ROOT}/v$v/${PG_TARBALL}
+            if [ ! -f "$PG_TARBALL" ]; then
+                $PGENV_CURL -fLO "${PGENV_DOWNLOAD_ROOT}/v$v/${PG_TARBALL}"
+            fi
+
+            # Starting from 17.x docs target might fail
+            # due to a missing dependency (docbooks-xsl).
+            # Download the docs tarball separately and
+            # install it after build.
+            if [[ ${v%.*} -ge 17 ]]; then
+                PG_DOCS_TARBALL="postgresql-$v-docs.tar.gz"
+                pgenv_debug "Downloading docs tarball"
+
+                if [ ! -f "$PG_DOCS_TARBALL" ]; then
+                    $PGENV_CURL -fLO "${PGENV_DOWNLOAD_ROOT}/v$v/${PG_DOCS_TARBALL}"
+                fi
             fi
         fi
 
         # warn if no configuration was loaded
-        if [ ! -z "$PGENV_WARNINGS" ]; then
+        if [ -n "$PGENV_WARNINGS" ]; then
             if [ -z "$PGENV_CONFIGURATION_FILE" ]; then
                 seconds=5
                 cat <<EOF
@@ -1235,11 +1435,10 @@ EOF
 
         rm -rf "postgresql-$v"
 
-        if [ ! -z "$PGENV_LOCAL_POSTGRESQL_REPO" ] && [ -d $PGENV_LOCAL_POSTGRESQL_REPO ]; then
+        if [ -n "$PGENV_LOCAL_POSTGRESQL_REPO" ] && [ -d "$PGENV_LOCAL_POSTGRESQL_REPO" ]; then
             pgenv_debug "Using local postgresql repo: $PGENV_LOCAL_POSTGRESQL_REPO"
 
-            (cd $PGENV_LOCAL_POSTGRESQL_REPO &&
-                 git fetch)
+            (cd "$PGENV_LOCAL_POSTGRESQL_REPO" && git fetch)
             if [[ $v =~ ^[1-9]\. ]]; then
                 # version 1-9
                 tag=REL${v}
@@ -1249,31 +1448,51 @@ EOF
             tag=${tag^^}        # uppercase for rc, beta, etc
             tag=${tag//./_}     # change dots to underscores
 
-            mkdir postgresql-$v
-            (cd $PGENV_LOCAL_POSTGRESQL_REPO &&
-                 git archive --format=tar $tag) | tar xp -C postgresql-$v
+            mkdir "postgresql-$v"
+            (cd "$PGENV_LOCAL_POSTGRESQL_REPO" &&
+                 git archive --format=tar "$tag") | tar xp -C "postgresql-$v"
         else
+            pgenv_debug "Unpacking tarball"
+
             # Unpack the source.
-            $PGENV_TAR $TAR_OPTS $PG_TARBALL
+            # shellcheck disable=SC2086
+            $PGENV_TAR $TAR_OPTS "$PG_TARBALL"
+
+            # In order to prevent build failures due to missing
+            # dependency for docs since 17.x and above, extracted
+            # docs will be placed into the source directory,
+            # as if they were built.
+            if [[ ${v%.*} -ge 17 ]]; then
+                pgenv_debug "Unpacking docs tarball"
+                $PGENV_TAR zxf "$PG_DOCS_TARBALL"
+            fi
         fi
 
-        cd postgresql-$v
+        cd "postgresql-$v" || exit
 
         # patch the source tree if required
         pgenv_debug "Patching version $v"
         pgenv_patch_source_tree "$v" 'verbose'
 
-        pgenv_debug "configure command line [--prefix=$PGENV_ROOT/pgsql-$v] + [${PGENV_CONFIGURE_OPTIONS[@]}]"
-        ./configure --prefix=$PGENV_ROOT/pgsql-$v "${PGENV_CONFIGURE_OPTIONS[@]}"
+        pgenv_debug "configure command line [--prefix=$PGENV_ROOT/pgsql-$v] + [${PGENV_CONFIGURE_OPTIONS[*]}]"
+        ./configure --prefix="$PGENV_ROOT/pgsql-$v" "${PGENV_CONFIGURE_OPTIONS[@]}"
 
         # make and make install
         if [[ $v =~ ^[1-8]\. ]]; then
             # 8.x (and prior versions?) doesn't have `make world`.
             $PGENV_MAKE "${PGENV_MAKE_OPTIONS[@]}"
             $PGENV_MAKE install
-            cd contrib
+            cd contrib || exit
             $PGENV_MAKE "${PGENV_MAKE_OPTIONS[@]}"
             $PGENV_MAKE install
+        elif [[ ${v%.*} -ge 17 ]]; then
+            # Starting from 17.x docs target might fail
+            # due to a missing dependency (docbooks-xsl).
+            # Build world without docs, then copy prebuilt
+            # docs from tarball separately.
+            $PGENV_MAKE world-bin "${PGENV_MAKE_OPTIONS[@]}"
+            $PGENV_MAKE install-world-bin
+            cp -R doc/src/sgml/html "$PGENV_ROOT/pgsql-$v/share/doc"
         else
             # Yay, make world!
             $PGENV_MAKE world "${PGENV_MAKE_OPTIONS[@]}"
@@ -1296,7 +1515,7 @@ EOF
     clear)
         pgenv_exit_if_no_postgresql_in_use
         v=$( pgenv_current_postgresql_version )
-        pgenv_configuration_load $v
+        pgenv_configuration_load "$v"
 
         # stop the instance
         pgenv_stop_or_restart_instance 'stop' "$v"
@@ -1312,7 +1531,7 @@ EOF
         v=$( pgenv_guess_postgresql_version "$2" "$3" )
         pgenv_input_version_or_exit "$v" 'show-installed-versions' 'build'
 
-        if [ "`readlink pgsql`" = "pgsql-$v" ]; then
+        if [ "$(readlink pgsql)" = "pgsql-$v" ]; then
             echo "PostgreSQL $v currently in use"
             echo "Run \`pgenv clear\` to clear it"
             echo "or \`pgenv use\` to switch to another version"
@@ -1320,10 +1539,10 @@ EOF
         fi
 
         rm -fr "pgsql-$v"
-        rm -fr src/postgresql-$v.tar.* # could be .tar.bz2 or .tar.gz
-        rm -fr src/postgresql-$v
-        pgenv_configuration_delete $v  # remove this particular configuration
-        pgenv_configuration_delete     # remove default configuration if no instances are left
+        rm -fr "src/postgresql-$v.tar."* # could be .tar.bz2 or .tar.gz
+        rm -fr "src/postgresql-$v"
+        pgenv_configuration_delete "$v"  # remove this particular configuration
+        pgenv_configuration_delete       # remove default configuration if no instances are left
         echo "PostgreSQL $v removed"
         exit
         ;;
@@ -1359,21 +1578,20 @@ EOF
 
         # check to have some version in the hash, or
         # the download did go wrong
-        keys=$( echo ${!pg_versions_hash[@]} )
-        if [ -z "$keys" ]; then
+        if [ -z "${!pg_versions_hash[*]}" ]; then
             echo "No versions found at URL <$PGENV_DOWNLOAD_ROOT>"
-            pgenv_debug "Hash content: ${!pg_versions_hash[@]}"
+            pgenv_debug "Hash content: ${!pg_versions_hash[*]}"
             exit 1
         fi
 
         # read back the versions and display the output
         # displaying each version with a separated header
-        for major in $( echo ${!pg_versions_hash[@]} | sort -n )
+        for major in $( echo "${!pg_versions_hash[@]}" | sort -n )
         do
             # normalize version numbers
             # (note, use sed instead of bc to avoid introducing another dependency)
-            if [ $major -ge 70 -a $major -le 96 ]; then
-                current_version=$( echo $major | $PGENV_SED 's/\([[:digit:]]\)\([[:digit:]]\)/\1\.\2/' )
+            if [ "$major" -ge 70 ] && [ "$major" -le 96 ]; then
+                current_version=$( echo "$major" | $PGENV_SED 's/\([[:digit:]]\)\([[:digit:]]\)/\1\.\2/' )
             else
                 current_version=$(( major / 10 ))
             fi
@@ -1385,9 +1603,9 @@ EOF
             must_print=1 # always print a version group in default
             if [ $# -ge 1 ]; then
                 must_print=0
-                for required_major in $*
+                for required_major in "$@"
                 do
-                    if [ $current_version = $required_major ]; then
+                    if [ "$current_version" = "$required_major" ]; then
                         must_print=1
                         break
                     fi
@@ -1402,7 +1620,7 @@ EOF
             echo "                     PostgreSQL $current_version"
             echo "    ------------------------------------------------"
             printed=0
-            for numeric in $( echo ${pg_versions_hash[$major]} \
+            for numeric in $( echo "${pg_versions_hash[$major]}" \
                                   | tr '-' '\n'  \
                                   | sort -V  )
             do
@@ -1419,7 +1637,7 @@ EOF
 
                 # the output string will be 'MM.m.pp' or 'MM.mm'
                 # therefore no more than 6 chars, left aligned
-                printf " %-6s " $numeric
+                printf " %-6s " "$numeric"
                 printed=$(( printed +  1 ))
             done
             echo -e "\n"
@@ -1446,7 +1664,7 @@ EOF
             nuke=""
         else
             # understand the version the user wants to configure
-            v=$( pgenv_guess_postgresql_version $3 $4 )
+            v=$( pgenv_guess_postgresql_version "$3" "$4" )
             if [ "$3" = "default" ]; then
                 nuke="default"
             fi
@@ -1459,7 +1677,7 @@ EOF
         fi
 
         title="PostgreSQL version $v"
-        configuration_file=$( pgenv_configuration_file_name $v )
+        configuration_file=$( pgenv_configuration_file_name "$v" )
 
         case $action in
             migrate)
@@ -1483,7 +1701,8 @@ EOF
                         new_config_file="$PGENV_CONFIG_ROOT/${new_config_file}"
                         pgenv_debug "Migrating [$old_config_file] to [$new_config_file]"
                         mv "$old_config_file" "$new_config_file"
-                        if [ $? -eq 0 ]; then
+                        ret=$?
+                        if [ $ret -eq 0 ]; then
                             files_migrated=$(( files_migrated + 1 ))
                         else
                             files_missing=$(( files_missing + 1 ))
@@ -1493,10 +1712,9 @@ EOF
 
                 if [ $files_to_migrate -eq 0 ]; then
                     echo "No configuration file to migrate!"
-                else if [ $files_migrated -gt 0 ]; then
-                         echo "Migrated $files_migrated configuration file(s) from previous versions ($files_missing not migrated)"
-                         echo "Your configuration file(s) are now into [$PGENV_CONFIG_ROOT]"
-                     fi
+                elif [ $files_migrated -gt 0 ]; then
+                    echo "Migrated $files_migrated configuration file(s) from previous versions ($files_missing not migrated)"
+                    echo "Your configuration file(s) are now into [$PGENV_CONFIG_ROOT]"
                 fi
                 ;;
 
@@ -1520,13 +1738,13 @@ EOF
                 pgenv_configuration_load
                 pgenv_configuration_write "$v" ;;
             edit)
-                if [ ! -z "$EDITOR" ] && [ $(command -v $EDITOR ) ]; then
+                if [ -n "$EDITOR" ] && [ "$(command -v "$EDITOR" )" ]; then
                     pgenv_debug "Launching editor $EDITOR"
-                    $EDITOR $configuration_file
+                    $EDITOR "$configuration_file"
                 else
                     cat <<EOF >&2
 No EDITOR variable set (or executable)!
-You can either start manually your favourite
+You can either start manually your favorite
 editor to edit the configuration file
      $configuration_file
 or export the EDITOR variable, such as
@@ -1538,6 +1756,8 @@ EOF
                 ;;
             delete)
                 pgenv_configuration_delete "$v" "$nuke";;
+        path)
+        pgenv_configuration_show_path "$v";;
             *)
                 if [ -z "$action" ]; then
                     cat <<EOF >&2
@@ -1548,7 +1768,8 @@ You need to specify one of the following \`config\` actions to perform:
     write
     edit
     delete
-
+    use
+    path
 
 For instance:
 
@@ -1575,12 +1796,11 @@ EOF
         shift # remove the command line 'log' argument
         # pass to tail every argument
         if [ -f "$PGENV_LOG" ]; then
-
             echo -e "Dumping the content of $PGENV_LOG \n"
 
             # tail is not in a PGENV_ variable, but should have been checked
             # via `pgenv check`
-            command tail $* "$PGENV_LOG"
+            command tail "$@" "$PGENV_LOG"
             exit $?
         else
             # uhm.. no log is there, could it be the database
@@ -1598,7 +1818,7 @@ EOF
 
     *)
         if [ $# -gt 0 ]; then
-            echo "Unknown command \`$@\`"
+            echo "Unknown command \`$*\`"
         fi
 
         pgenv_help

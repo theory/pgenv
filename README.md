@@ -27,6 +27,9 @@ Synopsis
     # Start current version
     pgenv start
 
+    # Show server status
+    pgenv status
+
     # Restart current version
     pgenv restart
    
@@ -114,7 +117,17 @@ The script gets the version of PostgreSQL being installed as first argument.
     command ends the `initdb` phase, that happens only the `PGDATA` has not been
     initialized (i.e., on *very first `use`*). The return value of the script
     does not affect the `pgenv` workflow. The script gets the current `PGDATA`
-    path as first argument.
+    path as first argument. Please note that this script runs with the cluster
+	turned off.
+
+-   `PGENV_SCRIPT_FIRSTSTART` is an executable script run at the very first of
+    a freshly installed cluster. Typically, this happens immediatly after the
+	`initdb` phase, after the cluster has been succesfully started. Please
+	note that this script is run only once in the whole cluster's life, that
+	means it will not run at every cluster start action, but only on the very first
+	start of the cluster. Therefore, this script can be used to initialize
+	the cluster with custmo data (e.g., creating users, databases, populating
+	tables and so on).
 
 -   `PGENV_SCRIPT_POSTSTART` is an executable script executed each time an
     instances is started, that is `start` is executed. The return value of the
@@ -235,7 +248,20 @@ special keywords. As an example:
 pgenv use latest 10
 ```
 
-will select the most recent PostgreSQL version of the 10 series installed.    
+will select the most recent PostgreSQL version of the 10 series installed.
+
+Since `pgenv` version `1.3.7`, the `use` command accepts also arbitrary strings
+as version specifiers, assuming such specifiers identify *externally managed* PostgreSQL
+installations.
+An externally managed PostgreSQL installation must have the same directory layout
+of those managed by `pgenv`, and therefore:
+- it must live within `pgenv-<your_version_identifier>` inside the `PGENV_ROOT` directory;
+- it must contain a `data` subdirectory that will be used as `PGDATA` for such installation;
+- it must contain a `bin`, `lib`, `share` and `include` subdirectories as for other installations.
+
+Please consider that using externally managed PostgreSQL installations requires you to use unique version
+identifiers to avoid clashing with those used by `pgenv`. All PostgreSQL version numbering, as well as the reserved
+words `latest` and `earliest`, cannot be used as custom identifiers.
 
 ### pgenv switch
 
@@ -279,7 +305,7 @@ $ pgenv current
 10.4
 ```
 
-Please note that `version` is a command synonym for version:
+Please note that `current` is a command synonym for version:
 
 ```
 $ pgenv version
@@ -332,7 +358,7 @@ adjust 'configure' and 'make' options and flags and run again
 Within the configuration file it is possible to instrument the build phase from
 the configuration to the actual build. For instance, in order to build with
 PL/Perl, it is possible to configure the variable `PGENV_CONFIGURE_OPTIONS`
-adding `--with-perl`. Or say you need SSL support and to tell teh compiler to
+adding `--with-perl`. Or say you need SSL support and to tell the compiler to
 use Homebrew-installed OpenSSL. Edit it something like:
 
 ``` 
@@ -362,6 +388,16 @@ interpreter, pass it on the command line at the time of build:
 ``` 
 PERL=/usr/local/my-fancy-perl pgenv build 10.5
 ```
+
+At the end of a `build` (or a `rebuild`) phase, `pgenv` creates a configuration
+file for the specific PostgreSQL version. If the file already exists, due to
+a prior `build` or `rebuild` action, the file will be automatically overwritten.
+In order to avoid the creation or overwriting of the configuration file,
+it is possible to set the environment variable
+`PGENV_WRITE_CONFIGURATION_FILE_AUTOMATICALLY` to a false value
+(either `0` or `NO`). If the variable is not set at all,
+or it is set to a true value (e.g., `1`, `YES`, etc.)
+the configuration file will be created or  overwritten (if it already exists).
 
 #### Patching
 
@@ -506,6 +542,32 @@ It is possible to specify flags to pass to `pg_ctl(1)` when performing the
 `restart` action, setting the `PGENV_RESTART_OPTIONS` array in the
 [configuration](#pgenv-config).
 
+### pgenv status
+
+Indicates whether an instance is already *running* or is *stopped*. In case an
+instance is not currently in use, the script complains and exits immediately.
+Furthermore, you can use `pgenv current` to see which version is in use.
+
+```sh
+$ pgenv status
+```
+
+The above command results in an output like the following:
+
+```
+server is running (PID: 81803)
+/opt/pgsql-16.0/bin/postgres "-D" "/opt/pgsql/data"
+```
+
+Same result can be achieved by running `pg_ctl` as follows:
+
+```sh
+$ $PG_ROOT/bin/pg_ctl status -D $PG_DATA
+```
+
+Where `PG_ROOT` is the path to your PostgreSQL installation directory, and
+`PG_DATA` is the path to your database directory.
+
 ### pgenv available
 
 Shows all the versions of PostgreSQL available to download and build. Handy to
@@ -591,6 +653,7 @@ The pgenv commands are:
     start      Start the current PostgreSQL server
     stop       Stop the current PostgreSQL server
     restart    Restart the current PostgreSQL server
+    status     Show the current PostgreSQL server status
     switch     Set the current PostgreSQL version
     clear      Stop and unset the current PostgreSQL version
     build      Build a specific version of PostgreSQL
@@ -635,6 +698,8 @@ The `config` command accepts the following subcommands:
            (Using `$EDITOR`, e.g: `export EDITOR=/usr/bin/emacs`)
 -    `delete` removes the specified configuration
 -    `migrate` is a command used to change the configuration format between versions of `pgenv`
+-    `path` accepts a version number and prints on standard output the path to such version
+            configuration path
  
 
 Each sub-command accepts a PostgreSQL version number (e.g., `10.5`) or a
@@ -770,7 +835,33 @@ Migrated 3 configuration file(s) from previous versions (0 not migrated)
 Your configuration file(s) are now into [~/git/misc/PostgreSQL/pgenv/config]
 ```
 
- 
+
+The `path` command accepts a specific version that will be used to compute the
+configuration file name related to such version, printing out the resulting
+path to the configuration file.
+This allows the user to set the `PGENV_CONFIGURATION_FILE` environment variable
+to a specific path to a custom configuration file, so that other subsequent
+invocations of `pgenv` will refer to such path.
+As an example, this is a way to exploit the default configuration file
+for different versions of PostgreSQL.
+In order to export the variable to a specific custom file location
+you can do, in your terminal, something like the following:
+
+```
+export PGENV_CONFIGURATION_FILE=$( pgenv config path 15.4 )
+```
+
+The above will set the environment variable `PGENV_CONFIGURATION_FILE` to the configuration
+file for the PostgreSQL version `15.4`.
+If you want to use the default configuration file, substitute the version number with the
+special `default` keyowrd, for example:
+
+```
+export PGENV_CONFIGURATION_FILE=pgenv config path default
+```
+
+
+
 ### pgenv log
 
 The `log` command provides a dump of the cluster log, if it exists, so that you
