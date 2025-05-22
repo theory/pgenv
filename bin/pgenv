@@ -2,7 +2,7 @@
 #
 # VERSION
 #
-PGENV_VERSION="1.4.1"
+PGENV_VERSION="1.4.2"
 
 # https://stackoverflow.com/a/19622569/79202
 trap 'exit' ERR
