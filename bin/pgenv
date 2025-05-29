@@ -1401,7 +1401,7 @@ case $1 in
             # due to a missing dependency (docbooks-xsl).
             # Download the docs tarball separately and
             # install it after build.
-	    major=${v//beta[0-9]/}
+            major=${v//beta[0-9]/}
             if [[ ${major%.*} -ge 17 ]]; then
                 PG_DOCS_TARBALL="postgresql-$v-docs.tar.gz"
                 pgenv_debug "Downloading docs tarball"
@@ -1463,7 +1463,7 @@ EOF
             # dependency for docs since 17.x and above, extracted
             # docs will be placed into the source directory,
             # as if they were built.
-	    major=${v//beta[0-9]/}
+            major=${v//beta[0-9]/}
             if [[ ${major%.*} -ge 17 ]]; then
                 pgenv_debug "Unpacking docs tarball"
                 $PGENV_TAR zxf "$PG_DOCS_TARBALL"
