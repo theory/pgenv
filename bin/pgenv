@@ -2,7 +2,7 @@
 #
 # VERSION
 #
-PGENV_VERSION="1.4.2"
+PGENV_VERSION="1.4.3"
 
 # https://stackoverflow.com/a/19622569/79202
 trap 'exit' ERR
@@ -1401,7 +1401,10 @@ case $1 in
             # due to a missing dependency (docbooks-xsl).
             # Download the docs tarball separately and
             # install it after build.
-            major=${v//beta[0-9]/}
+	    #
+	    # ATTENTION: this is a trick to make Bash regexp
+	    # strip all textual part, most notably 'rc' and 'beta'.
+	    major=${v//[[:alpha:]]*[0-9]/}
             if [[ ${major%.*} -ge 17 ]]; then
                 PG_DOCS_TARBALL="postgresql-$v-docs.tar.gz"
                 pgenv_debug "Downloading docs tarball"
@@ -1463,7 +1466,10 @@ EOF
             # dependency for docs since 17.x and above, extracted
             # docs will be placed into the source directory,
             # as if they were built.
-            major=${v//beta[0-9]/}
+	    #
+	    # ATTENTION: this is a trick to make Bash regexp
+	    # strip all textual part, most notably 'rc' and 'beta'.
+	    major=${v//[[:alpha:]]*[0-9]/}
             if [[ ${major%.*} -ge 17 ]]; then
                 pgenv_debug "Unpacking docs tarball"
                 $PGENV_TAR zxf "$PG_DOCS_TARBALL"
