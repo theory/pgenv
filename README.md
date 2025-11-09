@@ -121,12 +121,12 @@ The script gets the version of PostgreSQL being installed as first argument.
 	turned off.
 
 -   `PGENV_SCRIPT_FIRSTSTART` is an executable script run at the very first of
-    a freshly installed cluster. Typically, this happens immediatly after the
-	`initdb` phase, after the cluster has been succesfully started. Please
+    a freshly installed cluster. Typically, this happens immediately after the
+	`initdb` phase, after the cluster has been successfully started. Please
 	note that this script is run only once in the whole cluster's life, that
 	means it will not run at every cluster start action, but only on the very first
 	start of the cluster. Therefore, this script can be used to initialize
-	the cluster with custmo data (e.g., creating users, databases, populating
+	the cluster with custom data (e.g., creating users, databases, populating
 	tables and so on).
 
 -   `PGENV_SCRIPT_POSTSTART` is an executable script executed each time an
@@ -694,8 +694,8 @@ The `config` command accepts the following subcommands:
 -    `show` prints the current or specified version configuration
 -    `init` produces a configuration file from scratch, with default settings
 -    `write` store the specified version configuration
--    `edit` opens the current or specified version configuration file in your favourite text editor 
-           (Using `$EDITOR`, e.g: `export EDITOR=/usr/bin/emacs`)
+-    `edit` opens the current or specified version configuration file in your
+     favorite text editor (Using `$EDITOR`, e.g: `export EDITOR=/usr/bin/emacs`)
 -    `delete` removes the specified configuration
 -    `migrate` is a command used to change the configuration format between versions of `pgenv`
 -    `path` accepts a version number and prints on standard output the path to such version
@@ -854,7 +854,7 @@ export PGENV_CONFIGURATION_FILE=$( pgenv config path 15.4 )
 The above will set the environment variable `PGENV_CONFIGURATION_FILE` to the configuration
 file for the PostgreSQL version `15.4`.
 If you want to use the default configuration file, substitute the version number with the
-special `default` keyowrd, for example:
+special `default` keyword, for example:
 
 ```
 export PGENV_CONFIGURATION_FILE=pgenv config path default
