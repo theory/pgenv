@@ -185,6 +185,8 @@ $ git pull
 *   sed, grep, cat, tar, sort, tr, uname, tail - General Unix command line utilities
 *   patch - For patching versions that need patching
 *   make -  Builds PostgreSQL
+*   gzip -  Compresses and decompresses files
+*   bzip2 -  Compresses and decompresses files
 
 Optional dependencies:
 

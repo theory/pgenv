@@ -230,6 +230,9 @@ pgenv_check_dependencies(){
     fi
     pgenv_detail_command "tar" "$PGENV_TAR"
 
+    pgenv_detail_command "gzip" "$(command -v gzip)"
+    pgenv_detail_command "bzip2" "$(command -v bzip2)"
+
     if [ -z "$PGENV_SED" ]; then
         PGENV_SED=$(command -v sed)
     fi
