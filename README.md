@@ -179,6 +179,8 @@ $ git pull
 ### Dependencies
 ------------
 
+`pgenv` needs the following dependencies in order to run:
+
 *   env - Sets environment for execution
 *   bash - Command shell interpreter
 *   curl - Used to download files
@@ -186,8 +188,12 @@ $ git pull
 *   patch - For patching versions that need patching
 *   make -  Builds PostgreSQL
 
+Morever, `bunzip2(1)` and `gunzip(1)` are required to extract
+the downloaded PostgreSQL tarballs.
+
 Optional dependencies:
 
+-   `git(1)` in the case you want to build a development version of PostgreSQL
 *   Perl 5 - To build PL/Perl 
 *   Python - To build PL/Python
 
